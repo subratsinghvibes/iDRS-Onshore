@@ -1,0 +1,1155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Management - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Use CSS variables from style.css */
+    :root {
+        --adb-primary: #0a2f5a;
+        --adb-primary-light: #1a4f8a;
+        --adb-primary-dark: #061d3a;
+        --adb-secondary: #c4a962;
+        --adb-white: #ffffff;
+        --adb-gray-100: #f8f9fa;
+        --adb-gray-200: #e9ecef;
+    }
+    
+    /* Page container - matches view-all-rigs */
+    .user-management-page {
+        padding: 1.5rem 0.5rem;
+        min-height: calc(100vh - 60px);
+    }
+    
+    /* Page title styling - matches view-all-rigs */
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--adb-primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-title-icon {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .page-subtitle {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+    
+    .page-separator {
+        border: none;
+        border-top: 2px solid var(--adb-gray-200);
+        margin: 1rem 0 1.5rem 0;
+    }
+    
+    /* Card styling - matches view-all-rigs */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(10, 47, 90, 0.1);
+    }
+    
+    .card-header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        background: transparent;
+    }
+    
+    .card-header h5 {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #374151;
+    }
+    
+    .card-header h5 i {
+        color: var(--adb-primary) !important;
+        font-size: 0.9rem;
+    }
+    
+    /* Table styling - matches view-all-rigs */
+    .table-scroll-container {
+        max-height: 450px;
+        overflow-y: auto;
+        border-radius: 8px;
+    }
+    
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f3f4f6;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        color: #374151;
+        border-bottom: 2px solid #e5e7eb;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(10, 47, 90, 0.05);
+    }
+    
+    /* Search input styling */
+    .data-search-input {
+        width: 300px;
+        font-size: 0.8rem;
+    }
+    
+    /* Upload section styling */
+    .upload-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .upload-section h6 {
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    /* Modern modal styling */
+    .modern-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .modern-modal .modal-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+        border-radius: 16px 16px 0 0;
+        color: white;
+    }
+    
+    .modern-modal .modal-title {
+        color: white;
+    }
+    
+    .modern-modal .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .modern-modal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modern-modal .modal-footer {
+        border-top: 1px solid rgba(0,0,0,0.1);
+        padding: 1rem 1.5rem;
+    }
+    
+    /* Loading state */
+    .loading-state {
+        padding: 3rem 0;
+        text-align: center;
+    }
+    
+    /* Section divider */
+    .section-divider {
+        border-top: 2px solid var(--adb-gray-200);
+        margin: 1.5rem 0;
+    }
+    
+    /* Filter row styling */
+    .filter-row {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Hidden class */
+    .hidden-by-default {
+        display: none;
+    }
+    
+    /* User table column widths */
+    .user-table-cpf { width: 100px; }
+    .user-table-name { width: 150px; }
+    .user-table-email { width: 200px; }
+    .user-table-role { width: 80px; }
+    .user-table-location { width: 100px; }
+    .user-table-status { width: 80px; }
+    .user-table-login { width: 100px; }
+    .user-table-actions { width: 100px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
+<div class="user-management-page">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-people page-title-icon"></i>
+                <h1 class="page-title mb-0">User Management</h1>
+            </div>
+            <p class="page-subtitle">
+                Manage user access, roles, and personnel information
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-3 justify-content-end">
+                <a href="{% url 'mpi_table_view' %}" class="btn btn-outline-primary btn-sm" target="_blank">
+                    <i class="bi bi-table me-2"></i>View All Personnel
+                </a>
+                <a href="{% url 'data_management' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+    
+    <!-- MPI Search Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-search me-2"></i>
+                Search Personnel
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="mpiSearch" class="form-control form-control-sm data-search-input" placeholder="Search by CPF, Name, or Location...">
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Search Results Section -->
+            <div id="mpiSearchResults" class="hidden-by-default">
+                <div class="table-responsive table-scroll-container">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>CPF No</th>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Org Unit</th>
+                                <th>Position</th>
+                                <th>Role</th>
+                                <th class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mpiResultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="noSearchResults" class="text-center text-muted py-4">
+                <i class="bi bi-info-circle me-2"></i>
+                Enter a search term to find personnel records
+            </div>
+        </div>
+    </div>
+    
+    <!-- Authorized Users Card -->
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-people-fill me-2"></i>
+                Authorized Users (<span id="total-users-count">0</span>)
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <button class="btn btn-success btn-sm" onclick="openAddUserModal()">
+                    <i class="bi bi-person-plus me-2"></i>Add New User
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="filter-row">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" id="authUserFilter" class="form-control form-control-sm" placeholder="Filter by CPF or Name...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="authRoleFilter" class="form-select form-select-sm">
+                            <option value="">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="L1">L1</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="authStatusFilter" class="form-select form-select-sm">
+                            <option value="">All Status</option>
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-sm btn-outline-secondary w-100" onclick="loadAuthorizedUsers(1)" title="Refresh">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="authUsersLoading" class="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading authorized users...</p>
+            </div>
+            
+            <!-- Authorized Users Table -->
+            <div id="authUsersTable" class="hidden-by-default">
+                <div class="table-responsive table-scroll-container">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th class="user-table-cpf">CPF No</th>
+                                <th class="user-table-name">Name</th>
+                                <th class="user-table-email">Email</th>
+                                <th class="user-table-role">Role</th>
+                                <th class="user-table-location">Location</th>
+                                <th class="user-table-status">Status</th>
+                                <th class="user-table-login">Last Login</th>
+                                <th class="user-table-actions text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="authUsersBody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div id="authUsersPagination" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top hidden-by-default">
+                    <div class="text-muted small" id="authUsersCount"></div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="authUsersPaginationList"></ul>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Upload Section -->
+            <div class="upload-section mt-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Personnel Data CSV
+                </h6>
+                <form id="mpi-upload-form" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="mpi-file" name="file" accept=".csv" required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload me-2"></i>Upload Personnel CSV
+                        </button>
+                    </div>
+                    <small class="text-muted">The CSV will be processed and all relevant employee information will be updated.</small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>Add New User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-user-form">
+                    <div class="mb-3">
+                        <label for="new-user-cpf" class="form-label">CPF Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new-user-cpf" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-user-name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new-user-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-user-role" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select" id="new-user-role" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Admin - Full access to everything</option>
+                            <option value="L1">L1 - All locations, no admin content</option>
+                            <option value="user">User - Limited to assigned location</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 hidden-by-default" id="location-field">
+                        <label for="new-user-location" class="form-label">Assigned Location <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new-user-location" placeholder="e.g., ASSET-101">
+                        <small class="text-muted">Required for 'User' role</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveNewUser()">
+                    <i class="bi bi-check-lg me-2"></i>Add User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Role Modal -->
+<div class="modal fade" id="assignRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-badge me-2"></i>Assign Role
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Assign a role to <strong id="roleUserName"></strong></p>
+                <input type="hidden" id="roleUserCpf">
+                <div class="mb-3">
+                    <label for="assign-role-select" class="form-label">Select Role <span class="text-danger">*</span></label>
+                    <select class="form-select" id="assign-role-select" required>
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin - Full access to everything</option>
+                        <option value="L1">L1 - All locations, no admin content</option>
+                        <option value="user">User - Limited to assigned location</option>
+                    </select>
+                </div>
+                <div class="mb-3 hidden-by-default" id="assign-location-field">
+                    <label for="assign-location" class="form-label">Assigned Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="assign-location" readonly>
+                    <small class="text-muted">Auto-populated from employee's MPI location</small>
+                </div>
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Role permissions will be activated immediately after assignment.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveRoleAssignment()">
+                    <i class="bi bi-check-lg me-2"></i>Assign Role
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // =============================================================================
+    // MASTER PERSONNEL INFO (MPI) MANAGEMENT
+    // =============================================================================
+    
+    // CSRF Token helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    let mpiSearchTimeout = null;
+    let currentAuthUsersPage = 1;
+    let authUsersFilters = {
+        search: '',
+        role: '',
+        status: 'active'
+    };
+    
+    // =============================================================================
+    // MPI SEARCH
+    // =============================================================================
+    
+    async function searchMPI(query) {
+        try {
+            const response = await fetch(`/api/mpi/search/?q=${encodeURIComponent(query)}`, {
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const results = await response.json();
+            displayMPIResults(results);
+        } catch (error) {
+            console.error('Error searching MPI:', error);
+            alert('Failed to search MPI records');
+        }
+    }
+    
+    function displayMPIResults(results) {
+        const tbody = document.getElementById('mpiResultsBody');
+        const resultsContainer = document.getElementById('mpiSearchResults');
+        const noResultsEl = document.getElementById('noSearchResults');
+        
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No results found</td></tr>';
+            resultsContainer.classList.remove('hidden-by-default');
+            noResultsEl.classList.add('hidden-by-default');
+            return;
+        }
+        
+        let html = '';
+        const searchQuery = document.getElementById('mpiSearch').value.trim().toLowerCase();
+        const isOrgUnitSearch = results.length > 1 && results.every(r => 
+            r.org_unit && r.org_unit.toLowerCase().includes(searchQuery) ||
+            r.org_unit_text && r.org_unit_text.toLowerCase().includes(searchQuery)
+        );
+        
+        if (isOrgUnitSearch) {
+            const orgUnit = results[0].org_unit || results[0].org_unit_text;
+            html += `
+                <tr class="table-success">
+                    <td colspan="7">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><strong>Found ${results.length} employees in ${orgUnit}</strong></div>
+                            <button class="btn btn-success btn-sm" onclick="bulkAddOrgUnit('${orgUnit}')">
+                                <i class="bi bi-people-fill me-2"></i>Add All as Users
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        results.forEach(mpi => {
+            let roleBadge = '<span class="badge bg-secondary">Not Assigned</span>';
+            if (mpi.role) {
+                if (mpi.role.role === 'admin') {
+                    roleBadge = '<span class="badge bg-danger">Admin</span>';
+                } else if (mpi.role.role === 'L1') {
+                    roleBadge = '<span class="badge bg-primary">L1</span>';
+                } else if (mpi.role.role === 'user') {
+                    roleBadge = '<span class="badge bg-success">User</span>';
+                }
+                if (mpi.role.assigned_location) {
+                    roleBadge += ` <small class="text-muted">(${mpi.role.assigned_location})</small>`;
+                }
+            }
+            
+            html += `
+                <tr data-cpf="${mpi.cpf_no}" data-location="${mpi.location || ''}">
+                    <td><strong>${mpi.cpf_no || '-'}</strong></td>
+                    <td>${mpi.name || '-'}</td>
+                    <td>${mpi.location || '-'}</td>
+                    <td>${mpi.org_unit_text || '-'}</td>
+                    <td>${mpi.position_text || '-'}</td>
+                    <td>${roleBadge}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary btn-sm" onclick="assignRole('${mpi.cpf_no}', '${mpi.name}')" title="Assign Role">
+                                <i class="bi bi-person-badge"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="removeUser('${mpi.cpf_no}', '${mpi.name}')" title="Remove User">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        resultsContainer.classList.remove('hidden-by-default');
+        noResultsEl.classList.add('hidden-by-default');
+    }
+    
+    async function bulkAddOrgUnit(orgUnit) {
+        if (!confirm(`Add all employees from "${orgUnit}" as Users?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/authorized-users/bulk-add-org-unit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ org_unit: orgUnit })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                const query = document.getElementById('mpiSearch').value.trim();
+                if (query) {
+                    searchMPI(query);
+                }
+                loadAuthorizedUsers();
+            } else {
+                alert('Error: ' + (result.error || 'Failed to bulk add users'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to bulk add users');
+        }
+    }
+    
+    // =============================================================================
+    // AUTHORIZED USERS MANAGEMENT
+    // =============================================================================
+    
+    async function loadAuthorizedUsers(page = 1) {
+        const loadingEl = document.getElementById('authUsersLoading');
+        const tableEl = document.getElementById('authUsersTable');
+        
+        loadingEl.style.display = 'block';
+        tableEl.classList.add('hidden-by-default');
+        
+        try {
+            const params = new URLSearchParams({
+                page: page,
+                page_size: 50,
+                search: authUsersFilters.search,
+                role: authUsersFilters.role,
+                status: authUsersFilters.status
+            });
+            
+            const response = await fetch(`/api/authorized-users/?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (data.users) {
+                displayAuthorizedUsers(data.users);
+                currentAuthUsersPage = page;
+                
+                document.getElementById('total-users-count').textContent = data.total_count || data.users.length;
+                document.getElementById('authUsersCount').textContent = `Showing ${data.users.length} of ${data.total_count} users`;
+                document.getElementById('authUsersPagination').classList.remove('hidden-by-default');
+            }
+        } catch (error) {
+            console.error('Error loading authorized users:', error);
+            document.getElementById('authUsersBody').innerHTML = 
+                '<tr><td colspan="8" class="text-center text-danger py-3">Failed to load authorized users</td></tr>';
+        } finally {
+            loadingEl.style.display = 'none';
+            tableEl.classList.remove('hidden-by-default');
+        }
+    }
+    
+    function displayAuthorizedUsers(users) {
+        const tbody = document.getElementById('authUsersBody');
+        
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No authorized users found</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        users.forEach(user => {
+            let roleBadgeClass = 'secondary';
+            if (user.role === 'admin') roleBadgeClass = 'danger';
+            else if (user.role === 'L1') roleBadgeClass = 'primary';
+            else if (user.role === 'user') roleBadgeClass = 'success';
+            
+            const statusBadge = user.is_active 
+                ? '<span class="badge bg-success">Active</span>' 
+                : '<span class="badge bg-danger">Revoked</span>';
+            
+            const lastLogin = user.last_login 
+                ? new Date(user.last_login).toLocaleDateString() 
+                : '<span class="text-muted">Never</span>';
+            
+            const rowClass = user.is_active ? '' : 'table-secondary opacity-75';
+            
+            html += `
+                <tr class="${rowClass}">
+                    <td><strong>${user.cpf_no}</strong></td>
+                    <td>${user.name || '<span class="text-muted">—</span>'}</td>
+                    <td class="small">${user.email || '<span class="text-muted">—</span>'}</td>
+                    <td><span class="badge bg-${roleBadgeClass}">${user.role_display}</span></td>
+                    <td class="small">${user.assigned_location || '<span class="text-muted">All</span>'}</td>
+                    <td>${statusBadge}</td>
+                    <td class="small">${lastLogin}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary btn-sm" onclick="editAuthorizedUser('${user.username}', '${user.cpf_no}', '${user.name}')" title="Edit Role">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            ${user.is_active 
+                                ? `<button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteAuthorizedUser('${user.username || user.cpf_no}', '${user.cpf_no}', '${user.name}')" 
+                                        title="Revoke Access">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>`
+                                : `<button class="btn btn-outline-success btn-sm" 
+                                        onclick="reactivateAuthorizedUser('${user.username || user.cpf_no}', '${user.cpf_no}', '${user.name}')" 
+                                        title="Restore Access">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    }
+    
+    // =============================================================================
+    // USER ACTIONS
+    // =============================================================================
+    
+    function openAddUserModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        document.getElementById('add-user-form').reset();
+        document.getElementById('location-field').classList.add('hidden-by-default');
+        modal.show();
+    }
+    
+    async function assignRole(cpfNo, name) {
+        document.getElementById('roleUserCpf').val = cpfNo;
+        document.getElementById('roleUserCpf').value = cpfNo;
+        document.getElementById('roleUserName').textContent = name;
+        
+        const row = document.querySelector(`#mpiResultsBody tr[data-cpf="${cpfNo}"]`);
+        let mpiLocation = row ? row.dataset.location : '';
+        
+        if (!mpiLocation) {
+            try {
+                const response = await fetch(`/api/mpi/search/?q=${encodeURIComponent(cpfNo)}`, {
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const results = await response.json();
+                    if (results.length > 0) {
+                        mpiLocation = results[0].location || '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching location from API:', error);
+            }
+        }
+        
+        document.getElementById('assignRoleModal').dataset.mpiLocation = mpiLocation;
+        document.getElementById('assign-role-select').value = '';
+        document.getElementById('assign-location').value = '';
+        document.getElementById('assign-location-field').classList.add('hidden-by-default');
+        
+        const modal = new bootstrap.Modal(document.getElementById('assignRoleModal'));
+        modal.show();
+    }
+    
+    function removeUser(cpfNo, name) {
+        if (confirm(`Are you sure you want to remove ${name} (CPF: ${cpfNo}) from the system?`)) {
+            fetch('/api/user-roles/remove/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ cpf_no: cpfNo })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.message);
+                    const query = document.getElementById('mpiSearch').value.trim();
+                    if (query) {
+                        searchMPI(query);
+                    }
+                    loadAuthorizedUsers();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to remove user'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to remove user');
+            });
+        }
+    }
+    
+    function saveNewUser() {
+        const cpf = document.getElementById('new-user-cpf').value.trim();
+        const name = document.getElementById('new-user-name').value.trim();
+        const role = document.getElementById('new-user-role').value;
+        const location = document.getElementById('new-user-location').value.trim();
+        
+        if (!cpf || !name || !role) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        if (role === 'user' && !location) {
+            alert('Location is required for User role');
+            return;
+        }
+        
+        const data = {
+            cpf_no: cpf,
+            role: role,
+            assigned_location: location || null
+        };
+        
+        fetch('/api/user-roles/assign/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('idrs_csrftoken')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert(result.message);
+                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                document.getElementById('add-user-form').reset();
+                document.getElementById('location-field').classList.add('hidden-by-default');
+                const query = document.getElementById('mpiSearch').value.trim();
+                if (query) {
+                    searchMPI(query);
+                }
+                loadAuthorizedUsers();
+            } else {
+                alert('Error: ' + (result.error || 'Failed to add user'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to add user');
+        });
+    }
+    
+    function saveRoleAssignment() {
+        const cpf = document.getElementById('roleUserCpf').value;
+        const role = document.getElementById('assign-role-select').value;
+        const location = document.getElementById('assign-location').value.trim();
+        
+        if (!role) {
+            alert('Please select a role');
+            return;
+        }
+        
+        if (role === 'user' && !location) {
+            alert('Location is required for User role');
+            return;
+        }
+        
+        const data = {
+            cpf_no: cpf,
+            role: role,
+            assigned_location: location || null
+        };
+        
+        fetch('/api/user-roles/assign/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('idrs_csrftoken')
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert(result.message);
+                bootstrap.Modal.getInstance(document.getElementById('assignRoleModal')).hide();
+                document.getElementById('assign-role-select').value = '';
+                document.getElementById('assign-location').value = '';
+                document.getElementById('assign-location-field').classList.add('hidden-by-default');
+                const query = document.getElementById('mpiSearch').value.trim();
+                if (query) {
+                    searchMPI(query);
+                }
+                loadAuthorizedUsers();
+            } else {
+                alert('Error: ' + (result.error || 'Failed to assign role'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to assign role');
+        });
+    }
+    
+    function editAuthorizedUser(username, cpfNo, name) {
+        fetch(`/api/authorized-users/`, { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(result => {
+            const user = result.users.find(u => u.cpf_no === cpfNo);
+            if (user) {
+                document.getElementById('roleUserName').textContent = user.name || name || cpfNo;
+                document.getElementById('roleUserCpf').value = cpfNo || username;
+                
+                let roleValue = 'user';
+                if (user.is_superuser) roleValue = 'admin';
+                else if (user.is_staff) roleValue = 'L1';
+                
+                document.getElementById('assign-role-select').value = roleValue;
+                
+                if (roleValue === 'user' && user.location) {
+                    document.getElementById('assign-location-field').classList.remove('hidden-by-default');
+                    document.getElementById('assign-location').value = user.location;
+                } else {
+                    document.getElementById('assign-location-field').classList.add('hidden-by-default');
+                    document.getElementById('assign-location').value = '';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('assignRoleModal'));
+                modal.show();
+            } else {
+                alert('User not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load user details');
+        });
+    }
+    
+    async function deleteAuthorizedUser(username, cpfNo, name) {
+        if (!confirm(`Revoke app access for ${name} (${cpfNo || username})?`)) return;
+        
+        try {
+            const response = await fetch('/api/authorized-users/delete/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ username: username, cpf_no: cpfNo })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                loadAuthorizedUsers(currentAuthUsersPage);
+            } else {
+                alert('Error: ' + (result.error || 'Failed to revoke access'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to revoke access');
+        }
+    }
+    
+    async function reactivateAuthorizedUser(username, cpfNo, name) {
+        if (!confirm(`Restore app access for ${name} (${cpfNo || username})?`)) return;
+        
+        try {
+            const response = await fetch('/api/authorized-users/reactivate/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ username: username, cpf_no: cpfNo })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                loadAuthorizedUsers(currentAuthUsersPage);
+            } else {
+                alert('Error: ' + (result.error || 'Failed to restore access'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to restore access');
+        }
+    }
+    
+    // =============================================================================
+    // MPI UPLOAD
+    // =============================================================================
+    
+    document.getElementById('mpi-upload-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('mpi-file');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('Please select a file to upload');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        try {
+            const response = await fetch('/api/mpi/upload/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                let message = data.message;
+                if (data.errors && data.errors.length > 0) {
+                    message += '\n\nErrors:\n' + data.errors.join('\n');
+                }
+                alert(message);
+                document.getElementById('mpi-upload-form').reset();
+                loadAuthorizedUsers();
+            } else {
+                alert('Upload failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error uploading MPI:', error);
+            alert('Failed to upload MPI file');
+        }
+    });
+    
+    // =============================================================================
+    // EVENT LISTENERS & INITIALIZATION
+    // =============================================================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load authorized users on page load
+        loadAuthorizedUsers();
+        
+        // MPI Search
+        document.getElementById('mpiSearch')?.addEventListener('keyup', function() {
+            const query = this.value.trim();
+            
+            if (query) {
+                localStorage.setItem('mpi_last_search', query);
+            } else {
+                localStorage.removeItem('mpi_last_search');
+            }
+            
+            if (mpiSearchTimeout) {
+                clearTimeout(mpiSearchTimeout);
+            }
+            
+            if (query.length < 2) {
+                document.getElementById('mpiSearchResults').classList.add('hidden-by-default');
+                document.getElementById('noSearchResults').classList.remove('hidden-by-default');
+                return;
+            }
+            
+            mpiSearchTimeout = setTimeout(() => {
+                searchMPI(query);
+            }, 300);
+        });
+        
+        // Restore last search
+        const lastSearch = localStorage.getItem('mpi_last_search');
+        if (lastSearch) {
+            document.getElementById('mpiSearch').value = lastSearch;
+            setTimeout(() => {
+                searchMPI(lastSearch);
+            }, 500);
+        }
+        
+        // Role select change handlers
+        document.getElementById('assign-role-select')?.addEventListener('change', async function() {
+            const role = this.value;
+            const locationField = document.getElementById('assign-location-field');
+            const locationInput = document.getElementById('assign-location');
+            
+            if (role === 'user') {
+                let mpiLocation = document.getElementById('assignRoleModal').dataset.mpiLocation || '';
+                
+                if (!mpiLocation) {
+                    const cpfNo = document.getElementById('roleUserCpf').value;
+                    if (cpfNo) {
+                        try {
+                            const response = await fetch(`/api/mpi/search/?q=${encodeURIComponent(cpfNo)}`, {
+                                credentials: 'same-origin'
+                            });
+                            if (response.ok) {
+                                const results = await response.json();
+                                if (results.length > 0) {
+                                    mpiLocation = results[0].location || '';
+                                    document.getElementById('assignRoleModal').dataset.mpiLocation = mpiLocation;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error fetching location from API:', error);
+                        }
+                    }
+                }
+                
+                locationInput.value = mpiLocation;
+                locationField.classList.remove('hidden-by-default');
+            } else {
+                locationField.classList.add('hidden-by-default');
+                locationInput.value = '';
+            }
+        });
+        
+        document.getElementById('new-user-role')?.addEventListener('change', function() {
+            const locationField = document.getElementById('location-field');
+            if (this.value === 'user') {
+                locationField.classList.remove('hidden-by-default');
+                document.getElementById('new-user-location').required = true;
+            } else {
+                locationField.classList.add('hidden-by-default');
+                document.getElementById('new-user-location').required = false;
+            }
+        });
+        
+        // Filter event handlers
+        document.getElementById('authUserFilter')?.addEventListener('keyup', function() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                authUsersFilters.search = this.value.trim();
+                loadAuthorizedUsers(1);
+            }, 300);
+        });
+        
+        document.getElementById('authRoleFilter')?.addEventListener('change', function() {
+            authUsersFilters.role = this.value;
+            loadAuthorizedUsers(1);
+        });
+        
+        document.getElementById('authStatusFilter')?.addEventListener('change', function() {
+            authUsersFilters.status = this.value;
+            loadAuthorizedUsers(1);
+        });
+    });
+</script>
+{% endblock %}

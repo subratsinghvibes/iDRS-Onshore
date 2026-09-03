@@ -1,0 +1,506 @@
+[
+{
+  "model": "scheduler.companycode",
+  "pk": "09438496-cb9b-4cc6-97eb-c37d161e534a",
+  "fields": {
+    "fund_centre": "KKLASASP",
+    "company_code": "KKL",
+    "cost_centre": "KKLSACSREX",
+    "category": "Asset",
+    "name": "Cauvery Asset, Karaikal",
+    "city": "Karaikal",
+    "state": "UT of Puducherry",
+    "location": "Karaikal",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.800Z",
+    "updated_at": "2026-02-04T09:15:44.971Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "0b0ec84d-d1e0-464a-b259-40671a75ab46",
+  "fields": {
+    "fund_centre": "DDNSCSMED",
+    "company_code": "DDN",
+    "cost_centre": "DDNCSCSREX",
+    "category": "Other",
+    "name": "Dehradun - Medical",
+    "city": "Dehradun",
+    "state": "Uttarakhand",
+    "location": "Dehradun",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.793Z",
+    "updated_at": "2026-02-04T09:15:44.965Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "15b4a04e-52ba-4b05-907b-45ed4c79d4d9",
+  "fields": {
+    "fund_centre": "RJYAKASP",
+    "company_code": "RJY",
+    "cost_centre": "RJYKACSREX",
+    "category": "Asset",
+    "name": "EOA Asset, Kakinada",
+    "city": "Kakinada",
+    "state": "Andhra Pradesh",
+    "location": "Kakinada",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.807Z",
+    "updated_at": "2026-02-04T09:15:44.977Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "1be6ac80-c5b6-4ecd-8456-6c014f4836cf",
+  "fields": {
+    "fund_centre": "MBPBSBSP",
+    "company_code": "MBP",
+    "cost_centre": "MBPSBCSREX",
+    "category": "Asset",
+    "name": "CBM Bokaro Asset",
+    "city": "Bokaro",
+    "state": "Jharkhand",
+    "location": "Bokaro",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.803Z",
+    "updated_at": "2026-02-04T09:15:44.973Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "266bb585-db2e-435a-a2ee-a7b9828da19b",
+  "fields": {
+    "fund_centre": "AGTASASP",
+    "company_code": "AGT",
+    "cost_centre": "AGTCSCSREX",
+    "category": "Asset",
+    "name": "Tripura Asset",
+    "city": "Agartala",
+    "state": "Tripura",
+    "location": "Agartala",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.786Z",
+    "updated_at": "2026-02-04T09:15:44.961Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+  "fields": {
+    "fund_centre": "MHNASASP",
+    "company_code": "MHN",
+    "cost_centre": "MHNSACSREX",
+    "category": "Asset",
+    "name": "Mehsana Asset",
+    "city": "Mehsana",
+    "state": "Gujarat",
+    "location": "Mehsana",
+    "description": "Auto-created location for asset_id: Mehsana",
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.803Z",
+    "updated_at": "2026-02-04T09:15:44.974Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "294b2b82-7994-418d-ad39-72509bbdba42",
+  "fields": {
+    "fund_centre": "DVPBSBSP",
+    "company_code": "DVP",
+    "cost_centre": "DVPSBCSREX",
+    "category": "Basin",
+    "name": "Jorhat Basin",
+    "city": "Jorhat",
+    "state": "Assam",
+    "location": "Jorhat",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.797Z",
+    "updated_at": "2026-02-04T09:15:44.969Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "33ca3d54-63f8-4992-bfaa-818d6492ddcb",
+  "fields": {
+    "fund_centre": "KKLSCSSP",
+    "company_code": "KKL",
+    "cost_centre": "CHNCSSBCSR",
+    "category": "Basin",
+    "name": "Cauvery Basin (KG+PG), Rajahmundry",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "location": "Chennai",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.800Z",
+    "updated_at": "2026-02-04T09:15:44.972Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+  "fields": {
+    "fund_centre": "AMDASASP",
+    "company_code": "AMD",
+    "cost_centre": "AMDCSCSREX",
+    "category": "Asset",
+    "name": "Ahmedabad Asset",
+    "city": "Ahmedabad",
+    "state": "Gujarat",
+    "location": "Ahmedabad",
+    "description": "Oil and gas operations in Ahmedabad region, Gujarat",
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.788Z",
+    "updated_at": "2026-02-04T09:15:44.963Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "39deb194-4157-45bf-a029-b5b5eddec647",
+  "fields": {
+    "fund_centre": "JDHBSBFB",
+    "company_code": "JDH",
+    "cost_centre": "JDHCSCSREX",
+    "category": "Asset",
+    "name": "Jodhpur",
+    "city": "Jodhpur",
+    "state": "Rajasthan",
+    "location": "Jodhpur",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.799Z",
+    "updated_at": "2026-02-04T09:15:44.970Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "40439f67-aa69-46bf-81e7-592573d9d812",
+  "fields": {
+    "fund_centre": "MUMSROHD",
+    "company_code": "MUM",
+    "cost_centre": "MUMCSCSREX",
+    "category": "Other",
+    "name": "RO, Mumbai",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "location": "Mumbai",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.806Z",
+    "updated_at": "2026-02-04T09:15:44.975Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "5b15986d-8e21-4a37-af28-334e2cd04e2f",
+  "fields": {
+    "fund_centre": "RJYASASP",
+    "company_code": "RJY",
+    "cost_centre": "RJYCSCSREX",
+    "category": "Asset",
+    "name": "Rajahmundry Asset",
+    "city": "Rajahmundry",
+    "state": "Andhra Pradesh",
+    "location": "Rajahmundry",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.808Z",
+    "updated_at": "2026-02-04T09:15:44.978Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "61418b99-1ec2-4e8d-aef8-6ca7d5d90807",
+  "fields": {
+    "fund_centre": "BDAPDPSP",
+    "company_code": "BDA",
+    "cost_centre": "BDACSCSREX",
+    "category": "Plant",
+    "name": "Dahej Plant, Vadodara",
+    "city": "Vadodara",
+    "state": "Gujarat",
+    "location": "Baroda",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.791Z",
+    "updated_at": "2026-02-04T09:15:44.964Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "7146d1ce-484f-4988-812e-479764bfd7d0",
+  "fields": {
+    "fund_centre": "MBPACMSP",
+    "company_code": "MBP",
+    "cost_centre": "MBPCMCSREX",
+    "category": "Basin",
+    "name": "MBA Basin, Kolkata",
+    "city": "Kolkata",
+    "state": "West Bengal",
+    "location": "Kolkata",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.802Z",
+    "updated_at": "2026-02-04T09:15:44.973Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "8dd0a313-4a60-44b2-ac46-caae2f366ed4",
+  "fields": {
+    "fund_centre": "KKLSCSSP",
+    "company_code": "KKL",
+    "cost_centre": "CHNCSKBCSR",
+    "category": "Basin",
+    "name": "KG-PG Basin",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "location": "Chennai",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.801Z",
+    "updated_at": "2026-02-04T09:15:44.972Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "9052b79d-b2e5-458b-a9b0-9dae785232e9",
+  "fields": {
+    "fund_centre": "DDNSCSSP",
+    "company_code": "DDN",
+    "cost_centre": "DDNCSCSREX",
+    "category": "Other",
+    "name": "Dehradun HQ",
+    "city": "Dehradun",
+    "state": "Uttarakhand",
+    "location": "Dehradun",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.794Z",
+    "updated_at": "2026-02-04T09:15:44.966Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "9b4a4c55-8549-44e9-b696-3090bffeda7e",
+  "fields": {
+    "fund_centre": "DLISCSCSR",
+    "company_code": "DLI",
+    "cost_centre": "DLICSCSREX",
+    "category": "Other",
+    "name": "Corporate CSR",
+    "city": "Delhi",
+    "state": "Delhi",
+    "location": "Delhi",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.795Z",
+    "updated_at": "2026-02-04T09:15:44.966Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "a0b33753-b4b7-4fe6-b8e9-8745476a17f8",
+  "fields": {
+    "fund_centre": "DLISCSSP",
+    "company_code": "DLI",
+    "cost_centre": "DLICSSR601",
+    "category": "Other",
+    "name": "Delhi",
+    "city": "Delhi",
+    "state": "Delhi",
+    "location": "Delhi",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.796Z",
+    "updated_at": "2026-02-04T09:15:44.968Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "bbe828bf-4415-4679-b425-c244b12efdb5",
+  "fields": {
+    "fund_centre": "MUMSSTSP",
+    "company_code": "MUM",
+    "cost_centre": "MUMSTCSREX",
+    "category": "Institute",
+    "name": "IPSHEM, Goa",
+    "city": "Goa",
+    "state": "Goa",
+    "location": "Goa",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.806Z",
+    "updated_at": "2026-02-04T09:15:44.975Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "dd98e191-ffc1-4577-8ad5-06c4ba786f55",
+  "fields": {
+    "fund_centre": "MUMPUPSP",
+    "company_code": "MUM",
+    "cost_centre": "MUMUPCSREX",
+    "category": "Plant",
+    "name": "Uran Plant",
+    "city": "Uran",
+    "state": "Maharashtra",
+    "location": "Uran",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.805Z",
+    "updated_at": "2026-02-04T09:15:44.976Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "de0536fa-3d5e-4aed-92c0-bc15965bf208",
+  "fields": {
+    "fund_centre": "MUMPHPSP",
+    "company_code": "MUM",
+    "cost_centre": "MUMHPCSREX",
+    "category": "Plant",
+    "name": "Hazira Plant",
+    "city": "Hazira",
+    "state": "Gujarat",
+    "location": "Hazira",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.804Z",
+    "updated_at": "2026-02-04T09:15:44.974Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "de1f3002-4fb0-4352-9305-707961827730",
+  "fields": {
+    "fund_centre": "CBYASASP",
+    "company_code": "CBY",
+    "cost_centre": "CBYSACSREX",
+    "category": "Asset",
+    "name": "Cambay Asset",
+    "city": "Cambay",
+    "state": "Gujarat",
+    "location": "Cambay",
+    "description": "Auto-created location for asset_id: CAMBAY",
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.792Z",
+    "updated_at": "2026-02-04T09:15:44.964Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "deae70f2-a175-486b-a7ab-9c00a8398979",
+  "fields": {
+    "fund_centre": "SBSASASP",
+    "company_code": "SBS",
+    "cost_centre": "SBSCSCSREX",
+    "category": "Asset",
+    "name": "Assam Asset",
+    "city": "Nazira",
+    "state": "Assam",
+    "location": "Nazira",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.809Z",
+    "updated_at": "2026-02-04T09:15:44.978Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "e3b6c602-99e6-43d3-ae07-13db4690718d",
+  "fields": {
+    "fund_centre": "DVPASASP",
+    "company_code": "DVP",
+    "cost_centre": "DVPSACSREX",
+    "category": "Asset",
+    "name": "Jorhat Asset",
+    "city": "Jorhat",
+    "state": "Assam",
+    "location": "Jorhat",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.797Z",
+    "updated_at": "2026-02-04T09:15:44.969Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "e751d24d-8c72-4287-b2aa-296e3fa9baa1",
+  "fields": {
+    "fund_centre": "BDABSBSP",
+    "company_code": "BDA",
+    "cost_centre": "BDACSCSREX",
+    "category": "Basin",
+    "name": "Western Onshore Basin, Vadodara",
+    "city": "Vadodara",
+    "state": "Gujarat",
+    "location": "Baroda",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.790Z",
+    "updated_at": "2026-02-04T09:15:44.964Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "f04a9d4d-1846-44e4-92d0-e20650c61137",
+  "fields": {
+    "fund_centre": "ANKASASP",
+    "company_code": "ANK",
+    "cost_centre": "ANKCSCSREX",
+    "category": "Asset",
+    "name": "Ankleshwar Asset",
+    "city": "Ankleshwar",
+    "state": "Gujarat",
+    "location": "Ankleshwar",
+    "description": "Major oil field in Bharuch district, Gujarat",
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.789Z",
+    "updated_at": "2026-02-04T09:15:44.963Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "f6569742-ec31-4a5d-8bfa-7685291db664",
+  "fields": {
+    "fund_centre": "SILBSBFB",
+    "company_code": "SIL",
+    "cost_centre": "SILCSCSREX",
+    "category": "Asset",
+    "name": "Silchar",
+    "city": "Silchar",
+    "state": "Assam",
+    "location": "Silchar",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.810Z",
+    "updated_at": "2026-02-04T09:15:44.979Z"
+  }
+},
+{
+  "model": "scheduler.companycode",
+  "pk": "fefccb8a-9d3f-4fb5-a4ec-84dc449323e4",
+  "fields": {
+    "fund_centre": "GVKBSBSP",
+    "company_code": "GVK",
+    "cost_centre": "GVKSBCSREX",
+    "category": "Basin",
+    "name": "Frontier Basin, Dehradun",
+    "city": "Dehradun",
+    "state": "Uttarakhand",
+    "location": "Dehradun",
+    "description": null,
+    "is_active": true,
+    "created_at": "2026-01-15T08:48:49.798Z",
+    "updated_at": "2026-02-04T09:15:44.970Z"
+  }
+}
+]

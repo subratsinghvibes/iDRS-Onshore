@@ -1,0 +1,1618 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load currency_filters %}
+
+{% block title %}Schedule Comparison - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* CRITICAL: Ensure Bootstrap Icons always display correctly */
+    .comparison-page i.bi,
+    .comparison-page .bi::before,
+    .modal i.bi,
+    .modal .bi::before {
+        -webkit-text-fill-color: currentColor !important;
+        background: none !important;
+        background-clip: initial !important;
+        -webkit-background-clip: initial !important;
+        font-family: "bootstrap-icons" !important;
+    }
+    
+    /* Main content container with proper padding */
+    .comparison-container {
+        padding: 0;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+    
+    /* Page header styling is centralized in style.css */
+    
+    /* Clean Card Styles */
+    .comparison-card {
+        margin-bottom: 2rem;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+    
+    .comparison-card:hover {
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .comparison-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .schedule-header {
+        background: #f9fafb;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        color: #374151;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .schedule-header i {
+        color: #10b981 !important;
+        font-size: 0.95rem;
+    }
+    
+    /* Enhanced comparison table */
+    .comparison-table {
+        width: 100%;
+        margin-bottom: 0;
+        font-size: 0.875rem;
+    }
+    
+    .comparison-table th {
+        background: #f9fafb;
+        color: #10b981;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .comparison-table td {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        vertical-align: middle;
+        transition: background-color 0.2s ease;
+    }
+    
+    .comparison-table tbody tr:hover td {
+        background-color: #f9fafb;
+    }
+    
+    /* Enhanced button styling */
+    .btn-outline-primary {
+        border: 1.5px solid #10b981;
+        color: #10b981;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-primary:hover {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    .btn-primary {
+        background: #10b981;
+        border: 1.5px solid #10b981;
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        border-color: #059669;
+    }
+    
+    .btn-sm {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+    
+    .btn-sm i {
+        font-size: 0.7rem;
+    }
+    
+    /* Improved stat cards */
+    .stat-comparison {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #f9fafb;
+    }
+    
+    .stat-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #10b981;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .best-value {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .worst-value {
+        background: rgba(220, 38, 38, 0.1) !important;
+        color: #dc2626 !important;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    /* Rig allocation section - improved comparative layout */
+    .rig-allocation-section {
+        background: #f9fafb;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .rig-comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .rig-comparison-table th {
+        background: #f9fafb;
+        color: #10b981;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .rig-comparison-table td {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        vertical-align: middle;
+    }
+    
+    .rig-comparison-table tbody tr:hover td {
+        background-color: #f9fafb;
+    }
+    
+    .rig-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        height: auto;
+        min-height: 200px;
+    }
+    
+    .rig-card-header {
+        background: #f9fafb;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        color: #374151;
+        flex-shrink: 0;
+    }
+    
+    .rig-card-body {
+        padding: 1rem;
+        flex: 1;
+    }
+    
+    .rig-card-body.scrollable {
+        overflow-y: auto;
+        max-height: 240px;
+    }
+    
+    .rig-card-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .rig-card-body::-webkit-scrollbar-track {
+        background: #f9fafb;
+        border-radius: 3px;
+    }
+    
+    .rig-card-body::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .rig-card-body::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    .well-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    
+    .well-item {
+        background: #10b981;
+        color: white;
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+    
+    .well-item:hover {
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        background: #059669;
+    }
+    
+    .well-sequence {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-right: 0.5rem;
+    }
+    
+    .well-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    
+    .well-name {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    
+    /* Rig comparison specific styles */
+    .rig-comparison-section {
+        background: #f9fafb;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 2rem;
+    }
+    
+    .rig-header h6 {
+        color: #374151;
+        font-weight: 600;
+    }
+    
+    .rig-comparison-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+    }
+    
+    .rig-comparison-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .rig-comparison-container::-webkit-scrollbar-track {
+        background: #f9fafb;
+        border-radius: 3px;
+    }
+    
+    .rig-comparison-container::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .rig-comparison-container::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        background: white !important;
+        z-index: 100;
+        border-bottom: 2px solid #e5e7eb !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .position-badge {
+        background: #10b981;
+        color: white;
+        padding: 0.3rem 0.6rem;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 700;
+        min-width: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .well-comparison-item {
+        background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(19, 132, 150, 0.1) 100%);
+        border: 1px solid rgba(23, 162, 184, 0.2);
+        border-radius: 6px;
+        padding: 0.6rem;
+        margin: 0.2rem 0;
+    }
+    
+    .well-comparison-item .well-name {
+        font-weight: 600;
+        color: var(--theme-primary);
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .well-comparison-item .well-details {
+        font-size: 0.75rem;
+    }
+
+    /* Detailed rig table scrolling */
+    .rig-table-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+    }
+    
+    .rig-table-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .rig-table-container::-webkit-scrollbar-track {
+        background: #f9fafb;
+        border-radius: 3px;
+    }
+    
+    .rig-table-container::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .rig-table-container::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    .rig-table-container .table {
+        margin-bottom: 0;
+    }
+    
+    .rig-table-container thead th {
+        position: sticky;
+        top: 0;
+        background: white !important;
+        z-index: 100;
+        border-bottom: 2px solid #e5e7eb !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        font-weight: 600;
+        color: #10b981 !important;
+    }
+
+    /* Main comparison section styling */
+    .comparison-main-section {
+        margin-bottom: 2rem;
+    }
+    
+    /* Subsection styling for better organization */
+    .comparison-subsection {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    /* Reduce bottom padding for rig allocation section */
+    .rig-allocation-subsection {
+        padding-bottom: 1rem;
+    }
+    
+    .subsection-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .subsection-title {
+        color: #374151;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .subsection-title i {
+        color: #10b981 !important;
+        font-size: 1rem;
+    }
+    
+    .subsection-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    /* Well identification styles */
+    .well-badge-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    
+    .well-hash {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        padding: 0.1rem 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .common-well {
+        position: relative;
+        border: 2px solid #ffc107 !important;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 80%, #ffc107 100%) !important;
+        animation: pulse-warning 2s infinite;
+    }
+    
+    .highlight-common {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.6) !important;
+        z-index: 10;
+    }
+    
+    @keyframes pulse-warning {
+        0% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+    }
+
+    .well-info {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    
+    /* Overview section well-list styles */
+    .well-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0;
+        max-height: 150px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        background: rgba(248, 249, 250, 0.5);
+        border-radius: 8px;
+    }
+    
+    .well-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .well-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .well-list::-webkit-scrollbar-thumb {
+        background: rgba(10, 47, 90, 0.3);
+        border-radius: 10px;
+    }
+    
+    .well-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(10, 47, 90, 0.5);
+    }
+    
+    .well-badge {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    /* Rig comparison specific styles */
+    .rig-wells-display {
+        text-align: center;
+        padding: 1rem 0.5rem;
+    }
+    
+    .well-count-badge {
+        margin-bottom: 0.75rem;
+    }
+    
+    .wells-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        justify-content: center;
+        align-items: center;
+        max-height: 120px;
+        overflow-y: auto;
+        padding: 0.5rem;
+    }
+    
+    .wells-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .wells-container::-webkit-scrollbar-track {
+        background: #f9fafb;
+        border-radius: 3px;
+    }
+    
+    .wells-container::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+    
+    .wells-container::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    /* Full-width layout for rig allocation */
+    .schedule-comparison-row {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    
+    .schedule-summary.full-width {
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .rigs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .rig-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        height: auto;
+        min-height: 200px;
+    }
+    
+    .schedule-selector {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+        border: 2px dashed #dee2e6;
+        text-align: center;
+    }
+    
+    .comparison-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 2rem;
+        color: #dee2e6;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .comparison-container {
+            padding: 0 1rem;
+        }
+        
+        .stat-comparison {
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.8rem;
+            padding: 1rem;
+        }
+        
+        .stat-item {
+            padding: 0.8rem 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 1.2rem;
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.8rem 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .schedule-header {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+    
+    /* Extra small screens - 3 columns for stats */
+    @media (max-width: 576px) {
+        .stat-comparison {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            padding: 0.8rem;
+        }
+        
+        .stat-item {
+            padding: 0.6rem 0.3rem;
+        }
+        
+        .stat-number {
+            font-size: 1rem;
+        }
+        
+        .stat-label {
+            font-size: 0.65rem;
+        }
+    }
+    
+    /* Schedule summary cards */
+    .schedule-summary {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .summary-header {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    
+    /* Right align only currency amounts and dates */
+    .currency-format,
+    .comparison-table tr:nth-child(6) td:nth-child(n+2),
+    .comparison-table tr:nth-child(7) td:nth-child(n+2),
+    .comparison-table tr:nth-child(8) td:nth-child(n+2), 
+    .comparison-table tr:nth-child(9) td:nth-child(n+2),
+    .comparison-table tr:last-child td:nth-child(n+2) {
+        text-align: right !important;
+    }
+    
+    /* Responsive grid for smaller screens */
+    @media (max-width: 1200px) {
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .page-header-section .badge .bi,
+    .page-header-section .btn .bi,
+    .page-header-section .badge .bi::before,
+    .page-header-section .btn .bi::before {
+        color: white !important;
+    }
+    
+    .page-header-section .btn:hover {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    .page-header-section .page-divider {
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        border-top: 2px solid rgba(255, 255, 255, 0.4) !important;
+        margin: 1.5rem 0 0 0;
+    }
+    
+    .comparison-card {
+        margin-bottom: 2rem;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        overflow: visible;
+    }
+    
+    .comparison-card:hover {
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    
+    .schedule-header {
+        background: #f9fafb;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .schedule-header i {
+        color: #10b981 !important;
+    }
+    
+    .schedule-header h4 {
+        margin: 0;
+        color: #374151;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .schedule-header .subsection-header {
+        border: none;
+        padding: 0;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .schedule-header .badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+    }
+    
+    .stat-comparison {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #f9fafb;
+    }
+    
+    .stat-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+        text-align: center;
+        border: 1px solid rgba(10, 47, 90, 0.1);
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--theme-primary);
+        display: block;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    
+    .comparison-table th {
+        background: linear-gradient(90deg, rgba(10, 47, 90, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%);
+        color: var(--theme-primary);
+        font-weight: 700;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid rgba(10, 47, 90, 0.2);
+    }
+    
+    .comparison-table td {
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid rgba(10, 47, 90, 0.1);
+        vertical-align: middle;
+    }
+    
+    .best-value {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .worst-value {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .schedule-selector {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .comparison-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comparison-page">
+    <!-- Main Comparison Heading -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="bi bi-graph-up me-2"></i>
+                Schedule Comparison
+            </h1>
+            <p class="page-subtitle">
+                Comprehensive analysis and performance comparison of multiple schedules
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-2 justify-content-end">
+                <button class="btn btn-outline-primary btn-sm" onclick="clearComparison()">
+                    <i class="bi bi-trash me-1"></i>
+                    Clear All
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>
+                    Print
+                </button>
+                <a href="{% url 'scheduling' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Back
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+<div class="comparison-container">
+
+    {% if schedules %}
+        <!-- Main Comparison Section -->
+        <section class="comparison-main-section">
+            <!-- Comparison Summary Subsection -->
+            <div class="comparison-subsection mb-4">
+                <div class="subsection-header mb-3">
+                    <h4 class="subsection-title">
+                        Key Metrics Comparison
+                    </h4>
+                    <p class="subsection-description text-muted mb-0">
+                        Side-by-side comparison of essential schedule performance indicators
+                    </p>
+                </div>
+                
+                <div class="comparison-card">
+                    <div class="schedule-header">
+                        <span>
+                            <i class="bi bi-bar-chart-line me-2"></i>
+                            Comparison Overview ({{ comparison_count }} Schedules)
+                        </span>
+                    </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 150px;">Metric</th>
+                                {% for schedule_data in schedules %}
+                                <th style="min-width: 200px;">{{ schedule_data.schedule.name }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Status</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>
+                                    <span class="badge 
+                                        {% if schedule_data.schedule.status == 'COMPLETED' %}bg-success
+                                        {% elif schedule_data.schedule.status == 'RUNNING' %}bg-warning
+                                        {% elif schedule_data.schedule.status == 'FAILED' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ schedule_data.schedule.get_status_display }}
+                                    </span>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Wells Assigned</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.stats.assigned_wells_count }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Wells Rejected</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.stats.unassigned_wells_count }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Rigs Utilized</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.stats.utilized_rigs_count }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Rig Names</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                        {% for rig in schedule_data.stats.utilized_rigs %}
+                                        <span class="badge bg-primary">{{ rig }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Rig Efficiency</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.stats.wells_per_rig|floatformat:1 }} wells/rig</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Total Cost</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td class="currency-format">₹{{ schedule_data.stats.total_cost|indian_currency }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Cost per Well</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td class="currency-format">₹{{ schedule_data.stats.cost_per_well|indian_currency }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Drilling Cost</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td class="currency-format">₹{{ schedule_data.stats.total_drilling_cost|indian_currency }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>ILM Cost</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td class="currency-format">₹{{ schedule_data.stats.total_ilm_cost|indian_currency }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Solve Time</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.schedule.solve_time_seconds|format_solve_time }}</td>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <td><strong>Created</strong></td>
+                                {% for schedule_data in schedules %}
+                                <td>{{ schedule_data.schedule.created_at|date:"M d, Y H:i" }}</td>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+            
+            <!-- Rig Allocation Subsection -->
+            <div class="comparison-subsection rig-allocation-subsection">
+                <div class="subsection-header mb-3">
+                    <h4 class="subsection-title">
+                        Rig-wise Wells Allocation Comparison
+                    </h4>
+                    <p class="subsection-description text-muted mb-0">
+                        Detailed breakdown of rig utilization and well assignments across schedules
+                    </p>
+                </div>
+                
+                <div class="row">
+                        {% for schedule_data in schedules %}
+                        <div class="col-md-6 mb-4">
+                            <div class="schedule-summary">
+                                <div class="summary-header">
+                                    <h6 class="mb-0 text-primary">
+                                        <i class="bi bi-calendar-check me-2"></i>
+                                        {{ schedule_data.schedule.name }}
+                                    </h6>
+                                    <small class="text-muted">{{ schedule_data.assignments_by_rig.items|length }} rigs utilized</small>
+                                </div>
+                                
+                                {% for rig_name, assignments in schedule_data.assignments_by_rig.items %}
+                                <div class="rig-card mb-3">
+                                    <div class="rig-card-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong>
+                                                {{ rig_name }}
+                                            </strong>
+                                            <span class="badge bg-primary">{{ assignments|length }} wells</span>
+                                        </div>
+                                    </div>
+                                    <div class="rig-card-body">
+                                        <div class="well-list">
+                                            {% for assignment in assignments %}
+                                            <div class="well-badge-container mb-2">
+                                                <span class="well-badge" title="Sequence: {{ assignment.sequence_order }}">
+                                                    <span class="well-sequence">{{ forloop.counter }}</span>
+                                                    {{ assignment.well.name }}
+                                                </span>
+                                                <div class="well-info">
+                                                    <small class="text-muted">
+                                                        {{ assignment.well.duration }} days | 
+                                                        ₹{{ assignment.drilling_cost|add:assignment.ilm_cost|indian_currency_short }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-muted text-center py-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <small>No rigs utilized in this schedule</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- Detailed Schedule Information -->
+        {% for schedule_data in schedules %}
+        <div class="comparison-card">
+            <div class="schedule-header">
+                <div>
+                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #374151;">
+                        <i class="bi bi-file-earmark-bar-graph me-2" style="color: #10b981;"></i>
+                        {{ schedule_data.schedule.name }}
+                    </h4>
+                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #6b7280;">
+                        Detailed performance metrics and analysis for this schedule
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge {% if schedule_data.schedule.status == 'COMPLETED' %}bg-success{% elif schedule_data.schedule.status == 'RUNNING' %}bg-warning{% elif schedule_data.schedule.status == 'FAILED' %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {{ schedule_data.schedule.get_status_display }}
+                    </span>
+                    <a href="{% url 'schedule_detail' schedule_data.schedule.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>
+                        View Details
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Performance Statistics Grid -->
+                <div class="stat-comparison">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ schedule_data.stats.assigned_wells_count }}</span>
+                        <div class="stat-label">Wells Assigned</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ schedule_data.stats.unassigned_wells_count }}</span>
+                        <div class="stat-label">Wells Rejected</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ schedule_data.stats.utilized_rigs_count }}</span>
+                        <div class="stat-label">Rigs Utilized</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number currency-format">₹{{ schedule_data.stats.total_cost|indian_currency }}</span>
+                        <div class="stat-label">Total Cost</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ schedule_data.stats.wells_per_rig|floatformat:1 }}</span>
+                        <div class="stat-label">Wells per Rig</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">
+                            {% if schedule_data.schedule.solve_time_seconds %}
+                                {{ schedule_data.schedule.solve_time_seconds|floatformat:2 }}s
+                            {% else %}
+                                &lt;60s
+                            {% endif %}
+                        </span>
+                        <div class="stat-label">Solve Time</div>
+                    </div>
+                </div>
+
+                <!-- Schedule Metadata -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="schedule-summary">
+                            <div class="summary-header">
+                                <h6><i class="bi bi-info-circle me-2"></i>Schedule Information</h6>
+                            </div>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>{{ schedule_data.schedule.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>{{ schedule_data.schedule.get_status_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Wells:</strong></td>
+                                    <td>{{ schedule_data.stats.assigned_wells_count|add:schedule_data.stats.unassigned_wells_count }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Success Rate:</strong></td>
+                                    <td>{{ schedule_data.stats.success_rate|floatformat:1 }}%</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="schedule-summary">
+                            <div class="summary-header">
+                                <h6><i class="bi bi-cash-coin me-2"></i>Cost Breakdown</h6>
+                            </div>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Drilling Cost:</strong></td>
+                                    <td class="currency-format">₹{{ schedule_data.stats.total_drilling_cost|indian_currency }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ILM Cost:</strong></td>
+                                    <td class="currency-format">₹{{ schedule_data.stats.total_ilm_cost|indian_currency }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Cost:</strong></td>
+                                    <td class="currency-format"><strong>₹{{ schedule_data.stats.total_cost|indian_currency }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cost per Well:</strong></td>
+                                    <td class="currency-format">₹{{ schedule_data.stats.cost_per_well|indian_currency }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Rig and Wells Information -->
+                {% if schedule_data.assignments_by_rig %}
+                <div class="mt-4">
+                    <h6><i class="bi bi-diagram-3-fill me-2"></i>Detailed Rig-wise Wells Assignment</h6>
+                    <div class="summary-grid">
+                        {% for rig_name, assignments in schedule_data.assignments_by_rig.items %}
+                        <div class="schedule-summary">
+                            <div class="summary-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>{{ rig_name }}</strong>
+                                    <span class="badge bg-primary">{{ assignments|length }} wells</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive rig-table-container">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Seq</th>
+                                            <th>Well Name</th>
+                                            <th>Duration</th>
+                                            <th>Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for assignment in assignments %}
+                                        <tr>
+                                            <td><span class="badge bg-secondary">{{ assignment.sequence_order }}</span></td>
+                                            <td><strong>{{ assignment.well.name }}</strong></td>
+                                            <td>{{ assignment.well.duration }} days</td>
+                                            <td class="currency-format small">₹{{ assignment.drilling_cost|add:assignment.ilm_cost|indian_currency_short }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Rejected Wells Information -->
+                {% if schedule_data.unassigned_wells %}
+                <div class="mt-4">
+                    <h6><i class="bi bi-exclamation-triangle text-warning me-2"></i>Rejected Wells Summary</h6>
+                    <div class="schedule-summary">
+                        <div class="alert alert-warning mb-0">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <strong>{{ schedule_data.unassigned_wells.count }} wells were rejected</strong>
+                                    <br>
+                                    <small>Common reasons: Capacity constraints, timing conflicts, validation failures</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <a href="{% url 'schedule_detail' schedule_data.schedule.id %}" class="btn btn-sm" style="background-color: var(--theme-primary); color: white; border: none;">
+                                        <i class="bi bi-list-ul me-1"></i>
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="schedule-selector">
+            <div class="empty-state">
+                <i class="bi bi-graph-up"></i>
+                <h4>No Schedules Selected for Comparison</h4>
+                <p class="mb-4">
+                    {% if error_message %}
+                        {{ error_message }}
+                    {% else %}
+                        Select multiple schedules from the scheduling page to compare their performance, costs, and efficiency.
+                    {% endif %}
+                </p>
+                <div class="comparison-actions">
+                    <a href="{% url 'scheduling' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Go to Scheduling
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="loadFromLocalStorage()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Load from Browser Storage
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Schedule comparison page loaded');
+    
+    // Format currency on load
+    formatCurrencyElements();
+    
+    // Highlight best and worst values
+    highlightComparisonValues();
+    
+    // Highlight common wells
+    highlightCommonWells();
+    
+    // Check if we should load from localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!urlParams.has('schedules') && localStorage.getItem('scheduleComparison')) {
+        loadFromLocalStorage();
+    }
+});
+
+function highlightCommonWells() {
+    // Get all well badges and group by well name
+    const wellBadges = document.querySelectorAll('.well-badge');
+    const wellGroups = {};
+    
+    wellBadges.forEach(badge => {
+        const wellText = badge.textContent.trim();
+        const wellName = wellText.split('#')[0].trim(); // Remove hash part
+        const cleanName = wellName.replace(/^\d+\s+/, ''); // Remove sequence number at start
+        
+        if (!wellGroups[cleanName]) {
+            wellGroups[cleanName] = [];
+        }
+        wellGroups[cleanName].push(badge);
+    });
+    
+    // Add common-well class and tooltip to wells that appear in multiple schedules
+    Object.entries(wellGroups).forEach(([wellName, badges]) => {
+        if (badges.length > 1) {
+            badges.forEach(badge => {
+                badge.classList.add('common-well');
+                badge.title = `⚠️ Common Well: "${wellName}" appears in ${badges.length} schedules`;
+                
+                // Add hover effect to highlight all instances
+                badge.addEventListener('mouseenter', () => {
+                    badges.forEach(b => b.classList.add('highlight-common'));
+                });
+                
+                badge.addEventListener('mouseleave', () => {
+                    badges.forEach(b => b.classList.remove('highlight-common'));
+                });
+            });
+        }
+    });
+}
+
+function formatCurrencyElements() {
+    // Currency is already properly formatted by Django template filters
+    // This function is disabled to prevent double formatting
+    return;
+}
+
+function formatIndianCurrency(amount) {
+    if (!amount || amount === 0) return "₹0.0L";
+    
+    try {
+        const num = parseFloat(amount);
+        
+        if (num >= 10000000) { // 1 Crore
+            const crores = num / 10000000;
+            return `₹${crores.toFixed(1)}Cr`;
+        } else if (num >= 100000) { // 1 Lakh
+            const lakhs = num / 100000;
+            return `₹${lakhs.toFixed(1)}L`;
+        } else {
+            return `₹${num.toFixed(1)}`;
+        }
+    } catch (e) {
+        return "₹0.0L";
+    }
+}
+
+function highlightComparisonValues() {
+    // Find comparison table rows and highlight best/worst values for numeric metrics
+    const table = document.querySelector('.comparison-table');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const metricCell = cells[0];
+        const valueCells = Array.from(cells).slice(1);
+        
+        if (metricCell && valueCells.length > 1) {
+            const metricText = metricCell.textContent.toLowerCase();
+            
+            // For cost metrics, lower is better
+            if (metricText.includes('cost')) {
+                highlightCostValues(valueCells);
+            }
+            // For wells assigned and rigs utilized, higher is better
+            else if (metricText.includes('wells assigned') || metricText.includes('rigs utilized')) {
+                highlightCountValues(valueCells, true);
+            }
+            // For rejected wells, lower is better
+            else if (metricText.includes('rejected')) {
+                highlightCountValues(valueCells, false);
+            }
+        }
+    });
+}
+
+function highlightCostValues(cells) {
+    const values = cells.map(cell => {
+        const text = cell.textContent;
+        const match = text.match(/₹?([\d.]+)/);
+        return match ? parseFloat(match[1]) : 0;
+    });
+    
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    
+    cells.forEach((cell, index) => {
+        if (values[index] === minValue && minValue !== maxValue) {
+            cell.classList.add('best-value');
+        } else if (values[index] === maxValue && minValue !== maxValue) {
+            cell.classList.add('worst-value');
+        }
+    });
+}
+
+function highlightCountValues(cells, higherIsBetter) {
+    const values = cells.map(cell => {
+        const text = cell.textContent;
+        const match = text.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+    });
+    
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    
+    cells.forEach((cell, index) => {
+        if (higherIsBetter) {
+            if (values[index] === maxValue && minValue !== maxValue) {
+                cell.classList.add('best-value');
+            } else if (values[index] === minValue && minValue !== maxValue) {
+                cell.classList.add('worst-value');
+            }
+        } else {
+            if (values[index] === minValue && minValue !== maxValue) {
+                cell.classList.add('best-value');
+            } else if (values[index] === maxValue && minValue !== maxValue) {
+                cell.classList.add('worst-value');
+            }
+        }
+    });
+}
+
+function clearComparison() {
+    if (confirm('Are you sure you want to clear all schedules from comparison?')) {
+        localStorage.removeItem('scheduleComparison');
+        showAlert('Comparison cleared successfully', 'success');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+}
+
+function loadFromLocalStorage() {
+    const comparisonList = JSON.parse(localStorage.getItem('scheduleComparison') || '[]');
+    
+    if (comparisonList.length === 0) {
+        showAlert('No schedules found in browser storage', 'warning');
+        return;
+    }
+    
+    const scheduleIds = comparisonList.map(item => item.id);
+    const queryParams = scheduleIds.map(id => `schedules=${id}`).join('&');
+    
+    window.location.href = `?${queryParams}`;
+}
+
+function showAlert(message, type) {
+    // Map alert types to Bootstrap classes
+    const alertTypeMap = {
+        'info': 'alert-primary',
+        'success': 'alert-success',
+        'warning': 'alert-warning',
+        'danger': 'alert-danger',
+        'error': 'alert-danger'
+    };
+    
+    const alertClass = alertTypeMap[type] || 'alert-primary';
+    
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed shadow-sm border-0`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; background-color: white; backdrop-filter: none;';
+    
+    // Get icon for alert type
+    const iconMap = {
+        'info': 'info-circle-fill',
+        'success': 'check-circle-fill',
+        'warning': 'exclamation-triangle-fill',
+        'danger': 'x-circle-fill',
+        'error': 'x-circle-fill'
+    };
+    const icon = iconMap[type] || 'info-circle-fill';
+    
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${icon} me-2"></i>
+            <div class="flex-grow-1">${message}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

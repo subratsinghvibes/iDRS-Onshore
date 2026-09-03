@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AppSense Link Diagnostic{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">AppSense Link Diagnostic Tool</h2>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configuration Status</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Setting</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>App Name</td>
+                            <td>{{ EXTERNAL_APP_NAME }}</td>
+                            <td><span class="badge bg-success">OK</span></td>
+                        </tr>
+                        <tr>
+                            <td>App URL</td>
+                            <td>{{ EXTERNAL_APP_URL }}</td>
+                            <td><span class="badge bg-success">OK</span></td>
+                        </tr>
+                        <tr>
+                            <td>Enabled</td>
+                            <td>{{ EXTERNAL_APP_ENABLED }}</td>
+                            <td>
+                                {% if EXTERNAL_APP_ENABLED %}
+                                <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                <span class="badge bg-danger">Disabled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Secret Key</td>
+                            <td>{{ EXTERNAL_APP_SECRET|slice:":10" }}...</td>
+                            <td><span class="badge bg-success">Present</span></td>
+                        </tr>
+                        <tr>
+                            <td>User</td>
+                            <td>{{ user.username }}</td>
+                            <td><span class="badge bg-success">OK</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Browser Environment</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table" id="browserTable">
+                        <tr>
+                            <th>Check</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                        <tr>
+                            <td>Protocol</td>
+                            <td id="protocol-status"></td>
+                            <td id="protocol-details"></td>
+                        </tr>
+                        <tr>
+                            <td>Crypto API</td>
+                            <td id="crypto-status"></td>
+                            <td id="crypto-details"></td>
+                        </tr>
+                        <tr>
+                            <td>Popup Blocker</td>
+                            <td id="popup-status"></td>
+                            <td id="popup-details"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Test Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-3" onclick="testAppSenseLink()">
+                        <i class="bi bi-bug"></i> Test AppSense Link
+                    </button>
+                    <button class="btn btn-secondary mb-3" onclick="testDirectLink()">
+                        <i class="bi bi-box-arrow-up-right"></i> Test Direct Link (No Signature)
+                    </button>
+                    <div id="test-results" class="mt-3"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Console Log</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="console-log" class="bg-light p-3" style="max-height: 300px; overflow-y: auto; font-size: 12px;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Custom console logger
+    const consoleLog = document.getElementById('console-log');
+    
+    function log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+        consoleLog.innerHTML += `<span style="color: ${color};">[${timestamp}] ${message}</span>\n`;
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+    
+    // Check browser environment
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check protocol
+        const protocol = window.location.protocol;
+        const isSecure = protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        document.getElementById('protocol-status').innerHTML = isSecure ? 
+            '<span class="badge bg-success">Secure</span>' : 
+            '<span class="badge bg-warning">Insecure</span>';
+        document.getElementById('protocol-details').textContent = protocol + ' (Server-side signature: Always works)';
+        
+        log('Protocol: ' + protocol);
+        log('✓ Using SERVER-SIDE signature generation - works without HTTPS', 'success');
+        
+        // Check Crypto API (not needed anymore, but good to know)
+        const hasCrypto = window.crypto && window.crypto.subtle;
+        document.getElementById('crypto-status').innerHTML = hasCrypto ? 
+            '<span class="badge bg-success">Available</span>' : 
+            '<span class="badge bg-info">Not Needed</span>';
+        document.getElementById('crypto-details').textContent = 'Server-side HMAC generation (no crypto API required)';
+        
+        log('Crypto API available: ' + hasCrypto + ' (not required for this implementation)', 'success');
+        log('Testing AppSense link with server-side signature...');
+        
+        try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            
+            log('Requesting signed URL from server...');
+            
+            // Call server-side endpoint
+            const response = await fetch('/api/get-appsense-url/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to generate URL');
+            }
+            
+            log('✓ Server generated URL successfully', 'success');
+            log('URL: ' + data.url.substring(0, 80) + '...');
+            
+            // Open the URL
+            const newWindow = window.open(data.url, '_blank');
+            
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                document.getElementById('popup-status').innerHTML = '<span class="badge bg-danger">Blocked</span>';
+                document.getElementById('popup-details').textContent = 'Popup was blocked by browser';
+                log('Popup was blocked by browser', 'error');
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Popup blocked! Please allow popups for this site and try again.</div>';
+            } else {
+                document.getElementById('popup-status').innerHTML = '<span class="badge bg-success">Allowed</span>';
+                document.getElementById('popup-details').textContent = 'Popups are allowed';
+                log('✓ Popup opened successfully', 'success');
+                resultsDiv.innerHTML = '<div class="alert alert-success">✓ Link opened successfully! Check the new tab.</div>';
+            }
+        } catch (error) {
+            log('ERROR: ' + error.message, 'error');
+            resultsDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${error.message}</div>`;
+        }
+    }
+    
+    function testDirectLink() {
+        const resultsDiv = document.getElementById('test-results');
+        log('Testing direct link without signature...');
+        
+        const externalUrl = '{{ EXTERNAL_APP_URL|escapejs }}';
+        const fullUrl = `${externalUrl}/report/`;
+        
+        log('Opening URL: ' + fullUrl);
+        const newWindow = window.open(fullUrl, '_blank');
+        
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+            log('Popup was blocked', 'error');
+            resultsDiv.innerHTML = '<div class="alert alert-danger">Popup blocked!</div>';
+        } else {
+            log('Direct link opened successfully', 'success');
+            resultsDiv.innerHTML = '<div class="alert alert-success">✓ Direct link opened successfully!</div>';
+        }
+    }
+</script>
+{% endblock %}

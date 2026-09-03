@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ tutorial.title }} - Video Tutorials - iDRS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-container {
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .video-player {
+        width: 100%;
+        max-height: 70vh;
+        display: block;
+    }
+    
+    .video-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        text-align: center;
+        z-index: 10;
+    }
+    
+    .video-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+    
+    .quality-selector {
+        position: absolute;
+        bottom: 60px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        border-radius: 4px;
+        padding: 0.5rem;
+        display: none;
+        z-index: 20;
+    }
+    
+    .quality-selector.active {
+        display: block;
+    }
+    
+    .quality-btn {
+        display: block;
+        width: 100%;
+        padding: 0.25rem 0.5rem;
+        background: transparent;
+        border: none;
+        color: white;
+        text-align: left;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    
+    .quality-btn:hover, .quality-btn.active {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .stream-info {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        z-index: 15;
+        display: none;
+    }
+    
+    .video-info {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .video-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+    
+    .video-meta {
+        display: flex;
+        gap: 2rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .video-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .video-description {
+        color: #4b5563;
+        line-height: 1.6;
+    }
+    
+    .related-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+    
+    .related-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+    }
+    
+    .related-video {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        transition: background 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        margin-bottom: 0.75rem;
+    }
+    
+    .related-video:hover {
+        background: #f9fafb;
+    }
+    
+    .related-thumbnail {
+        width: 120px;
+        height: 68px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .related-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    
+    .related-info {
+        flex: 1;
+    }
+    
+    .related-video-title {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .related-video-meta {
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+    
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+    }
+    
+    .back-button:hover {
+        color: #5568d3;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <a href="{% url 'video_tutorials' %}" class="back-button">
+        <i class="bi bi-arrow-left"></i>
+        Back to Tutorials
+    </a>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="video-container" id="videoContainer">
+                <div class="video-loading" id="videoLoading">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="mt-2">Loading video...</div>
+                </div>
+                <div class="stream-info" id="streamInfo"></div>
+                <video class="video-player" id="videoPlayer" controls controlsList="nodownload" preload="auto">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <div class="video-info">
+                <h1 class="video-title">{{ tutorial.title }}</h1>
+                
+                <div class="video-meta">
+                    <div class="video-meta-item">
+                        <i class="bi bi-folder-fill"></i>
+                        <span class="category-badge">{{ tutorial.get_category_display }}</span>
+                    </div>
+                    {% if tutorial.duration_minutes %}
+                    <div class="video-meta-item">
+                        <i class="bi bi-clock"></i>
+                        <span>{{ tutorial.duration_minutes }} minutes</span>
+                    </div>
+                    {% endif %}
+                    <div class="video-meta-item">
+                        <i class="bi bi-eye"></i>
+                        <span>{{ tutorial.view_count }} views</span>
+                    </div>
+                    <div class="video-meta-item">
+                        <i class="bi bi-calendar"></i>
+                        <span>{{ tutorial.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                
+                {% if tutorial.description %}
+                <div class="video-description">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">About this tutorial</h3>
+                    <p>{{ tutorial.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            {% if related_tutorials %}
+            <div class="related-section">
+                <h2 class="related-title">Related Tutorials</h2>
+                
+                {% for related in related_tutorials %}
+                <a href="{% url 'video_tutorial_detail' related.id %}" class="related-video">
+                    <div class="related-thumbnail">
+                        {% if related.thumbnail %}
+                            <img src="{{ related.thumbnail.url }}" alt="{{ related.title }}">
+                        {% else %}
+                            <i class="bi bi-play-circle-fill"></i>
+                        {% endif %}
+                    </div>
+                    <div class="related-info">
+                        <div class="related-video-title">{{ related.title }}</div>
+                        <div class="related-video-meta">
+                            {% if related.duration_minutes %}
+                                <i class="bi bi-clock me-1"></i>{{ related.duration_minutes }} min
+                            {% endif %}
+                            <span class="mx-2">•</span>
+                            <i class="bi bi-eye me-1"></i>{{ related.view_count }} views
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- HLS.js for adaptive bitrate streaming (Netflix-like quality) -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+<script>
+(function() {
+    const video = document.getElementById('videoPlayer');
+    const loading = document.getElementById('videoLoading');
+    const streamInfo = document.getElementById('streamInfo');
+    
+    // URLs for video streaming
+    const hlsUrl = "{% url 'stream_hls_master' tutorial.id %}";
+    const directUrl = "{% url 'stream_video_file' tutorial.id %}";
+    
+    // Track if HLS is being used
+    let usingHls = false;
+    let hls = null;
+    
+    // Hide loading indicator when video can play
+    function hideLoading() {
+        loading.style.display = 'none';
+    }
+    
+    // Show stream info briefly
+    function showStreamInfo(text) {
+        streamInfo.textContent = text;
+        streamInfo.style.display = 'block';
+        setTimeout(() => {
+            streamInfo.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Initialize video player
+    function initPlayer() {
+        // Try HLS first for adaptive bitrate streaming
+        if (Hls.isSupported()) {
+            // Check if HLS is available for this video
+            fetch(hlsUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        initHlsPlayer();
+                    } else {
+                        initDirectPlayer();
+                    }
+                })
+                .catch(() => {
+                    initDirectPlayer();
+                });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS support (Safari)
+            video.src = hlsUrl;
+            video.addEventListener('loadedmetadata', hideLoading);
+            video.addEventListener('error', () => {
+                console.log('Native HLS failed, falling back to direct streaming');
+                initDirectPlayer();
+            });
+            usingHls = true;
+            showStreamInfo('Adaptive streaming enabled');
+        } else {
+            initDirectPlayer();
+        }
+    }
+    
+    // Initialize HLS.js player
+    function initHlsPlayer() {
+        hls = new Hls({
+            // Optimized settings for smooth streaming
+            enableWorker: true,
+            lowLatencyMode: false,
+            backBufferLength: 90,
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60,
+            maxBufferSize: 60 * 1000 * 1000, // 60MB buffer
+            maxBufferHole: 0.5,
+            startLevel: -1, // Auto quality selection
+            abrEwmaDefaultEstimate: 500000, // 500kbps starting estimate
+            abrBandWidthFactor: 0.95,
+            abrBandWidthUpFactor: 0.7,
+            progressive: true, // Enable progressive loading
+            testBandwidth: true,
+        });
+        
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(video);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+            console.log('HLS manifest loaded, found ' + data.levels.length + ' quality levels');
+            hideLoading();
+            usingHls = true;
+            showStreamInfo('Adaptive streaming (' + data.levels.length + ' quality levels)');
+        });
+        
+        hls.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+            const level = hls.levels[data.level];
+            if (level) {
+                console.log('Quality switched to: ' + level.height + 'p');
+            }
+        });
+        
+        hls.on(Hls.Events.ERROR, function(event, data) {
+            if (data.fatal) {
+                switch(data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        console.log('Network error, trying to recover...');
+                        hls.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        console.log('Media error, trying to recover...');
+                        hls.recoverMediaError();
+                        break;
+                    default:
+                        console.log('Unrecoverable error, falling back to direct streaming');
+                        hls.destroy();
+                        initDirectPlayer();
+                        break;
+                }
+            }
+        });
+    }
+    
+    // Initialize direct streaming player (fallback)
+    function initDirectPlayer() {
+        console.log('Using direct streaming with range requests');
+        video.src = directUrl;
+        
+        video.addEventListener('loadedmetadata', () => {
+            hideLoading();
+            showStreamInfo('Direct streaming');
+        });
+        
+        video.addEventListener('error', () => {
+            loading.innerHTML = '<i class="bi bi-exclamation-circle" style="font-size: 3rem;"></i><div class="mt-2">Error loading video</div>';
+        });
+        
+        // Optimize for network streaming
+        video.preload = 'auto';
+    }
+    
+    // Start player initialization
+    initPlayer();
+    
+    // Handle seeking - show loading briefly
+    video.addEventListener('seeking', () => {
+        loading.querySelector('div').textContent = 'Buffering...';
+        loading.style.display = 'flex';
+    });
+    
+    video.addEventListener('seeked', hideLoading);
+    video.addEventListener('canplay', hideLoading);
+    video.addEventListener('playing', hideLoading);
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        if (hls) {
+            hls.destroy();
+        }
+    });
+})();
+</script>
+{% endblock %}

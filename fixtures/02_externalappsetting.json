@@ -1,0 +1,13 @@
+[
+{
+  "model": "scheduler.externalappsetting",
+  "pk": 1,
+  "fields": {
+    "name": "AppSense",
+    "url": "http://10.212.64.16:8099",
+    "secret_key": "iDRS_secret_key_12345",
+    "enabled": true,
+    "updated_at": "2026-02-09T15:05:47.062Z"
+  }
+}
+]

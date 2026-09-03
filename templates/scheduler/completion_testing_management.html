@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Completion Testing Norms - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'vendor/datatables/css/dataTables.bootstrap5.min.css' %}">
+    <!-- Section, table, and collapse styles are centralized in style.css -->
+    <style>
+        /* Compact table styling */
+        #normsTable {
+            font-size: 0.85rem;
+        }
+        
+        #normsTable thead th {
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        #normsTable tbody td {
+            padding: 0.4rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        /* Action buttons - extra small and square */
+        #normsTable .btn-xs {
+            padding: 0.25rem 0.35rem;
+            font-size: 0.7rem;
+            line-height: 1;
+            min-width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #normsTable .btn-xs i {
+            font-size: 0.7rem;
+        }
+        
+        /* Footer controls */
+        #normsTableFooter {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 1rem 0 0 0 !important;
+            margin-top: 1rem !important;
+            border-top: 1px solid #e5e7eb !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        #normsTableFooter > div {
+            flex: 0 0 auto !important;
+        }
+        
+        #normsTableLength {
+            min-width: 200px !important;
+        }
+        
+        #normsTableInfo {
+            flex: 1 !important;
+            text-align: center !important;
+        }
+        
+        #normsTablePagination {
+            min-width: 200px !important;
+            text-align: right !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length,
+        #normsTableLength .dataTables_length {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length label,
+        #normsTableLength .dataTables_length label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin: 0 !important;
+            font-size: 0.875rem !important;
+            color: #6b7280 !important;
+            white-space: nowrap !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        #normsTableLength .dataTables_length select {
+            border: 1px solid #d1d5db !important;
+            border-radius: 4px !important;
+            padding: 0.25rem 1.75rem 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            min-width: 60px !important;
+            margin: 0 0.25rem !important;
+        }
+        
+        .dataTables_wrapper .dataTables_info,
+        #normsTableInfo .dataTables_info {
+            color: #6b7280 !important;
+            font-size: 0.875rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate,
+        #normsTablePagination .dataTables_paginate {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button,
+        #normsTablePagination .dataTables_paginate .paginate_button {
+            padding: 0.25rem 0.5rem !important;
+            margin: 0 2px !important;
+            font-size: 0.875rem !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-clipboard-check" style="font-size: 2rem; margin-right: 0.75rem; color: #10b981;"></i>
+                <h1 class="page-title mb-0">Completion Testing Norms</h1>
+            </div>
+            <p class="page-subtitle mb-0">
+                Manage completion testing norms by location, depth interval, and well type
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 align-items-center justify-content-end">
+                <select class="form-select form-select-sm" id="location-selector" style="width: auto; min-width: 180px;">
+                    <option value="">All Locations</option>
+                </select>
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Testing Norms Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-clipboard-data me-2"></i>Completion Testing Norms</h5>
+                <button class="btn btn-primary btn-sm" id="addNormBtn">
+                    <i class="bi bi-plus-circle me-1"></i>Add Norm
+                </button>
+            </div>
+        </div>
+        <div class="section-body">
+            <table id="normsTable" class="table table-hover table-bordered w-100">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Well Depth Start (m)</th>
+                        <th>Well Depth End (m)</th>
+                        <th>Well Type</th>
+                        <th>Days</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <!-- DataTable Footer -->
+            <div id="normsTableFooter">
+                <div id="normsTableLength"></div>
+                <div id="normsTableInfo"></div>
+                <div id="normsTablePagination"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Norm Modal -->
+<div class="modal fade" id="normModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="normModalTitle">Add Completion Testing Norm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="normForm">
+                    <input type="hidden" id="normId">
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="wellDepthStart" class="form-label">Well Depth Start (m)</label>
+                            <input type="number" class="form-control" id="wellDepthStart" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="wellDepthEnd" class="form-label">Well Depth End (m)</label>
+                            <input type="number" class="form-control" id="wellDepthEnd" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wellType" class="form-label">Well Type</label>
+                        <select class="form-select" id="wellType" required>
+                            <option value="">Select well type</option>
+                            <option value="Development">Development</option>
+                            <option value="Exploratory">Exploratory</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="days" class="form-label">Days</label>
+                        <input type="number" class="form-control" id="days" min="0" step="0.1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNormBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- jQuery (Required for DataTables) -->
+    <script src="{% static 'vendor/jquery-3.7.1.min.js' %}"></script>
+    <!-- DataTables JS -->
+    <script src="{% static 'vendor/datatables/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/js/dataTables.bootstrap5.min.js' %}"></script>
+    
+    <script>
+        let normsTable;
+        let normsData = [];
+        let currentLocationFilter = '';
+        
+        // Get location from URL parameter
+        function getLocationFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('location') || '';
+        }
+        
+        $(document).ready(function() {
+            // Initialize DataTable
+            normsTable = $('#normsTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'asc'], [1, 'asc'], [3, 'asc']],
+                columnDefs: [
+                    { targets: 5, orderable: false }
+                ],
+                language: {
+                    emptyTable: "No completion testing norms available"
+                },
+                dom: 'lrtip'
+            });
+            
+            // Move DataTable controls to footer
+            $('#normsTable_length').appendTo('#normsTableLength');
+            $('#normsTable_info').appendTo('#normsTableInfo');
+            $('#normsTable_paginate').appendTo('#normsTablePagination');
+            
+            // Load data
+            loadNorms();
+            
+            // Event handlers
+            $('#addNormBtn').click(() => openNormModal());
+            $('#saveNormBtn').click(saveNorm);
+            
+            // Delete handler
+            $(document).on('click', '.delete-norm-btn', function() {
+                const normId = $(this).data('id');
+                if (confirm('Are you sure you want to delete this norm?')) {
+                    deleteNorm(normId);
+                }
+            });
+            
+            // Edit handler
+            $(document).on('click', '.edit-norm-btn', function() {
+                const normId = $(this).data('id');
+                const norm = normsData.find(n => n.id === normId);
+                if (norm) {
+                    openNormModal(norm);
+                }
+            });
+            
+            // Initialize location filter from URL
+            currentLocationFilter = getLocationFromURL();
+            
+            // Location filter change event
+            $('#location-selector').change(function() {
+                currentLocationFilter = $(this).val();
+                renderNorms();
+            });
+            
+            // Load locations and norms
+            loadLocations();
+        });
+        
+        async function loadNorms() {
+            try {
+                const response = await fetch('/api/completion-testing-norms/', {
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                normsData = await response.json();
+                updateLocationFilter();
+                renderNorms();
+            } catch (error) {
+                console.error('Error loading norms:', error);
+                alert('Failed to load completion testing norms');
+            }
+        }
+        
+        function renderNorms() {
+            normsTable.clear();
+            
+            // Filter by location if selected
+            const filteredNorms = currentLocationFilter 
+                ? normsData.filter(norm => norm.location === currentLocationFilter)
+                : normsData;
+            
+            filteredNorms.forEach(norm => {
+                normsTable.row.add([
+                    norm.location,
+                    norm.well_depth_start,
+                    norm.well_depth_end,
+                    norm.well_type,
+                    norm.days,
+                    `<button class="btn btn-xs btn-warning edit-norm-btn btn-action" data-id="${norm.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger delete-norm-btn btn-action ms-1" data-id="${norm.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            
+            normsTable.draw();
+        }
+        
+        async function loadLocations() {
+            try {
+                const response = await fetch('/api/company-codes/locations/');
+                const data = await response.json();
+                
+                const locationSelect = $('#location');
+                locationSelect.html('<option value="">Select Location</option>');
+                
+                if (data.locations) {
+                    data.locations.forEach(location => {
+                        locationSelect.append(`<option value="${location}">${location}</option>`);
+                    });
+                }
+                
+                // Load norms after locations are loaded
+                loadNorms();
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+        
+        function updateLocationFilter() {
+            // Extract unique locations from actual norms data
+            const uniqueLocations = [...new Set(normsData.map(norm => norm.location).filter(loc => loc))].sort();
+            
+            const filterSelect = $('#location-selector');
+            filterSelect.html('<option value="">All Locations</option>');
+            
+            uniqueLocations.forEach(location => {
+                filterSelect.append(`<option value="${location}">${location}</option>`);
+            });
+            
+            // Set filter from URL if present
+            if (currentLocationFilter && uniqueLocations.includes(currentLocationFilter)) {
+                filterSelect.val(currentLocationFilter);
+            } else if (currentLocationFilter && !uniqueLocations.includes(currentLocationFilter)) {
+                currentLocationFilter = '';
+            }
+        }
+        
+        function openNormModal(norm = null) {
+            const modal = new bootstrap.Modal(document.getElementById('normModal'));
+            
+            if (norm) {
+                $('#normModalTitle').text('Edit Completion Testing Norm');
+                $('#normId').val(norm.id);
+                $('#location').val(norm.location);
+                $('#wellDepthStart').val(norm.well_depth_start);
+                $('#wellDepthEnd').val(norm.well_depth_end);
+                $('#wellType').val(norm.well_type);
+                $('#days').val(norm.days);
+            } else {
+                $('#normModalTitle').text('Add Completion Testing Norm');
+                $('#normForm')[0].reset();
+                $('#normId').val('');
+            }
+            
+            modal.show();
+        }
+        
+        async function saveNorm() {
+            const normId = $('#normId').val();
+            const data = {
+                location: $('#location').val(),
+                well_depth_start: $('#wellDepthStart').val(),
+                well_depth_end: $('#wellDepthEnd').val(),
+                well_type: $('#wellType').val(),
+                days: $('#days').val()
+            };
+            
+            try {
+                const url = normId 
+                    ? `/api/completion-testing-norms/${normId}/update/`
+                    : '/api/completion-testing-norms/create/';
+                const method = normId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('normModal')).hide();
+                    loadNorms();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to save norm'));
+                }
+            } catch (error) {
+                console.error('Error saving norm:', error);
+                alert('Failed to save norm');
+            }
+        }
+        
+        async function deleteNorm(normId) {
+            try {
+                const response = await fetch(`/api/completion-testing-norms/${normId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadNorms();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to delete norm'));
+                }
+            } catch (error) {
+                console.error('Error deleting norm:', error);
+                alert('Failed to delete norm');
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,15 @@
+[
+{
+  "model": "scheduler.wellbasket",
+  "pk": "09b3a70b-97c9-4faa-910b-02b3a059fc09",
+  "fields": {
+    "name": "Testing",
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "description": "",
+    "status": "ACTIVE",
+    "created_by": 12,
+    "created_at": "2026-03-04T14:44:33.258Z",
+    "updated_at": "2026-03-04T14:44:33.258Z"
+  }
+}
+]

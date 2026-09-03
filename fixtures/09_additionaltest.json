@@ -1,0 +1,710 @@
+[
+{
+  "model": "scheduler.additionaltest",
+  "pk": "08697dd8-9cd6-4c18-b661-93686471fd1f",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "CBL/USIT (Cement Bond Log)",
+    "norm_time": "0.5 days",
+    "notes": "Post-cementation cement bond quality evaluation",
+    "created_at": "2026-03-05T12:19:56.315Z",
+    "updated_at": "2026-03-05T12:19:56.315Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "0d321ba0-a768-469c-916b-d0c814644900",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Build-up studies",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.413Z",
+    "updated_at": "2026-01-28T15:48:18.413Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "1154d734-cf22-4774-b2c8-3ec1c4d64645",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Isolation: Bridge plug on wireline (each object)",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.481Z",
+    "updated_at": "2026-01-28T15:48:18.481Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "1639fcec-54a2-419d-993f-e313a1ff24fc",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Isolation: Bridge plug on tubing (each object)",
+    "norm_time": "36 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.482Z",
+    "updated_at": "2026-01-28T15:48:18.482Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "1c76f307-7454-482c-ac24-126247896fc2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Flow studies with each additional bean",
+    "norm_time": "12 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.488Z",
+    "updated_at": "2026-01-28T15:48:18.488Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "1eee7563-0e30-4e97-aa16-46fe9ff55f6e",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Logging / Spinner / Caliper / Temperature survey",
+    "norm_time": "Up to 24 hrs",
+    "notes": "Limited to 24 hrs",
+    "created_at": "2026-01-28T15:48:18.484Z",
+    "updated_at": "2026-01-28T15:48:18.484Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "2725878e-c395-4ed9-9a20-b1ccfa83e7aa",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "SPDC / SIPT (Step Rate / Injection Pressure Test)",
+    "norm_time": "2 days",
+    "notes": "Injectivity test for injection wells",
+    "created_at": "2026-03-05T12:19:56.320Z",
+    "updated_at": "2026-03-05T12:19:56.320Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "27466bf1-2e98-400c-b3ef-27cea4219467",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Bottom-hole sampling",
+    "norm_time": "10 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.490Z",
+    "updated_at": "2026-01-28T15:48:18.490Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "2d7c6689-1d29-4cad-b4d3-0851930b3034",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Make-up and lay-down tubing in singles",
+    "norm_time": "24 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.266Z",
+    "updated_at": "2026-01-12T05:08:22.266Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "2e56448a-2a87-493d-b55e-0163896dc353",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "DST (Drill Stem Test) — Single Zone",
+    "norm_time": "3 days",
+    "notes": "Single zone DST including running, testing, and POOH",
+    "created_at": "2026-03-05T12:19:56.310Z",
+    "updated_at": "2026-03-05T12:19:56.310Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "2e763c94-ed2b-485d-b9bb-da1f237cce8e",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Killing of HP wells",
+    "norm_time": "12 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.491Z",
+    "updated_at": "2026-01-28T15:48:18.491Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "2f60fd2b-e111-471e-889d-2f03bde41402",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Perforation (Wireline)",
+    "norm_time": "0.5 days",
+    "notes": "Wireline gun perforation",
+    "created_at": "2026-03-05T12:19:56.318Z",
+    "updated_at": "2026-03-05T12:19:56.318Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "30514c54-eba3-44bf-ae6a-ee7d3f0b4a9f",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Killing of HP wells",
+    "norm_time": "12 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.266Z",
+    "updated_at": "2026-01-12T05:08:22.266Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "316d5acf-3929-4b8e-987b-4111453b33ca",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Whipstock Setting (Directional Kick-off)",
+    "norm_time": "2 days",
+    "notes": "Whipstock placement and directional kick-off",
+    "created_at": "2026-03-05T12:19:56.323Z",
+    "updated_at": "2026-03-05T12:19:56.323Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "34f06ff0-6efd-447c-83fe-e0bf31ce68c6",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Flow studies with each additional bean",
+    "norm_time": "12 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.413Z",
+    "updated_at": "2026-01-28T15:48:18.413Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "38d84dc8-cb67-4533-b77d-d563085901fe",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Isolation: Cement plug (each object)",
+    "norm_time": "72 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.483Z",
+    "updated_at": "2026-01-28T15:48:18.483Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "3a149529-023d-4a93-8068-62c939741467",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Sidewall Core (per run)",
+    "norm_time": "0.5 days",
+    "notes": "Percussion or rotary sidewall coring",
+    "created_at": "2026-03-05T12:19:56.314Z",
+    "updated_at": "2026-03-05T12:19:56.314Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "3b6e3640-ea8d-430b-9a1f-b3b894cc92d2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "WFT / MDT (Formation Evaluation Tool)",
+    "norm_time": "1.5 days",
+    "notes": "Wireline formation tester; includes rig-up/rig-down",
+    "created_at": "2026-03-05T12:19:56.312Z",
+    "updated_at": "2026-03-05T12:19:56.312Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "3e129085-1089-4123-a733-024ea4a57fe5",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "RLT / Fall-off / Long build-up",
+    "norm_time": "48 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.490Z",
+    "updated_at": "2026-01-28T15:48:18.490Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "424dac06-2c25-48d4-a113-364747d2b9b1",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Completion with sleeve/mandrels/artificial lift",
+    "norm_time": "Actual time",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.485Z",
+    "updated_at": "2026-01-28T15:48:18.485Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "4314564d-6c6b-42e6-9608-f066cdac7466",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Isolation: Cement plug (each object)",
+    "norm_time": "72 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.409Z",
+    "updated_at": "2026-01-28T15:48:18.409Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "4f5395a1-c4fe-403b-bc9e-8fb982238a9a",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Make-up & lay-down tubing in singles",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.416Z",
+    "updated_at": "2026-01-28T15:48:18.416Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "51fecc17-9bb4-4328-9ad3-02ab46be38e0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "RFT (Repeat Formation Tester)",
+    "norm_time": "1 day",
+    "notes": "Repeat formation tester logging run",
+    "created_at": "2026-03-05T12:19:56.313Z",
+    "updated_at": "2026-03-05T12:19:56.313Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "5869a798-3e9b-41a0-a1ca-e18418c7d7a8",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Perforation (Tubing Conveyed)",
+    "norm_time": "1 day",
+    "notes": "TCP perforation in completed interval",
+    "created_at": "2026-03-05T12:19:56.317Z",
+    "updated_at": "2026-03-05T12:19:56.317Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "5a2cdfd5-b39c-410a-8105-8f0a353cb945",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Killing of HP wells",
+    "norm_time": "12 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.415Z",
+    "updated_at": "2026-01-28T15:48:18.415Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "5c566bf3-b47f-4511-b4da-cf75082ac62b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Activation efforts till constant salinity",
+    "norm_time": "Actual time",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.262Z",
+    "updated_at": "2026-01-12T05:08:22.262Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "5da646e4-3fa1-4f14-86e3-9c3b921a8f11",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "DST — Multi Zone (per additional zone)",
+    "norm_time": "+1 day per zone",
+    "notes": "Each additional zone after the first adds 1 day",
+    "created_at": "2026-03-05T12:19:56.311Z",
+    "updated_at": "2026-03-05T12:19:56.311Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "60427e1a-e17f-4228-9a38-1cd54e1cfb2c",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Isolation: Bridge plug on wireline (each object)",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.407Z",
+    "updated_at": "2026-01-28T15:48:18.407Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "61322ddf-6a2d-473b-9686-d52856a07d06",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Activation efforts after initial 2 days",
+    "norm_time": "Actual time (per day)",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.486Z",
+    "updated_at": "2026-01-28T15:48:18.486Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "63066f35-1a56-4ee7-b8f7-2ad7412b6192",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Build-up studies",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.489Z",
+    "updated_at": "2026-01-28T15:48:18.489Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "69835237-1362-49b3-84fb-299015bf6163",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Make-up & lay-down tubing in singles",
+    "norm_time": "24 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.492Z",
+    "updated_at": "2026-01-28T15:48:18.492Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "6a8d6f1f-d387-447f-86a1-73c55ae85412",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Completion with sleeve/mandrels/artificial lift",
+    "norm_time": "Actual time",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.411Z",
+    "updated_at": "2026-01-28T15:48:18.411Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "6bd071ac-8275-43e1-8bc7-2918b484848b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Velocity String Installation",
+    "norm_time": "1.5 days",
+    "notes": "Velocity string installation for liquid-loading mitigation",
+    "created_at": "2026-03-05T12:19:56.321Z",
+    "updated_at": "2026-03-05T12:19:56.321Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "6d803296-d187-42fd-a6b8-2a68a9ed77ef",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Isolation of each object: Bridge plug on wireline",
+    "norm_time": "24 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.257Z",
+    "updated_at": "2026-01-12T05:08:22.258Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "77c2a287-fab9-4f16-9ad6-78394b4970e2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Acid Job (Matrix Stimulation)",
+    "norm_time": "1 day",
+    "notes": "Matrix acid stimulation treatment",
+    "created_at": "2026-03-05T12:19:56.319Z",
+    "updated_at": "2026-03-05T12:19:56.319Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "7977cac6-db28-4929-9ca0-36d89f37974a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Completion with sliding sleeve / mandrels / downhole artificial lift equipment",
+    "norm_time": "Actual time",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.261Z",
+    "updated_at": "2026-01-12T05:08:22.261Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "7d456a90-cf36-4a8b-8f68-550d0d622847",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Activation efforts till constant salinity",
+    "norm_time": "Actual time",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.412Z",
+    "updated_at": "2026-01-28T15:48:18.412Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "7d60c5f9-101a-4fd8-a6e3-baf602eaa070",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Build-up studies",
+    "norm_time": "24 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.263Z",
+    "updated_at": "2026-01-12T05:08:22.264Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "81897c06-be99-472a-98de-4bbbf06cefc1",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Isolation of each object: Cement plug",
+    "norm_time": "72 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.259Z",
+    "updated_at": "2026-01-12T05:08:22.259Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "83b2883c-1f1b-40bc-97ee-7fc59d37130d",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Flow studies with each additional bean",
+    "norm_time": "12 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.263Z",
+    "updated_at": "2026-01-12T05:08:22.263Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "8d2fd88f-9250-4d5b-a3f7-7dd4e61cea57",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Fish Recovery / Junk Removal",
+    "norm_time": "3 days",
+    "notes": "Average fishing job; actual time varies",
+    "created_at": "2026-03-05T12:19:56.322Z",
+    "updated_at": "2026-03-05T12:19:56.322Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "904e1771-0a8f-4f0f-8c9a-fa47de920ecc",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "RLT / Fall-off / Long build-up",
+    "norm_time": "48 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.414Z",
+    "updated_at": "2026-01-28T15:48:18.414Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "939378ac-5961-4838-89ab-692dce7b7bc1",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Logging (Full Suite — Wireline)",
+    "norm_time": "1 day",
+    "notes": "Full suite wireline logging run through open hole",
+    "created_at": "2026-03-05T12:19:56.324Z",
+    "updated_at": "2026-03-05T12:19:56.324Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "a2e2476a-204e-4a38-b3da-82935d28e5e7",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Activation efforts after initial 2 days",
+    "norm_time": "Actual time (per day)",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.411Z",
+    "updated_at": "2026-01-28T15:48:18.411Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "a815ad47-01b4-4816-b4da-3495dceabde0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Logging / Spinner / Caliper / Temperature survey",
+    "norm_time": "Up to 24 hrs",
+    "notes": "Limited to 24 hrs",
+    "created_at": "2026-01-12T05:08:22.260Z",
+    "updated_at": "2026-01-12T05:08:22.260Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "acc44a75-ecfe-4e79-9e23-95e4ddc38aa0",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Isolation: Bridge plug on tubing (each object)",
+    "norm_time": "36 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.408Z",
+    "updated_at": "2026-01-28T15:48:18.408Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "ad1530f2-4d63-4d93-a16b-bf0500dd6a40",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Stimulation / Fracturing (Hydraulic)",
+    "norm_time": "3 days",
+    "notes": "Hydraulic fracturing including pre-frac and post-frac evaluation",
+    "created_at": "2026-03-05T12:19:56.318Z",
+    "updated_at": "2026-03-05T12:19:56.318Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "b3c1d288-3aff-45e4-b8c0-f9000136a819",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "ESP Installation / Workover",
+    "norm_time": "5 days",
+    "notes": "Electric submersible pump installation",
+    "created_at": "2026-03-05T12:19:56.322Z",
+    "updated_at": "2026-03-05T12:19:56.322Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "b56f0d5d-c144-4c2e-925f-76f1e279c2cf",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Logging (LWD/MWD)",
+    "norm_time": "Included in drilling time",
+    "notes": "LWD/MWD run simultaneously with drilling — no separate norm time",
+    "created_at": "2026-03-05T12:19:56.325Z",
+    "updated_at": "2026-03-05T12:19:56.325Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "c4a445e7-ea4b-4009-960c-ba2392a02655",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Additional activation efforts after initial 2 days of 24-hr activation",
+    "norm_time": "Actual time (typically counted per day)",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.261Z",
+    "updated_at": "2026-01-12T05:08:22.261Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "c869cf7b-a854-4995-8286-be4098ddbabb",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "RLT / Fall-off test / long build-up",
+    "norm_time": "48 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.264Z",
+    "updated_at": "2026-01-12T05:08:22.264Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "c8abe5b5-93a1-4e67-a882-abe9a4ec65c9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Logging / Spinner / Caliper / Temperature survey",
+    "norm_time": "Up to 24 hrs",
+    "notes": "Limited to 24 hrs",
+    "created_at": "2026-01-28T15:48:18.410Z",
+    "updated_at": "2026-01-28T15:48:18.410Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "c97501c7-1d47-4dc9-98a7-1731b0b99eaf",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Production Test / Extended Well Test",
+    "norm_time": "7 days",
+    "notes": "Extended production testing including surface test equipment rigging",
+    "created_at": "2026-03-05T12:19:56.316Z",
+    "updated_at": "2026-03-05T12:19:56.316Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "ccf1825e-df3b-4be2-a5bc-55fe3e860bf3",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Core Barrel Run (Conventional Core)",
+    "norm_time": "1 day per 9 m core",
+    "notes": "Full conventional coring run including core handling on surface",
+    "created_at": "2026-03-05T12:19:56.314Z",
+    "updated_at": "2026-03-05T12:19:56.314Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "d9a23506-20a8-436c-8c78-d65f2c6a2bb4",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "PVT Sampling",
+    "norm_time": "0.5 days",
+    "notes": "Downhole fluid sampling for PVT analysis",
+    "created_at": "2026-03-05T12:19:56.316Z",
+    "updated_at": "2026-03-05T12:19:56.316Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "dcdaad5d-c7de-4d66-a662-7d613e360fb2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Bottom-hole sampling",
+    "norm_time": "10 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.265Z",
+    "updated_at": "2026-01-12T05:08:22.265Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "f8beb89c-9b3e-40fc-8b43-393936837a16",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "job": "Isolation of each object: Bridge plug on tubing",
+    "norm_time": "36 hrs",
+    "notes": "",
+    "created_at": "2026-01-12T05:08:22.259Z",
+    "updated_at": "2026-01-12T05:08:22.259Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "fa369fe1-f4f1-4ccb-bd03-2754f490583f",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "job": "Activation efforts till constant salinity",
+    "norm_time": "Actual time",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.487Z",
+    "updated_at": "2026-01-28T15:48:18.487Z"
+  }
+},
+{
+  "model": "scheduler.additionaltest",
+  "pk": "ff429601-097b-407b-b0c7-6fe1f3e00d75",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "job": "Bottom-hole sampling",
+    "norm_time": "10 hrs",
+    "notes": null,
+    "created_at": "2026-01-28T15:48:18.415Z",
+    "updated_at": "2026-01-28T15:48:18.415Z"
+  }
+}
+]

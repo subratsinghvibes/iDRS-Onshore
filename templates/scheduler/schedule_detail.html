@@ -1,0 +1,498 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ schedule.name }} - Schedule Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+    /* Clean card styles are centralized in style.css */
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #10b981;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        margin-top: 0.25rem;
+    }
+    
+    /* Cost Cards */
+    .cost-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.875rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .cost-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #374151;
+    }
+    
+    .cost-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+    
+    /* Tables */
+    .detail-table {
+        font-size: 0.875rem;
+    }
+    
+    .detail-table thead {
+        background: #f8fafc;
+    }
+    
+    .detail-table th {
+        font-weight: 600;
+        color: #374151;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .detail-table td {
+        padding: 0.625rem 0.5rem;
+    }
+    
+    .sequence-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .check-ok { color: #10b981; font-weight: 600; }
+    .check-nok { color: #ef4444; font-weight: 600; }
+    
+    .reason-text {
+        background: #fef3c7;
+        border: 1px solid #fde68a;
+        border-radius: 6px;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        color: #92400e;
+    }
+    
+    .rig-section {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #10b981;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .rig-section h6 {
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    
+    @media print {
+        .no-print { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 py-3">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-file-text me-2"></i>{{ schedule.name }}
+            </h1>
+            <p class="page-subtitle mb-0">Schedule Details & Analysis Report</p>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            <span class="badge {% if schedule.status == 'COMPLETED' %}bg-success{% elif schedule.status == 'RUNNING' %}bg-warning{% else %}bg-secondary{% endif %} px-3 py-2">
+                <i class="bi bi-circle-fill me-1"></i>{{ schedule.get_status_display }}
+            </span>
+            <a href="{% url 'interactive_gantt' %}?schedule={{ schedule.id }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-bar-chart me-1"></i>Gantt
+            </a>
+            <a href="/api/export/schedule/{{ schedule.id }}/excel/" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>Print
+            </button>
+            <a href="{% url 'schedules_list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="clean-card">
+        <div class="clean-card-header">
+            <h6><i class="bi bi-bar-chart text-primary"></i> Schedule Overview</h6>
+        </div>
+        <div class="clean-card-body">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.assigned_wells_count }}</div>
+                    <div class="stat-label">Assigned Wells</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #ef4444;">{{ stats.unassigned_wells_count }}</div>
+                    <div class="stat-label">Unassigned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.utilized_rigs_count }}</div>
+                    <div class="stat-label">Utilized Rigs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #6b7280;">{{ stats.unused_rigs_count }}</div>
+                    <div class="stat-label">Unused Rigs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value currency-format">₹{{ stats.total_cost|floatformat:0 }}</div>
+                    <div class="stat-label">Total Cost</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #f59e0b;">{{ schedule.solve_time_seconds|floatformat:2 }}s</div>
+                    <div class="stat-label">Solve Time</div>
+                </div>
+            </div>
+            
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <div class="cost-card">
+                        <div class="cost-label">Drilling Cost</div>
+                        <div class="cost-value currency-format">₹{{ stats.total_drilling_cost|floatformat:0 }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="cost-card">
+                        <div class="cost-label">ILM Cost</div>
+                        <div class="cost-value currency-format">₹{{ stats.total_ilm_cost|floatformat:0 }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="cost-card">
+                        <div class="cost-label">Total ILM Days</div>
+                        <div class="cost-value">{{ stats.total_ilm_days|floatformat:1 }}d</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="cost-card">
+                        <div class="cost-label">Total Project Cost</div>
+                        <div class="cost-value currency-format">₹{{ stats.total_cost|floatformat:0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Wells by Rig -->
+    <div class="clean-card">
+        <div class="clean-card-header">
+            <h6><i class="bi bi-check-circle text-success"></i> Assigned Wells by Rig</h6>
+            <span class="badge bg-success">{{ stats.assigned_wells_count }} wells</span>
+        </div>
+        <div class="clean-card-body">
+            {% for rig_name, rig_assignments in assignments_by_rig.items %}
+                <div class="rig-section">
+                    <h6>
+                        <i class="bi bi-tools"></i> {{ rig_name }}
+                        <span class="badge bg-primary ms-2">{{ rig_assignments|length }} wells</span>
+                    </h6>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm detail-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Seq</th>
+                                    <th>Well Name</th>
+                                    <th>Location</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Days</th>
+                                    <th>ILM Days</th>
+                                    <th>Drilling Cost</th>
+                                    <th>ILM Cost</th>
+                                    <th>Validations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in rig_assignments %}
+                                <tr>
+                                    <td><span class="sequence-badge">{{ assignment.sequence_order }}</span></td>
+                                    <td><strong>{{ assignment.well.name }}</strong></td>
+                                    <td>{{ assignment.well.asset_id }}</td>
+                                    <td>{{ assignment.well_start_date }}</td>
+                                    <td>{{ assignment.well_end_date }}</td>
+                                    <td>{{ assignment.well.duration }}d</td>
+                                    <td>{{ assignment.ilm_days|floatformat:1 }}d</td>
+                                    <td class="currency-format">₹{{ assignment.drilling_cost|floatformat:0 }}</td>
+                                    <td class="currency-format">₹{{ assignment.ilm_cost|floatformat:0 }}</td>
+                                    <td style="font-size: 0.75rem;">
+                                        <span class="{% if assignment.rtd_check == 'OK' %}check-ok{% else %}check-nok{% endif %}">RTD:{{ assignment.rtd_check }}</span> |
+                                        <span class="{% if assignment.depth_check == 'OK' %}check-ok{% else %}check-nok{% endif %}">Depth:{{ assignment.depth_check }}</span> |
+                                        <span class="{% if assignment.hp_check == 'OK' %}check-ok{% else %}check-nok{% endif %}">HP:{{ assignment.hp_check }}</span> |
+                                        <span class="{% if assignment.bop_check == 'OK' %}check-ok{% else %}check-nok{% endif %}">BOP:{{ assignment.bop_check }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> No wells were assigned in this schedule.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Rejected/Unassigned Wells -->
+    {% if unassigned_wells %}
+    <div class="clean-card">
+        <div class="clean-card-header">
+            <h6><i class="bi bi-exclamation-triangle text-warning"></i> Unassigned Wells</h6>
+            <span class="badge bg-warning">{{ stats.unassigned_wells_count }} wells</span>
+        </div>
+        <div class="clean-card-body">
+            <div class="table-responsive">
+                <table class="table table-sm detail-table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Well</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Priority</th>
+                            <th>Depth</th>
+                            <th>Duration</th>
+                            <th>Rejection Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for unassigned in unassigned_wells %}
+                        <tr>
+                            <td><strong>{{ unassigned.well.name }}</strong></td>
+                            <td>{{ unassigned.well.asset_id }}</td>
+                            <td>{{ unassigned.well.get_well_type_display }}</td>
+                            <td>
+                                <span class="badge {% if unassigned.well.priority == 'HIGH' %}bg-danger{% elif unassigned.well.priority == 'MEDIUM' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ unassigned.well.priority }}
+                                </span>
+                            </td>
+                            <td>{{ unassigned.well.depth }}m</td>
+                            <td>{{ unassigned.well.duration }}d</td>
+                            <td><div class="reason-text">{{ unassigned.reason }}</div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Unused Rigs -->
+    {% if unused_rigs %}
+    <div class="clean-card">
+        <div class="clean-card-header">
+            <h6><i class="bi bi-x-circle text-danger"></i> Unused Rigs</h6>
+            <span class="badge bg-secondary">{{ stats.unused_rigs_count }} rigs</span>
+        </div>
+        <div class="clean-card-body">
+            <div class="table-responsive">
+                <table class="table table-sm detail-table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Rig Name</th>
+                            <th>Type</th>
+                            <th>Capacity</th>
+                            <th>Depth</th>
+                            <th>Daily Cost</th>
+                            <th>Available Period</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rig in unused_rigs %}
+                        <tr>
+                            <td><strong>{{ rig.name }}</strong></td>
+                            <td>{{ rig.get_rig_type_display }}</td>
+                            <td>{{ rig.rig_capacity_hp }} HP</td>
+                            <td>{{ rig.drilling_capacity_m }}m</td>
+                            <td class="currency-format">₹{{ rig.daily_cost_inr|floatformat:0 }}</td>
+                            <td>{{ rig.start_date }} to {{ rig.end_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Schedule Metadata -->
+    <div class="clean-card">
+        <div class="clean-card-header">
+            <h6><i class="bi bi-info-circle text-muted"></i> Schedule Information</h6>
+        </div>
+        <div class="clean-card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Created:</strong><br>
+                    <span class="text-muted">{{ schedule.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Financial Year:</strong><br>
+                    <span class="text-muted">{{ schedule.financial_year }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Solver Status:</strong><br>
+                    {% if schedule.solver_status == "OPTIMAL" %}
+                        <span class="badge bg-success">OPTIMAL</span>
+                    {% elif schedule.solver_status == "FEASIBLE" %}
+                        <span class="badge bg-warning text-dark">FEASIBLE</span>
+                    {% else %}
+                        <span class="text-muted">{{ schedule.solver_status|default:"—" }}</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Project End:</strong><br>
+                    <span class="text-muted">{{ schedule.project_end_date|default:"Calculated" }}</span>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <strong>Optimality Gap:</strong><br>
+                    {% if schedule.optimality_gap_percent is not None %}
+                        {% if schedule.optimality_gap_percent == 0 %}
+                            <span class="text-success fw-bold">0.0000% &#10003; Proven Optimal</span>
+                        {% elif schedule.optimality_gap_percent < 1 %}
+                            <span class="text-success fw-bold">{{ schedule.optimality_gap_percent|floatformat:4 }}% &mdash; Near-optimal</span>
+                        {% elif schedule.optimality_gap_percent < 5 %}
+                            <span class="text-warning fw-bold">{{ schedule.optimality_gap_percent|floatformat:4 }}% &mdash; Good solution</span>
+                        {% elif schedule.unassigned_wells_count == 0 %}
+                            <span class="text-info fw-bold">{{ schedule.optimality_gap_percent|floatformat:2 }}%</span>
+                            <br><small class="text-muted">All wells assigned &mdash; solution is implementable. High gap means solver could not mathematically prove near-optimality within the time limit.</small>
+                        {% else %}
+                            <span class="text-danger fw-bold">{{ schedule.optimality_gap_percent|floatformat:2 }}% &mdash; Consider re-running with more time</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <strong>Schedule Hash <small class="text-muted fw-normal">(fingerprint)</small>:</strong><br>
+                    {% if schedule.schedule_hash %}
+                        <code style="font-size: 0.85rem; letter-spacing: 0.05em;" title="SHA-256 fingerprint — identical hashes confirm identical schedules">{{ schedule.schedule_hash }}</code>
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any interactive functionality here
+    console.log('Schedule detail page loaded');
+    
+    // Add tooltips for validation checks
+    const checkElements = document.querySelectorAll('.check-ok, .check-nok');
+    checkElements.forEach(element => {
+        element.setAttribute('title', 
+            element.textContent.includes('OK') ? 'Validation passed' : 'Validation failed'
+        );
+    });
+});
+
+function showAlert(message, type) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+// Format currency amounts to Indian format (Lakhs/Crores)
+function formatIndianCurrency(amount) {
+    if (!amount || amount === 0) return "₹0.0L";
+    
+    try {
+        const num = parseFloat(amount);
+        
+        if (num >= 10000000) { // 1 Crore
+            const crores = num / 10000000;
+            return `₹${crores.toFixed(1)}Cr`;
+        } else if (num >= 100000) { // 1 Lakh
+            const lakhs = num / 100000;
+            return `₹${lakhs.toFixed(1)}L`;
+        } else {
+            return `₹${num.toFixed(1)}`;
+        }
+    } catch (e) {
+        return "₹0.0L";
+    }
+}
+
+// Apply currency formatting to all elements with currency-format class
+document.addEventListener('DOMContentLoaded', function() {
+    const currencyElements = document.querySelectorAll('.currency-format');
+    
+    currencyElements.forEach(element => {
+        const text = element.textContent;
+        const match = text.match(/₹([\d.]+)/);
+        
+        if (match) {
+            const amount = parseFloat(match[1]);
+            element.textContent = text.replace(/₹[\d.]+/, formatIndianCurrency(amount));
+        }
+    });
+});
+</script>
+{% endblock %}

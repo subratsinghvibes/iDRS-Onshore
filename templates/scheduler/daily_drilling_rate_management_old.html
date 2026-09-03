@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daily Drilling Rates - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'vendor/datatables/css/dataTables.bootstrap5.min.css' %}">
+    
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+        }
+        
+        /* DataTable styling */
+        #showEntriesContainer .dataTables_length,
+        #showEntriesContainer .dataTables_length label {
+            display: inline-flex !important;
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+            align-items: center !important;
+            gap: 0.3rem !important;
+        }
+        
+        #tableInfoContainer,
+        #paginationContainer {
+            display: inline-flex !important;
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+        }
+        
+        .table-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        table.dataTable thead th {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            color: #374151;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        table.dataTable tbody td {
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-speedometer" style="font-size: 2rem; margin-right: 0.75rem; color: #10b981;"></i>
+                <h1 class="page-title mb-0">Daily Drilling Rates</h1>
+            </div>
+            <p class="page-subtitle mb-0">
+                Manage daily drilling rate benchmarks by location and depth
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'data_management' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+            <button class="btn btn-primary" id="addRateBtn">
+                <i class="bi bi-plus-circle me-1"></i>Add Rate
+            </button>
+        </div>
+    </div>
+
+    <!-- Daily Drilling Rates Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table me-2"></i>
+                        Daily Drilling Rate Records
+                    </h5>
+                </div>
+                <div class="col-md-6 text-end">
+                    <input type="text" id="searchInput" class="form-control form-control-sm d-inline-block" 
+                           style="width: 200px;" placeholder="Search...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div id="showEntriesContainer"></div>
+                </div>
+                <table id="ratesTable" class="table table-hover table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th style="max-width: 120px;">Asset ID</th>
+                            <th style="max-width: 120px;">Depth Start (m)</th>
+                            <th style="max-width: 120px;">Depth End (m)</th>
+                            <th style="max-width: 150px;">Location</th>
+                            <th style="max-width: 130px;">Per Day Depth (m)</th>
+                            <th style="max-width: 120px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="d-flex flex-wrap justify-content-between w-100 mt-3">
+                    <div id="tableInfoContainer"></div>
+                    <div id="paginationContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Rate Modal -->
+<div class="modal fade" id="rateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rateModalTitle">Add Daily Drilling Rate</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rateForm">
+                    <input type="hidden" id="rateId">
+                    
+                    <div class="mb-3">
+                        <label for="assetId" class="form-label">Asset ID</label>
+                        <input type="text" class="form-control" id="assetId" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="depthStart" class="form-label">Depth Start (m)</label>
+                            <input type="number" class="form-control" id="depthStart" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="depthEnd" class="form-label">Depth End (m)</label>
+                            <input type="number" class="form-control" id="depthEnd" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="perDayDepth" class="form-label">Per Day Depth (m)</label>
+                        <input type="number" class="form-control" id="perDayDepth" min="0" step="0.01" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveRateBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- jQuery (Required for DataTables) -->
+    <script src="{% static 'vendor/jquery-3.7.1.min.js' %}"></script>
+    
+    <!-- DataTables JS -->
+    <script src="{% static 'vendor/datatables/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/js/dataTables.bootstrap5.min.js' %}"></script>
+    
+    <script>
+        let ratesTable;
+        let ratesData = [];
+        
+        $(document).ready(function() {
+            // Initialize DataTable
+            ratesTable = $('#ratesTable').DataTable({
+                dom: '<"row"<"col-sm-12"t>><"row"<"col-sm-5"i><"col-sm-7"p>>',
+                pageLength: 25,
+                order: [[0, 'asc'], [3, 'asc'], [1, 'asc']],
+                columnDefs: [
+                    { targets: 5, orderable: false }
+                ],
+                language: {
+                    emptyTable: "No daily drilling rates available"
+                }
+            });
+            // Move controls
+            $('#ratesTable_length').appendTo('#showEntriesContainer');
+            $('#ratesTable_paginate').appendTo('#paginationContainer');
+            
+            // Search functionality
+            $('#searchInput').on('keyup', function() {
+                ratesTable.search(this.value).draw();
+            });
+            
+            // Load data
+            loadRates();
+            
+            // Event handlers
+            $('#addRateBtn').click(() => openRateModal());
+            $('#saveRateBtn').click(saveRate);
+            
+            // Delete handler
+            $(document).on('click', '.delete-rate-btn', function() {
+                const rateId = $(this).data('id');
+                if (confirm('Are you sure you want to delete this rate?')) {
+                    deleteRate(rateId);
+                }
+            });
+            
+            // Edit handler
+            $(document).on('click', '.edit-rate-btn', function() {
+                const rateId = $(this).data('id');
+                const rate = ratesData.find(r => r.id === rateId);
+                if (rate) {
+                    openRateModal(rate);
+                }
+            });
+        });
+        
+        async function loadRates() {
+            try {
+                console.log('Loading daily drilling rates...');
+                const response = await fetch('/api/daily-drilling-rates/', {
+                    credentials: 'same-origin'
+                });
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received data:', data);
+                console.log('Number of records:', data.length);
+                
+                ratesData = data;
+                renderRates();
+            } catch (error) {
+                console.error('Error loading rates:', error);
+                alert('Failed to load daily drilling rates: ' + error.message);
+            }
+        }
+        
+        function renderRates() {
+            ratesTable.clear();
+            
+            ratesData.forEach(rate => {
+                ratesTable.row.add([
+                    rate.asset_id,
+                    rate.depth_start,
+                    rate.depth_end,
+                    rate.location,
+                    rate.per_day_depth,
+                    `<button class="btn btn-sm btn-warning edit-rate-btn btn-action" data-id="${rate.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-rate-btn btn-action ms-1" data-id="${rate.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            
+            ratesTable.draw();
+        }
+        
+        function openRateModal(rate = null) {
+            const modal = new bootstrap.Modal(document.getElementById('rateModal'));
+            
+            if (rate) {
+                $('#rateModalTitle').text('Edit Daily Drilling Rate');
+                $('#rateId').val(rate.id);
+                $('#assetId').val(rate.asset_id);
+                $('#depthStart').val(rate.depth_start);
+                $('#depthEnd').val(rate.depth_end);
+                $('#location').val(rate.location);
+                $('#perDayDepth').val(rate.per_day_depth);
+            } else {
+                $('#rateModalTitle').text('Add Daily Drilling Rate');
+                $('#rateForm')[0].reset();
+                $('#rateId').val('');
+            }
+            
+            modal.show();
+        }
+        
+        async function saveRate() {
+            const rateId = $('#rateId').val();
+            const data = {
+                asset_id: $('#assetId').val(),
+                depth_start: $('#depthStart').val(),
+                depth_end: $('#depthEnd').val(),
+                location: $('#location').val(),
+                per_day_depth: $('#perDayDepth').val()
+            };
+            
+            try {
+                const url = rateId 
+                    ? `/api/daily-drilling-rates/${rateId}/update/`
+                    : '/api/daily-drilling-rates/create/';
+                const method = rateId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('rateModal')).hide();
+                    loadRates();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to save rate'));
+                }
+            } catch (error) {
+                console.error('Error saving rate:', error);
+                alert('Failed to save rate');
+            }
+        }
+        
+        async function deleteRate(rateId) {
+            try {
+                const response = await fetch(`/api/daily-drilling-rates/${rateId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadRates();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to delete rate'));
+                }
+            } catch (error) {
+                console.error('Error deleting rate:', error);
+                alert('Failed to delete rate');
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,574 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Well CSV Upload - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Page header styling is centralized in style.css */
+        
+        .upload-section,
+        .mapping-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-header {
+            padding: 1.25rem;
+            border-bottom: 2px solid #e5e7eb;
+            background: #f9fafb;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .section-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #374151;
+            font-size: 1.125rem;
+        }
+        
+        .section-body {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .drop-zone i {
+            font-size: 2.5rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .mapping-table {
+            font-size: 0.875rem;
+        }
+        
+        .mapping-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 0.8125rem;
+        }
+        
+        .mapping-table td {
+            padding: 0.625rem 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+        }
+        
+        .mapping-table code {
+            background: #f3f4f6;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            color: #dc2626;
+        }
+        
+        .alert-info-compact {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-size: 0.8125rem;
+            margin-top: 1rem;
+        }
+        
+        .file-info-box {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 6px;
+            padding: 0.875rem;
+            margin-top: 1rem;
+        }
+        
+        .result-section {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .result-section h5 {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .badge-count {
+            padding: 0.25rem 0.625rem;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .badge-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .progress-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 300px;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+        
+        .equal-height-row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .equal-height-col {
+            display: flex;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="page-title mb-2">Upload Well CSV File</h1>
+                    <p class="text-muted mb-0">Upload location release data CSV file to bulk import wells to the staging area</p>
+                </div>
+                <div>
+                    <button onclick="history.back()" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="row equal-height-row">
+        <!-- Left Column: Upload CSV File -->
+        <div class="col-lg-6 mb-4 equal-height-col">
+            <div class="upload-section">
+                <div class="section-header">
+                    <h5><i class="bi bi-cloud-upload me-2"></i>Upload CSV File</h5>
+                </div>
+                <div class="section-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Drop Zone -->
+                        <div class="drop-zone mb-3" id="dropZone">
+                            <i class="bi bi-cloud-upload"></i>
+                            <h6 class="mb-2">Drag & Drop CSV File Here</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.875rem;">or click to browse</p>
+                            <input type="file" 
+                                   id="fileInput" 
+                                   name="file" 
+                                   accept=".csv"
+                                   style="display: none;"
+                                   required>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder2-open me-2"></i>Choose File
+                            </button>
+                        </div>
+                        
+                        <!-- Selected File Display -->
+                        <div id="fileInfo" class="file-info-box" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-file-earmark-text me-2 text-primary" style="font-size: 1.25rem;"></i>
+                                <div class="flex-grow-1">
+                                    <div><strong id="fileName"></strong></div>
+                                    <small class="text-muted"><span id="fileSize"></span></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Button -->
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-upload" id="uploadBtn" disabled>
+                                <i class="bi bi-upload me-2"></i>Upload & Process CSV
+                            </button>
+                        </div>
+                        
+                        <!-- Info Alert -->
+                        <div class="alert-info-compact">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Staging Process:</strong> Wells will be uploaded to the staging area. Complete additional fields in the Staged Wells page before finalizing.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Column Mapping Reference -->
+        <div class="col-lg-6 mb-4 equal-height-col">
+            <div class="mapping-section">
+                <div class="section-header">
+                    <h5><i class="bi bi-table me-2"></i>Column Mapping Reference</h5>
+                </div>
+                <div class="section-body">
+                    <p class="text-muted mb-3" style="font-size: 0.875rem;">CSV columns will be mapped as follows:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table mapping-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">CSV Column</th>
+                                    <th style="width: 30%;">Database Field</th>
+                                    <th style="width: 35%;">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>Company Code</code></td>
+                                    <td><strong>Asset ID</strong></td>
+                                    <td>Asset identifier</td>
+                                </tr>
+                                <tr>
+                                    <td><code>WellId</code></td>
+                                    <td><strong>Well Name</strong></td>
+                                    <td>Well identifier</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Fieild_Name</code></td>
+                                    <td><strong>Field</strong></td>
+                                    <td>Field name</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Category</code></td>
+                                    <td><strong>Type</strong></td>
+                                    <td>D=Dev, E=EXP</td>
+                                </tr>
+                                <tr>
+                                    <td><code>Targ._Depth</code></td>
+                                    <td><strong>Depth</strong></td>
+                                    <td>Target depth (m)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>CORD:_LAT_&_LONG</code></td>
+                                    <td><strong>Lat/Long</strong></td>
+                                    <td>GPS (DMS format)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>CVIL_WRK_END_DATE</code></td>
+                                    <td><strong>RTD</strong></td>
+                                    <td>Ready To Drill date</td>
+                                </tr>
+                                <tr>
+                                    <td><code>(priority)</code></td>
+                                    <td><strong>Priority</strong></td>
+                                    <td>HIGH/MEDIUM/LOW</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert-info-compact">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Update Behavior:</strong> Re-uploading wells will only fill missing fields, preserving existing data.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <!-- Success Results -->
+                <div id="successSection" class="result-section" style="display: none;">
+                    <h5 class="text-success mb-3">
+                        <i class="bi bi-check-circle me-2"></i>Successfully Created
+                        <span class="badge-count badge-success ms-2" id="successCount">0</span>
+                    </h5>
+                    <div id="successList"></div>
+                </div>
+
+                <!-- Updated Results -->
+                <div id="updatedSection" class="result-section" style="display: none;">
+                    <h5 class="text-info mb-3">
+                        <i class="bi bi-pencil-square me-2"></i>Updated with Missing Fields
+                        <span class="badge-count bg-info text-white ms-2" id="updatedCount">0</span>
+                    </h5>
+                    <div id="updatedList"></div>
+                </div>
+
+                <!-- Skipped Results -->
+                <div id="skippedSection" class="result-section" style="display: none;">
+                    <h5 class="text-warning mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Skipped Rows
+                        <span class="badge-count badge-warning ms-2" id="skippedCount">0</span>
+                    </h5>
+                    <div id="skippedList"></div>
+                </div>
+
+                <!-- Error Results -->
+                <div id="errorSection" class="result-section" style="display: none;">
+                    <h5 class="text-danger mb-3">
+                        <i class="bi bi-x-circle me-2"></i>Errors
+                        <span class="badge-count badge-danger ms-2" id="errorCount">0</span>
+                    </h5>
+                    <div id="errorList"></div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'staged_wells_management' %}" class="btn btn-primary">
+                        <i class="bi bi-hourglass-split me-2"></i>Go to Staged Wells
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Overlay -->
+<div class="progress-overlay" id="progressOverlay">
+    <div class="progress-content">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5>Processing CSV File...</h5>
+        <p class="text-muted mb-0">Please wait while we import the wells</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const progressOverlay = document.getElementById('progressOverlay');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // Click to select file
+        dropZone.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+                fileInput.click();
+            }
+        });
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileInfo.style.display = 'block';
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            else return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            // Show progress overlay
+            progressOverlay.style.display = 'flex';
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('{% url "well_csv_upload" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                // Hide progress overlay
+                progressOverlay.style.display = 'none';
+
+                if (response.ok) {
+                    displayResults(data);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error occurred'));
+                }
+
+            } catch (error) {
+                progressOverlay.style.display = 'none';
+                console.error('Upload error:', error);
+                alert('Error uploading file: ' + error.message);
+            }
+        });
+
+        function displayResults(data) {
+            resultsSection.style.display = 'block';
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+            // Display success (created)
+            if (data.created_count > 0) {
+                document.getElementById('successSection').style.display = 'block';
+                document.getElementById('successCount').textContent = data.created_count;
+                const successList = document.getElementById('successList');
+                successList.innerHTML = '<ul class="mb-0" style="column-count: 2; font-size: 0.875rem;">' + 
+                    data.created_wells.map(well => `<li>${well}</li>`).join('') + 
+                    '</ul>';
+            }
+
+            // Display updated
+            if (data.updated_count > 0) {
+                document.getElementById('updatedSection').style.display = 'block';
+                document.getElementById('updatedCount').textContent = data.updated_count;
+                const updatedList = document.getElementById('updatedList');
+                updatedList.innerHTML = '<ul class="mb-0" style="column-count: 2; font-size: 0.875rem;">' + 
+                    data.updated_wells.map(well => `<li>${well}</li>`).join('') + 
+                    '</ul>';
+            }
+
+            // Display skipped
+            if (data.skipped_count > 0) {
+                document.getElementById('skippedSection').style.display = 'block';
+                document.getElementById('skippedCount').textContent = data.skipped_count;
+                const skippedList = document.getElementById('skippedList');
+                skippedList.innerHTML = '<ul class="mb-0 text-warning" style="font-size: 0.875rem;">' + 
+                    data.skipped_rows.slice(0, 20).map(row => `<li>${row}</li>`).join('') + 
+                    (data.skipped_rows.length > 20 ? `<li><em>... and ${data.skipped_rows.length - 20} more</em></li>` : '') +
+                    '</ul>';
+            }
+
+            // Display errors
+            if (data.error_count > 0) {
+                document.getElementById('errorSection').style.display = 'block';
+                document.getElementById('errorCount').textContent = data.error_count;
+                const errorList = document.getElementById('errorList');
+                errorList.innerHTML = '<ul class="mb-0 text-danger" style="font-size: 0.875rem;">' + 
+                    data.errors.slice(0, 10).map(error => `<li>${error}</li>`).join('') + 
+                    (data.errors.length > 10 ? `<li><em>... and ${data.errors.length - 10} more</em></li>` : '') +
+                    '</ul>';
+            }
+
+            // Show summary notification
+            const message = data.message || 'Upload completed';
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mb-3';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                <strong>Success:</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            resultsSection.insertBefore(alertDiv, resultsSection.firstChild);
+        }
+    });
+</script>
+{% endblock %}

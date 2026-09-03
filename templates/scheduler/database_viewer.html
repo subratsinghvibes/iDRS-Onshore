@@ -1,0 +1,538 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Database Viewer - iDRS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+
+    .category-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .category-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .category-header {
+        padding: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .category-icon {
+        font-size: 1.2rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        color: white;
+    }
+
+    .category-title {
+        flex: 1;
+    }
+
+    .category-title h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .category-title p {
+        margin: 0.25rem 0 0 0;
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    .table-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .table-item:last-child {
+        border-bottom: none;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .table-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .table-count {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .data-table {
+        width: 100%;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+
+    .data-table thead {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .data-table thead th {
+        padding: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .data-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .data-table tbody td {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+
+    .btn-explore {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-explore:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        color: white;
+    }
+
+    .no-records {
+        text-align: center;
+        padding: 2rem;
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .null-value {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-main-heading {
+            font-size: 1.8rem;
+        }
+    }
+
+    /* Category Stats Cards */
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        min-width: 100px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s;
+    }
+
+    .stats-card:hover::before {
+        left: 100%;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .stats-card.active {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    }
+
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.2rem;
+        color: white;
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        transition: all 0.3s ease;
+    }
+
+    .stats-card.active .stats-icon {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        transform: scale(1.1);
+    }
+
+    .stats-content {
+        color: #374151;
+    }
+
+    .stats-number {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .stats-card.active .stats-number {
+        color: #1e40af;
+    }
+
+    .stats-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.25rem;
+    }
+
+    .stats-subtext {
+        font-size: 0.7rem;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+
+    /* Category filtering */
+    .category-card {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 10000px;
+        overflow: hidden;
+    }
+
+    .category-card.filtered {
+        opacity: 0;
+        transform: scale(0.95);
+        max-height: 0;
+        margin-bottom: 0;
+        pointer-events: none;
+        padding: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .category-card,
+        .stats-card {
+            transition: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Main Heading - Dashboard Style -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <h1 class="dashboard-main-heading">
+                <i class="bi bi-database-fill me-3"></i>
+                Database Viewer
+            </h1>
+            <p class="dashboard-subtitle">
+                Explore and search all database tables in the system
+            </p>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <!-- Category Stats Cards -->
+    <div class="row mb-4" id="category-stats">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                <!-- All Categories Card -->
+                <div class="stats-card active" data-category="all">
+                    <div class="stats-icon">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                    </div>
+                    <div class="stats-content">
+                        <div class="stats-number">{{ categories|length }}</div>
+                        <div class="stats-label">All Categories</div>
+                        <div class="stats-subtext">Show Everything</div>
+                    </div>
+                </div>
+
+                {% for category in categories %}
+                <div class="stats-card" data-category="{{ category.name|slugify }}">
+                    <div class="stats-icon" style="background: {{ category.color }};">
+                        <i class="{{ category.icon }}"></i>
+                    </div>
+                    <div class="stats-content">
+                        <div class="stats-number">{{ category.tables|length }}</div>
+                        <div class="stats-label">{{ category.name }}</div>
+                        <div class="stats-subtext">Tables</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    {% for category in categories %}
+    <div class="category-card" id="category-{{ category.name|slugify }}">
+        <div class="category-header">
+            <div class="category-icon" style="background: {{ category.color }};">
+                <i class="{{ category.icon }}"></i>
+            </div>
+            <div class="category-title">
+                <h3>{{ category.name }}</h3>
+                <p>{{ category.tables|length }} table{{ category.tables|length|pluralize }}</p>
+            </div>
+        </div>
+        
+        <div class="tables-list">
+            {% for table in category.tables %}
+            <div class="table-item">
+                <div class="table-header">
+                    <h5 class="table-name">
+                        <i class="bi bi-table me-2" style="color: {{ category.color }};"></i>
+                        {{ table.model_name }}
+                        <small style="color: #6b7280; font-weight: 400; font-size: 0.85rem;">
+                            ({{ table.app_label }}.{{ table.model_name }})
+                        </small>
+                    </h5>
+                    <div>
+                        <span class="table-count">
+                            {{ table.count }} record{{ table.count|pluralize }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if table.preview_records %}
+                <div style="overflow-x: auto;">
+                    <table class="table data-table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                {% for key in table.preview_records.0.keys %}
+                                <th>{{ key }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in table.preview_records %}
+                            <tr>
+                                {% for key, value in record.items %}
+                                <td>
+                                    {% if value %}
+                                        {{ value|truncatechars:50 }}
+                                    {% else %}
+                                        <span class="null-value">null</span>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="no-records">
+                    <i class="bi bi-inbox me-2"></i>
+                    No records in this table
+                </div>
+                {% endif %}
+
+                <div class="text-end">
+                    <a href="{% url 'database_table_detail' table.app_label table.model_name %}" 
+                       class="btn-explore">
+                        <i class="bi bi-search me-2"></i>
+                        Explore Full Table
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="category-card">
+        <div class="no-records">
+            <i class="bi bi-inbox" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+            No database tables found
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statsCards = document.querySelectorAll('.stats-card');
+    const categoryCards = document.querySelectorAll('.category-card');
+    let currentFilter = 'all';
+
+    // Function to filter categories
+    function filterCategories(categorySlug) {
+        // Prevent re-filtering to same category
+        if (currentFilter === categorySlug) {
+            return;
+        }
+        
+        currentFilter = categorySlug;
+
+        // Update active stats card with smooth transition
+        statsCards.forEach(card => {
+            card.classList.remove('active');
+        });
+        
+        const activeCard = document.querySelector(`[data-category="${categorySlug}"]`);
+        if (activeCard) {
+            activeCard.classList.add('active');
+            
+            // Add a subtle pulse effect
+            activeCard.style.animation = 'none';
+            setTimeout(() => {
+                activeCard.style.animation = 'pulse 0.3s ease-out';
+            }, 10);
+        }
+
+        // Filter category cards with staggered animation
+        if (categorySlug === 'all') {
+            // Show all categories
+            categoryCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.remove('filtered');
+                }, index * 50); // Stagger effect
+            });
+        } else {
+            // Show only matching category
+            categoryCards.forEach((card, index) => {
+                if (card.id === `category-${categorySlug}`) {
+                    setTimeout(() => {
+                        card.classList.remove('filtered');
+                    }, 100);
+                } else {
+                    card.classList.add('filtered');
+                }
+            });
+        }
+
+    }
+
+    // Add click event listeners to stats cards with ripple effect
+    statsCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const categorySlug = this.getAttribute('data-category');
+            
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                background: rgba(59, 130, 246, 0.3);
+                left: ${x}px;
+                top: ${y}px;
+                transform: scale(0);
+                animation: ripple 0.6s ease-out;
+                pointer-events: none;
+            `;
+            
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+            
+            // Apply filter
+            filterCategories(categorySlug);
+        });
+        
+        // Add keyboard accessibility
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `Filter by ${card.querySelector('.stats-label')?.textContent || 'category'}`);
+        
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+
+    // Add CSS animation for pulse and ripple
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Initialize with all categories shown
+    filterCategories('all');
+});
+</script>
+{% endblock %}

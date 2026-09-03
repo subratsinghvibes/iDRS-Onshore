@@ -1,0 +1,1586 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scheduling - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+
+    /* Extra small toggle buttons for List/Baskets */
+    #wells-source-toggle .btn {
+        padding: 0.15rem 0.5rem;
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+    #wells-source-toggle .btn i {
+        font-size: 0.65rem;
+    }
+
+    /* Baskets selector container - stacked layout */
+    #wells-baskets-selector {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+    }
+    #wells-baskets-selector.show {
+        display: flex;
+    }
+
+    /* Action Buttons Row - specific to scheduling page */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn-primary {
+        background: #ffffff;
+        border: 1.5px solid var(--adb-primary);
+        color: var(--adb-primary);
+    }
+
+    .action-btn-primary:hover {
+        background: var(--adb-primary);
+        color: white;
+    }
+
+    .action-btn-secondary {
+        background: #ffffff;
+        border: 1.5px solid #9ca3af;
+        color: #6b7280;
+    }
+
+    .action-btn-secondary:hover {
+        background: #f3f4f6;
+        border-color: #6b7280;
+    }
+
+    /* Resource List */
+    .resource-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        flex: 1;
+    }
+
+    .resource-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .resource-list::-webkit-scrollbar-track {
+        background: #f9fafb;
+        border-radius: 3px;
+    }
+
+    .resource-list::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+
+    /* Resource Item */
+    .resource-card {
+        background: #ffffff;
+        border: 2px dashed #e5e7eb;
+        border-radius: 10px;
+        padding: 0.875rem 1rem;
+        margin-bottom: 0.625rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .resource-card:hover {
+        border-color: var(--adb-primary);
+        border-style: solid;
+        box-shadow: 0 2px 8px rgba(10, 47, 90, 0.15);
+    }
+
+    .resource-card.selected {
+        background: rgba(10, 47, 90, 0.05);
+        border-color: var(--adb-primary);
+        border-style: solid;
+    }
+
+    .resource-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .resource-name {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 0.95rem;
+    }
+
+    .priority-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .priority-high {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .priority-medium {
+        background: #fefce8;
+        color: #ca8a04;
+    }
+
+    .priority-low {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .type-mobile {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .type-fixed {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .resource-details {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .resource-details span {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* All basket styles moved to style.css */
+
+    /* Config Form */
+    .config-form {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .config-form .form-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: 0.375rem;
+    }
+
+    .config-form .form-control,
+    .config-form .form-select {
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9rem;
+    }
+
+    .config-form .form-control:focus,
+    .config-form .form-select:focus {
+        border-color: var(--adb-primary);
+        box-shadow: 0 0 0 3px rgba(10, 47, 90, 0.1);
+    }
+
+    /* Status Card - Compact */
+    .status-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.875rem;
+    }
+
+    .status-ready {
+        text-align: center;
+        color: #9ca3af;
+        padding: 0.75rem;
+    }
+
+    .status-ready i {
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Equal height layout */
+    .main-row {
+        display: flex;
+        align-items: stretch;
+    }
+
+    .left-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .left-column .row.flex-grow-1 {
+        flex: 1;
+    }
+
+    .left-column .row.flex-grow-1 > [class*="col-"] {
+        display: flex;
+    }
+
+    .left-column .row.flex-grow-1 .clean-card {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .left-column .row.flex-grow-1 .clean-card .resource-list {
+        flex: 1;
+        max-height: none;
+        min-height: 250px;
+    }
+
+    /* Activity Log */
+    .activity-log {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 0.5rem;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.7rem;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    .activity-log::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .activity-log::-webkit-scrollbar-thumb {
+        background: #4b5563;
+        border-radius: 2px;
+    }
+
+    .activity-item {
+        color: #f1f5f9;
+        padding: 0.125rem 0;
+        border-bottom: 1px solid #1e293b;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-item.success {
+        color: #4ade80;
+    }
+
+    .activity-item.info {
+        color: #93c5fd;
+    }
+
+    .activity-item.warning {
+        color: #fbbf24;
+    }
+
+    .timer-display {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .timer-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #60a5fa;
+        font-family: 'Monaco', 'Menlo', monospace;
+        text-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
+    }
+
+    .timer-label {
+        font-size: 0.65rem;
+        color: #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 768px) {
+        .config-form {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Stop Optimization Button */
+    .stop-btn {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 2px solid #dc2626;
+        background: transparent;
+        color: #dc2626;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+    }
+    .stop-btn:hover {
+        background: #dc2626;
+        color: white;
+    }
+    .stop-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Error display in optimization status */
+    .optimization-error {
+        background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+    }
+    .optimization-error .error-icon {
+        font-size: 1.5rem;
+        color: #dc2626;
+        margin-bottom: 0.25rem;
+    }
+    .optimization-error .error-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #991b1b;
+        margin-bottom: 0.25rem;
+    }
+    .optimization-error .error-detail {
+        font-size: 0.75rem;
+        color: #7f1d1d;
+        line-height: 1.4;
+    }
+    .optimization-error .error-action {
+        margin-top: 0.5rem;
+    }
+    .optimization-error .error-action button {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-calendar-check me-2"></i>Schedule Optimization
+            </h1>
+            <p class="page-subtitle mb-0">Create optimized drilling schedules by selecting rigs and wells</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if can_view_all_locations %}
+            <select class="form-select form-select-sm" id="location-selector">
+                <option value="">All Locations</option>
+                {% for asset_id in asset_ids %}
+                <option value="{{ asset_id }}">{{ asset_id }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <span class="badge bg-primary px-3 py-2">
+                <i class="bi bi-geo-alt me-1"></i>{{ user_location }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <div class="row g-2 main-row">
+        <!-- Left Column: Configuration & Resources -->
+        <div class="col-lg-8 left-column">
+            <!-- Schedule Configuration -->
+            <div class="clean-card mb-2">
+                <div class="clean-card-header">
+                    <h6><i class="bi bi-gear text-muted"></i> Schedule Configuration</h6>
+                </div>
+                <div class="clean-card-body">
+                    <div class="config-form">
+                        <div>
+                            <label class="form-label">Schedule Name</label>
+                            <input type="text" class="form-control" id="schedule-name" placeholder="e.g., Q1 2025 Plan">
+                        </div>
+                        <div>
+                            <label class="form-label" title="Wells must START within the selected FY (Apr 1 - Mar 31). Drilling can extend beyond FY end if started within the period.">
+                                Financial Year <i class="bi bi-info-circle text-muted" style="font-size: 0.8rem;"></i>
+                            </label>
+                            <select class="form-select" id="financial-year" title="Schedule will only assign wells that can START within this FY period">
+                                <option value="">Select FY</option>
+                                {% for value, label in financial_year_choices %}
+                                <option value="{{ value }}" {% if value == current_financial_year %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-1">Wells must start within FY period (Apr-Mar)</small>
+                        </div>
+                        <div>
+                            <label class="form-label">Time Limit</label>
+                            <select class="form-select" id="time-limit">
+                                <option value="60">1 minute</option>
+                                <option value="300" selected>5 minutes</option>
+                                <option value="600">10 minutes</option>
+                                <option value="900">15 minutes</option>
+                                <option value="1200">20 minutes</option>
+                                <option value="1500">25 minutes</option>
+                                <option value="1800">30 minutes</option>
+                                <option value="3600">60 minutes</option>
+                                <option value="5400">90 minutes</option>
+                                <option value="7200">120 minutes (2 hours)</option>
+                                <option value="10800">180 minutes (3 hours)</option>
+                                <option value="14400">240 minutes (4 hours)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Pools Row -->
+            <div class="row g-2 flex-grow-1">
+                <!-- Available Rigs -->
+                <div class="col-md-6">
+                    <div class="clean-card h-100">
+                        <div class="clean-card-header">
+                            <h6><i class="bi bi-tools text-primary"></i> Available Rigs</h6>
+                            <span class="badge" id="available-rigs-count">0</span>
+                        </div>
+                        <div class="action-buttons">
+                            <button type="button" class="action-btn action-btn-primary" onclick="addAllRigsToBasket()">
+                                <i class="bi bi-plus-circle"></i> Add All
+                            </button>
+                            <button type="button" class="action-btn action-btn-secondary"
+                                onclick="clearRigsFromBasket()">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </button>
+                        </div>
+                        <div class="resource-list" id="rigs-pool">
+                            <div class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                <p class="mb-0 mt-2 small">Loading rigs...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Wells -->
+                <div class="col-md-6">
+                    <div class="clean-card h-100">
+                        <div class="clean-card-header">
+                            <h6><i class="bi bi-circle-fill text-success"></i> Available Wells</h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="btn-group btn-group-sm" role="group" id="wells-source-toggle">
+                                    <button type="button" class="btn btn-outline-primary active" id="wells-list-btn" onclick="switchWellsSource('list')">
+                                        <i class="bi bi-list-ul"></i> List
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" id="wells-baskets-btn" onclick="switchWellsSource('baskets')">
+                                        <i class="bi bi-collection"></i> Baskets
+                                    </button>
+                                </div>
+                                <span class="badge" id="available-wells-count">0</span>
+                            </div>
+                        </div>
+                        <!-- List view action buttons -->
+                        <div class="action-buttons" id="wells-list-actions">
+                            <button type="button" class="action-btn action-btn-primary" onclick="addAllWellsToBasket()">
+                                <i class="bi bi-plus-circle"></i> Add All
+                            </button>
+                            <button type="button" class="action-btn action-btn-secondary"
+                                onclick="clearWellsFromBasket()">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </button>
+                        </div>
+                        <!-- Baskets view selector -->
+                        <div id="wells-baskets-selector">
+                            <div style="padding: 0.75rem 1.25rem; border-bottom: 1px solid #f3f4f6;">
+                                <select class="form-select form-select-sm" id="basket-selector" onchange="loadSelectedBasket()">
+                                    <option value="">Select a basket...</option>
+                                </select>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="action-btn action-btn-primary" onclick="addAllBasketWellsToOptimization()" title="Add all wells from selected basket">
+                                    <i class="bi bi-plus-circle"></i> Add All
+                                </button>
+                                <button type="button" class="action-btn action-btn-secondary" onclick="clearAllBasketWellsFromOptimization()" title="Clear all basket wells from optimization">
+                                    <i class="bi bi-x-circle"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Basket info message -->
+                        <div class="alert alert-info py-2 px-3 mb-0 small" id="basket-info-message" style="display: none; margin: 0.5rem; border-radius: 8px;">
+                            <i class="bi bi-info-circle me-1"></i> Only imported wells from this basket are shown
+                        </div>
+                        <div class="resource-list" id="wells-pool">
+                            <div class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                <p class="mb-0 mt-2 small">Loading wells...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Optimization Basket -->
+        <div class="col-lg-4">
+            <div class="basket-card" id="optimization-basket">
+                <div class="basket-header">
+                    <h5 class="basket-title">
+                        <i class="bi bi-basket3-fill"></i> Optimization Basket
+                    </h5>
+                    <p class="basket-subtitle mb-0">
+                        <i class="bi bi-hand-index"></i> Click items to add/remove
+                    </p>
+                </div>
+
+                <div class="basket-content" id="basket-content">
+                    <div class="basket-empty" id="basket-empty">
+                        <i class="bi bi-inbox"></i>
+                        <p class="mb-0 small">No resources selected</p>
+                        <small class="text-muted" style="font-size: 0.7rem;">Click on rigs and wells to add</small>
+                    </div>
+
+                    <div id="basket-rigs-section" class="basket-section" style="display: none;">
+                        <div class="basket-section-title">
+                            <i class="bi bi-tools"></i> SELECTED RIGS
+                            <span class="badge bg-primary ms-auto" style="font-size: 0.65rem;"
+                                id="basket-rigs-count">0</span>
+                        </div>
+                        <div class="basket-items-grid" id="basket-rigs-list"></div>
+                    </div>
+
+                    <div id="basket-wells-section" class="basket-section" style="display: none;">
+                        <div class="basket-section-title">
+                            <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> SELECTED WELLS
+                            <span class="badge bg-success ms-auto" style="font-size: 0.65rem;"
+                                id="basket-wells-count">0</span>
+                        </div>
+                        <div class="basket-items-grid" id="basket-wells-list"></div>
+                    </div>
+                </div>
+
+                <div class="basket-stats" id="basket-stats">
+                    <div class="basket-stat">
+                        <div class="basket-stat-value" id="basket-total-rigs">0</div>
+                        <div class="basket-stat-label">Rigs</div>
+                    </div>
+                    <div class="basket-stat">
+                        <div class="basket-stat-value" id="basket-total-wells">0</div>
+                        <div class="basket-stat-label">Wells</div>
+                    </div>
+                </div>
+
+                <div class="p-2">
+                    <button type="button" class="start-btn" id="start-optimization-btn" onclick="startOptimization()"
+                        disabled>
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Start Optimization
+                    </button>
+                    <button type="button" class="stop-btn mt-1" id="stop-optimization-btn" onclick="stopOptimization()"
+                        style="display: none;">
+                        <i class="bi bi-stop-circle-fill"></i>
+                        Stop Optimization
+                    </button>
+                </div>
+
+                <!-- Optimization Status - Inside basket card -->
+                <div class="px-2 pb-2 mt-auto">
+                    <!-- Ready State -->
+                    <div id="optimization-status" class="text-center py-2" style="color: #9ca3af;">
+                        <i class="bi bi-hourglass" style="font-size: 1.25rem;"></i>
+                        <p class="mb-0 small">Ready to optimize</p>
+                    </div>
+
+                    <!-- Progress State with Timer and Activity -->
+                    <div id="optimization-progress" style="display: none;">
+                        <div class="timer-display">
+                            <div class="timer-value" id="timer-value">00:00</div>
+                            <div class="timer-label">Elapsed Time</div>
+                        </div>
+                        <div class="progress mb-2" style="height: 4px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                style="width: 100%"></div>
+                        </div>
+                        <div class="activity-log" id="activity-log">
+                            <div class="activity-item info">▶ Starting optimization...</div>
+                        </div>
+                    </div>
+
+                    <!-- Results State -->
+                    <div id="optimization-results" style="display: none; font-size: 0.8rem;">
+                        <div class="row g-1 mb-2">
+                            <div class="col-6"><span class="text-muted">Assigned:</span> <strong class="text-success"
+                                    id="result-assignments">-</strong></div>
+                            <div class="col-6"><span class="text-muted">Unassigned:</span> <strong class="text-danger"
+                                    id="result-unassigned">-</strong></div>
+                        </div>
+                        <div class="row g-1 mb-2">
+                            <div class="col-6"><span class="text-muted">Cost:</span> <strong>₹<span
+                                        id="result-cost">-</span></strong></div>
+                            <div class="col-6"><span class="text-muted">Time:</span> <strong id="result-time">-</strong>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary btn-sm flex-fill"
+                                style="font-size: 0.7rem; padding: 0.375rem;" onclick="viewLastScheduleDetails()">
+                                <i class="bi bi-file-text"></i> Details
+                            </button>
+                            <button class="btn btn-outline-success btn-sm flex-fill"
+                                style="font-size: 0.7rem; padding: 0.375rem;" onclick="viewGanttChart()">
+                                <i class="bi bi-bar-chart"></i> Gantt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for schedule creation -->
+<div id="schedule-form" style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/plotly-2.26.0.min.js' %}"></script>
+<script src="{% static 'js/main.js' %}?v=3"></script>
+
+<script>
+    // Data stores
+    let allWells = [];
+    let allRigs = [];
+    let filteredWells = [];
+    let filteredRigs = [];
+    let basketRigs = new Set();
+    let basketWells = new Set();
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async function () {
+        // Load company codes map first for proper location filtering
+        if (typeof loadCompanyCodesMap === 'function') {
+            await loadCompanyCodesMap();
+        }
+        await loadData();
+        setupEventListeners();
+    });
+
+    // Fetch every record from a paginated DRF endpoint by following the `next` links.
+    // Without this, only the first page (PAGE_SIZE, currently 100) would be loaded.
+    async function fetchAllPages(baseUrl, pageSize = 1000) {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        let url = `${baseUrl}${separator}page_size=${pageSize}`;
+        const items = [];
+
+        while (url) {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error(`Request failed (${response.status}) for ${url}`);
+            }
+            const data = await response.json();
+
+            // Non-paginated responses come back as a plain array
+            if (Array.isArray(data)) {
+                return data;
+            }
+
+            items.push(...(data.results || []));
+
+            // `next` is an absolute URL from DRF; keep it same-origin relative
+            if (data.next) {
+                const nextUrl = new URL(data.next, window.location.origin);
+                url = nextUrl.pathname + nextUrl.search;
+            } else {
+                url = null;
+            }
+        }
+
+        return items;
+    }
+
+    // Load data from API
+    async function loadData() {
+        try {
+            const [rigs, wells] = await Promise.all([
+                fetchAllPages('/api/rigs/'),
+                fetchAllPages('/api/wells/')
+            ]);
+
+            allRigs = rigs;
+            allWells = wells;
+            filteredRigs = [...allRigs];
+            filteredWells = [...allWells];
+
+            renderRigsPool();
+            renderWellsPool();
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        const locationSelector = document.getElementById('location-selector');
+        if (locationSelector) {
+            locationSelector.addEventListener('change', applyAllFilters);
+        }
+        
+        // Add FY change listener
+        const fySelector = document.getElementById('financial-year');
+        if (fySelector) {
+            fySelector.addEventListener('change', applyAllFilters);
+        }
+    }
+    
+    // Parse Financial Year string (e.g., "2024-2025") to get start and end dates
+    function parseFYToDateRange(fyString) {
+        if (!fyString || !fyString.includes('-')) return null;
+        
+        const parts = fyString.split('-');
+        if (parts.length !== 2) return null;
+        
+        const startYear = parseInt(parts[0]);
+        const endYear = parseInt(parts[1]);
+        
+        if (isNaN(startYear) || isNaN(endYear)) return null;
+        
+        // FY runs from April 1 of start year to March 31 of end year
+        return {
+            start: new Date(startYear, 3, 1),  // April 1 (month is 0-indexed)
+            end: new Date(endYear, 2, 31)       // March 31
+        };
+    }
+    
+    // Check if a rig's availability overlaps with the FY period
+    function rigOverlapsFY(rig, fyRange) {
+        if (!fyRange) return true; // No FY filter, include all
+        
+        const rigStart = rig.start_date ? new Date(rig.start_date) : null;
+        const rigEnd = rig.end_date ? new Date(rig.end_date) : null;
+        
+        if (!rigStart || !rigEnd) return false; // Missing dates, exclude
+        
+        // Check if rig availability overlaps with FY period
+        // Overlap exists if rig ends >= FY start AND rig starts <= FY end
+        return rigEnd >= fyRange.start && rigStart <= fyRange.end;
+    }
+    
+    // Check if a well's RTD falls within or before FY end (can be scheduled in FY)
+    function wellAvailableForFY(well, fyRange) {
+        if (!fyRange) return true; // No FY filter, include all
+        
+        const wellRtd = well.rtd ? new Date(well.rtd) : null;
+        
+        if (!wellRtd) return true; // No RTD, include (will be filtered by other constraints)
+        
+        // Well must be ready (RTD) on or before FY end to potentially start within FY
+        return wellRtd <= fyRange.end;
+    }
+
+    // Master filter function - applies both location and FY filters
+    function applyAllFilters() {
+        const locationSelector = document.getElementById('location-selector');
+        const location = locationSelector ? locationSelector.value : '';
+        
+        const fySelector = document.getElementById('financial-year');
+        const fyString = fySelector ? fySelector.value : '';
+        const fyRange = parseFYToDateRange(fyString);
+        
+        // Start with all data
+        let rigsPool = [...allRigs];
+        let wellsPool = [...allWells];
+        
+        // Apply location filter if selected
+        if (location) {
+            const normalizedLocation = (companyCodesMap[location.toUpperCase()] || location).toUpperCase();
+
+            rigsPool = rigsPool.filter(r => {
+                if (!r.asset_id) return false;
+                const rigLocation = companyCodesMap[r.asset_id.toUpperCase()] || r.asset_id;
+                return rigLocation.toUpperCase() === normalizedLocation;
+            });
+
+            wellsPool = wellsPool.filter(w => {
+                if (!w.asset_id) return false;
+                const wellLocation = companyCodesMap[w.asset_id.toUpperCase()] || w.asset_id;
+                return wellLocation.toUpperCase() === normalizedLocation;
+            });
+        }
+        
+        // Apply FY filter if selected
+        if (fyRange) {
+            rigsPool = rigsPool.filter(r => rigOverlapsFY(r, fyRange));
+            wellsPool = wellsPool.filter(w => wellAvailableForFY(w, fyRange));
+        }
+        
+        filteredRigs = rigsPool;
+        filteredWells = wellsPool;
+
+        renderRigsPool();
+        renderWellsPool();
+        
+        // If in baskets mode, reload the basket with new FY filter
+        if (wellsSource === 'baskets' && selectedBasketId) {
+            loadSelectedBasket();
+        }
+    }
+    
+    // Filter by location (kept for backward compatibility, now calls master filter)
+    function filterByLocation() {
+        applyAllFilters();
+    }
+
+    // Render rigs pool
+    function renderRigsPool() {
+        const pool = document.getElementById('rigs-pool');
+        const count = document.getElementById('available-rigs-count');
+
+        if (count) count.textContent = filteredRigs.length;
+
+        if (filteredRigs.length === 0) {
+            pool.innerHTML = '<div class="text-center text-muted py-4"><p class="mb-0">No rigs available</p></div>';
+            return;
+        }
+
+        pool.innerHTML = filteredRigs.map(rig => `
+        <div class="resource-card ${basketRigs.has(rig.id) ? 'selected' : ''}" 
+             onclick="toggleRig('${rig.id}')" id="rig-${rig.id}">
+            <div class="resource-card-header">
+                <span class="resource-name">${rig.name}</span>
+                <span class="priority-badge ${rig.rig_type === 'Mobile' ? 'type-mobile' : 'type-fixed'}">${rig.rig_type}</span>
+            </div>
+            <div class="resource-details">
+                <span><i class="bi bi-gear"></i> ${rig.rig_capacity_hp} HP</span>
+                <span><i class="bi bi-arrow-down-up"></i> ${rig.drilling_capacity_m}m</span>
+                <span><i class="bi bi-calendar3"></i> ${rig.start_date}</span>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    // Render wells pool
+    function renderWellsPool() {
+        const pool = document.getElementById('wells-pool');
+        const count = document.getElementById('available-wells-count');
+
+        if (count) count.textContent = filteredWells.length;
+
+        if (filteredWells.length === 0) {
+            pool.innerHTML = '<div class="text-center text-muted py-4"><p class="mb-0">No wells available</p></div>';
+            return;
+        }
+
+        pool.innerHTML = filteredWells.map(well => {
+            const priorityClass = well.priority === 'HIGH' ? 'priority-high' :
+                well.priority === 'MEDIUM' ? 'priority-medium' : 'priority-low';
+            return `
+            <div class="resource-card ${basketWells.has(well.id) ? 'selected' : ''}" 
+                 onclick="toggleWell('${well.id}')" id="well-${well.id}">
+                <div class="resource-card-header">
+                    <span class="resource-name">${well.name}</span>
+                    <span class="priority-badge ${priorityClass}">${well.priority}</span>
+                </div>
+                <div class="resource-details">
+                    <span><i class="bi bi-geo-alt"></i> ${well.asset_id}</span>
+                    <span><i class="bi bi-arrow-down-up"></i> ${well.depth}m</span>
+                    <span><i class="bi bi-clock"></i> ${well.duration}d</span>
+                </div>
+            </div>
+        `;
+        }).join('');
+    }
+
+    // Toggle rig selection
+    function toggleRig(id) {
+        if (basketRigs.has(id)) {
+            basketRigs.delete(id);
+        } else {
+            basketRigs.add(id);
+        }
+        updateUI();
+    }
+
+    // Toggle well selection
+    function toggleWell(id) {
+        if (basketWells.has(id)) {
+            basketWells.delete(id);
+        } else {
+            basketWells.add(id);
+        }
+        updateUI();
+    }
+
+    // Add all rigs
+    function addAllRigsToBasket() {
+        filteredRigs.forEach(rig => basketRigs.add(rig.id));
+        updateUI();
+    }
+
+    // Clear rigs
+    function clearRigsFromBasket() {
+        basketRigs.clear();
+        updateUI();
+    }
+
+    // Add all wells
+    function addAllWellsToBasket() {
+        filteredWells.forEach(well => basketWells.add(well.id));
+        updateUI();
+    }
+
+    // Clear wells
+    function clearWellsFromBasket() {
+        basketWells.clear();
+        updateUI();
+    }
+
+    // Update all UI elements
+    function updateUI() {
+        // Update pool visual state
+        filteredRigs.forEach(rig => {
+            const elem = document.getElementById(`rig-${rig.id}`);
+            if (elem) elem.classList.toggle('selected', basketRigs.has(rig.id));
+        });
+
+        filteredWells.forEach(well => {
+            const elem = document.getElementById(`well-${well.id}`);
+            if (elem) elem.classList.toggle('selected', basketWells.has(well.id));
+        });
+
+        // Update basket display
+        const emptyState = document.getElementById('basket-empty');
+        const rigsSection = document.getElementById('basket-rigs-section');
+        const wellsSection = document.getElementById('basket-wells-section');
+        const rigsList = document.getElementById('basket-rigs-list');
+        const wellsList = document.getElementById('basket-wells-list');
+        const startBtn = document.getElementById('start-optimization-btn');
+
+        const hasItems = basketRigs.size > 0 || basketWells.size > 0;
+
+        if (emptyState) emptyState.style.display = hasItems ? 'none' : 'block';
+
+        // Update rigs in basket - compact chips
+        if (basketRigs.size > 0 && rigsSection) {
+            rigsSection.style.display = 'block';
+            document.getElementById('basket-rigs-count').textContent = basketRigs.size;
+
+            const selectedRigs = allRigs.filter(r => basketRigs.has(r.id));
+            rigsList.innerHTML = selectedRigs.map(rig => `
+            <div class="basket-item">
+                <span class="basket-item-name">${rig.name}</span>
+                <button class="basket-item-remove" onclick="event.stopPropagation(); toggleRig('${rig.id}')">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `).join('');
+        } else if (rigsSection) {
+            rigsSection.style.display = 'none';
+        }
+
+        // Update wells in basket - compact chips
+        if (basketWells.size > 0 && wellsSection) {
+            wellsSection.style.display = 'block';
+            document.getElementById('basket-wells-count').textContent = basketWells.size;
+
+            const selectedWells = allWells.filter(w => basketWells.has(w.id));
+            wellsList.innerHTML = selectedWells.map(well => `
+            <div class="basket-item">
+                <span class="basket-item-name">${well.name}</span>
+                <button class="basket-item-remove" onclick="event.stopPropagation(); toggleWell('${well.id}')">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `).join('');
+        } else if (wellsSection) {
+            wellsSection.style.display = 'none';
+        }
+
+        // Update stats
+        document.getElementById('basket-total-rigs').textContent = basketRigs.size;
+        document.getElementById('basket-total-wells').textContent = basketWells.size;
+
+        // Enable/disable start button
+        if (startBtn) startBtn.disabled = basketRigs.size === 0 || basketWells.size === 0;
+    }
+
+    // Start optimization - calls API directly
+    async function startOptimization() {
+        const name = document.getElementById('schedule-name').value.trim();
+        const fy = document.getElementById('financial-year').value;
+        const timeLimit = parseInt(document.getElementById('time-limit').value) || 300;
+
+        if (!name) { alert('Please enter a schedule name'); return; }
+        if (!fy) { alert('Please select a financial year'); return; }
+        if (basketRigs.size === 0) { alert('Please select at least one rig'); return; }
+        if (basketWells.size === 0) { alert('Please select at least one well'); return; }
+
+        // Check if schedule name already exists
+        try {
+            const checkResponse = await fetch(`/api/schedules/?search=${encodeURIComponent(name)}`, {
+                credentials: 'same-origin'
+            });
+            if (checkResponse.ok) {
+                const existingSchedules = await checkResponse.json();
+                const schedules = existingSchedules.results || existingSchedules;
+                const duplicateName = schedules.find(s => s.name.toLowerCase() === name.toLowerCase());
+                if (duplicateName) {
+                    alert(`A schedule with the name "${name}" already exists. Please choose a different name.`);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not check for duplicate names:', e);
+        }
+
+        const scheduleData = {
+            name: name,
+            financial_year: fy,
+            time_limit_seconds: timeLimit,
+            rig_ids: Array.from(basketRigs),
+            well_ids: Array.from(basketWells)
+        };
+
+        // Show progress & stop button
+        showProgress();
+        const stopBtn = document.getElementById('stop-optimization-btn');
+        if (stopBtn) stopBtn.style.display = 'flex';
+
+        // Create AbortController so the user can cancel the fetch
+        abortController = new AbortController();
+        currentScheduleId = null;
+
+        try {
+            const response = await fetch('/api/schedules/create_schedule/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(scheduleData),
+                signal: abortController.signal
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create schedule');
+            }
+
+            const result = await response.json();
+            currentScheduleId = result.id;
+            showResults(result);
+            window.lastScheduleId = result.id;
+
+            // Clear form
+            document.getElementById('schedule-name').value = '';
+            basketRigs.clear();
+            basketWells.clear();
+            updateUI();
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                // User clicked Stop – show cancelled state
+                addActivityMessage('⏹ Optimization stopped by user', 'warning');
+                showCancelled();
+            } else {
+                console.error('Optimization error:', error);
+                showError(error.message);
+            }
+        } finally {
+            abortController = null;
+            const stopBtnEl = document.getElementById('stop-optimization-btn');
+            if (stopBtnEl) stopBtnEl.style.display = 'none';
+        }
+    }
+
+    // Stop / cancel a running optimization
+    async function stopOptimization() {
+        // 1) Abort the in-flight HTTP request
+        if (abortController) {
+            abortController.abort();
+        }
+        // 2) If we have a schedule ID, mark it cancelled on the server
+        if (currentScheduleId) {
+            try {
+                await fetch(`/api/schedules/${currentScheduleId}/cancel_schedule/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    credentials: 'same-origin'
+                });
+            } catch (_) { /* best-effort */ }
+        }
+    }
+
+    function getCSRFToken() {
+        // First try from meta tag (most reliable from base.html)
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (metaToken) {
+            return metaToken;
+        }
+        // Fallback to cookie - try custom IDRS cookie name first
+        let cookie = document.cookie.split('; ').find(row => row.startsWith('idrs_csrftoken='));
+        if (!cookie) {
+            cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        }
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    // Timer and activity log
+    let timerInterval = null;
+    let startTime = null;
+    let abortController = null;   // AbortController for fetch cancellation
+    let currentScheduleId = null; // ID of the schedule being optimised
+    let optimizationRunning = false; // Track if optimization is in progress
+
+    // Navigation warning when optimization is running
+    function onBeforeUnload(e) {
+        if (optimizationRunning) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    }
+
+    function enableNavWarning() {
+        optimizationRunning = true;
+        window.addEventListener('beforeunload', onBeforeUnload);
+
+        // Intercept sidebar link clicks
+        document.querySelectorAll('a.nav-link[href]:not([href^="javascript"])').forEach(link => {
+            link.addEventListener('click', navLinkInterceptor);
+        });
+    }
+
+    function disableNavWarning() {
+        optimizationRunning = false;
+        window.removeEventListener('beforeunload', onBeforeUnload);
+
+        document.querySelectorAll('a.nav-link[href]:not([href^="javascript"])').forEach(link => {
+            link.removeEventListener('click', navLinkInterceptor);
+        });
+    }
+
+    function navLinkInterceptor(e) {
+        if (!optimizationRunning) return;
+        e.preventDefault();
+        const href = e.currentTarget.getAttribute('href');
+
+        // Show friendly confirmation
+        if (confirm(
+            'The optimization engine is still running.\n\n' +
+            'You can safely navigate away \u2014 the optimization will continue in the background and your schedule will be saved automatically once it completes.\n\n' +
+            'Do you want to leave this page?'
+        )) {
+            disableNavWarning();
+            window.location.href = href;
+        }
+    }
+
+    const activityMessages = [
+        { time: 0, msg: '▶ Starting optimization engine...', type: 'info' },
+        { time: 1, msg: '✓ Loading rig availability data', type: 'success' },
+        { time: 2, msg: '✓ Loading well requirements', type: 'success' },
+        { time: 3, msg: '⚙ Building constraint model...', type: 'info' },
+        { time: 5, msg: '✓ Rig capacity constraints added', type: 'success' },
+        { time: 6, msg: '✓ Well priority constraints added', type: 'success' },
+        { time: 8, msg: '⚙ Running OR-Tools solver...', type: 'warning' },
+        { time: 12, msg: '⚙ Evaluating assignment options...', type: 'info' },
+        { time: 18, msg: '⚙ Optimizing rig movements...', type: 'info' },
+        { time: 25, msg: '⚙ Minimizing total costs...', type: 'info' },
+        { time: 35, msg: '⚙ Finding optimal schedule...', type: 'warning' },
+        { time: 50, msg: '⚙ Finalizing assignments...', type: 'info' }
+    ];
+
+    function showProgress() {
+        const statusDiv = document.getElementById('optimization-status');
+        const progressDiv = document.getElementById('optimization-progress');
+        const resultsDiv = document.getElementById('optimization-results');
+        const startBtn = document.getElementById('start-optimization-btn');
+        const activityLog = document.getElementById('activity-log');
+
+        if (statusDiv) statusDiv.style.display = 'none';
+        if (resultsDiv) resultsDiv.style.display = 'none';
+        if (progressDiv) progressDiv.style.display = 'block';
+        if (startBtn) startBtn.disabled = true;
+
+        // Enable navigation warning
+        enableNavWarning();
+
+        // Reset activity log
+        if (activityLog) activityLog.innerHTML = '<div class="activity-item info">▶ Starting optimization...</div>';
+
+        // Start timer
+        startTime = Date.now();
+        let lastMsgIndex = 0;
+
+        timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+
+            const timerEl = document.getElementById('timer-value');
+            if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+
+            // Add activity messages based on elapsed time
+            while (lastMsgIndex < activityMessages.length && activityMessages[lastMsgIndex].time <= elapsed) {
+                addActivityMessage(activityMessages[lastMsgIndex].msg, activityMessages[lastMsgIndex].type);
+                lastMsgIndex++;
+            }
+        }, 100);
+    }
+
+    function addActivityMessage(msg, type = 'info') {
+        const activityLog = document.getElementById('activity-log');
+        if (activityLog) {
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            item.textContent = msg;
+            activityLog.appendChild(item);
+            activityLog.scrollTop = activityLog.scrollHeight;
+        }
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function showResults(result) {
+        stopTimer();
+        disableNavWarning();
+        addActivityMessage('✓ Optimization complete!', 'success');
+
+        const statusDiv = document.getElementById('optimization-status');
+        const progressDiv = document.getElementById('optimization-progress');
+        const resultsDiv = document.getElementById('optimization-results');
+        const startBtn = document.getElementById('start-optimization-btn');
+
+        // Short delay to show completion message
+        setTimeout(() => {
+            if (statusDiv) statusDiv.style.display = 'none';
+            if (progressDiv) progressDiv.style.display = 'none';
+            if (resultsDiv) resultsDiv.style.display = 'block';
+            if (startBtn) startBtn.disabled = false;
+
+            document.getElementById('result-assignments').textContent = result.assignments ? result.assignments.length : 0;
+            document.getElementById('result-unassigned').textContent = result.unassigned_wells ? result.unassigned_wells.length : 0;
+            document.getElementById('result-cost').textContent = formatCost(result.total_cost || 0);
+            document.getElementById('result-time').textContent = result.solve_time_seconds ? result.solve_time_seconds.toFixed(2) + 's' : '< 1s';
+        }, 500);
+    }
+
+    function showError(message) {
+        stopTimer();
+        disableNavWarning();
+        addActivityMessage('✗ ' + message, 'warning');
+
+        const statusDiv = document.getElementById('optimization-status');
+        const progressDiv = document.getElementById('optimization-progress');
+        const resultsDiv = document.getElementById('optimization-results');
+        const startBtn = document.getElementById('start-optimization-btn');
+
+        setTimeout(() => {
+            if (progressDiv) progressDiv.style.display = 'none';
+            if (resultsDiv) resultsDiv.style.display = 'none';
+            if (startBtn) startBtn.disabled = false;
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                // Sanitize message for safe innerHTML
+                const safeMsg = message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                statusDiv.innerHTML = `
+                    <div class="optimization-error">
+                        <div class="error-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                        <div class="error-title">Optimization Failed</div>
+                        <div class="error-detail">${safeMsg}</div>
+                        <div class="error-action">
+                            <button class="btn btn-outline-danger btn-sm" onclick="resetOptimizationStatus()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Try Again
+                            </button>
+                        </div>
+                    </div>`;
+            }
+        }, 500);
+    }
+
+    function showCancelled() {
+        stopTimer();
+        disableNavWarning();
+
+        const statusDiv = document.getElementById('optimization-status');
+        const progressDiv = document.getElementById('optimization-progress');
+        const resultsDiv = document.getElementById('optimization-results');
+        const startBtn = document.getElementById('start-optimization-btn');
+
+        setTimeout(() => {
+            if (progressDiv) progressDiv.style.display = 'none';
+            if (resultsDiv) resultsDiv.style.display = 'none';
+            if (startBtn) startBtn.disabled = false;
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `
+                    <div style="text-align:center; padding:0.5rem;">
+                        <i class="bi bi-stop-circle text-warning" style="font-size: 1.25rem;"></i>
+                        <p class="mb-0 small text-warning">Optimization stopped by user</p>
+                        <button class="btn btn-outline-secondary btn-sm mt-2" style="font-size:0.7rem;" onclick="resetOptimizationStatus()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>`;
+            }
+        }, 300);
+    }
+
+    function resetOptimizationStatus() {
+        const statusDiv = document.getElementById('optimization-status');
+        const progressDiv = document.getElementById('optimization-progress');
+        const resultsDiv = document.getElementById('optimization-results');
+        if (progressDiv) progressDiv.style.display = 'none';
+        if (resultsDiv) resultsDiv.style.display = 'none';
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<i class="bi bi-hourglass" style="font-size: 1.25rem;"></i><p class="mb-0 small">Ready to optimize</p>';
+            statusDiv.style.color = '#9ca3af';
+        }
+    }
+
+    function formatCost(cost) {
+        if (cost >= 10000000) return (cost / 10000000).toFixed(2) + ' Cr';
+        if (cost >= 100000) return (cost / 100000).toFixed(2) + ' L';
+        if (cost >= 1000) return (cost / 1000).toFixed(2) + ' K';
+        return cost.toFixed(0);
+    }
+
+    function viewLastScheduleDetails() {
+        if (window.lastScheduleId) {
+            window.location.href = '/schedule/' + window.lastScheduleId + '/';
+        }
+    }
+
+    function viewGanttChart() {
+        if (window.lastScheduleId) {
+            window.location.href = '/gantt/?schedule=' + window.lastScheduleId;
+        } else {
+            window.location.href = '/gantt/';
+        }
+    }
+
+    // Make functions globally available
+    window.addAllRigsToBasket = addAllRigsToBasket;
+    window.clearRigsFromBasket = clearRigsFromBasket;
+    window.addAllWellsToBasket = addAllWellsToBasket;
+    window.clearWellsFromBasket = clearWellsFromBasket;
+    window.toggleRig = toggleRig;
+    window.toggleWell = toggleWell;
+    window.startOptimization = startOptimization;
+    window.stopOptimization = stopOptimization;
+    window.resetOptimizationStatus = resetOptimizationStatus;
+
+    // ==========================================================
+    // WELLS SOURCE TOGGLE: List vs Baskets
+    // ==========================================================
+    let wellsSource = 'list'; // 'list' or 'baskets'
+    let availableBaskets = [];
+    let selectedBasketId = null;
+
+    // Switch between List and Baskets view
+    window.switchWellsSource = function(source) {
+        wellsSource = source;
+        
+        // Toggle button states
+        document.getElementById('wells-list-btn').classList.toggle('active', source === 'list');
+        document.getElementById('wells-baskets-btn').classList.toggle('active', source === 'baskets');
+        
+        // Toggle action buttons visibility
+        document.getElementById('wells-list-actions').style.display = source === 'list' ? 'flex' : 'none';
+        document.getElementById('wells-baskets-selector').classList.toggle('show', source === 'baskets');
+        document.getElementById('basket-info-message').style.display = 'none';
+        
+        if (source === 'list') {
+            // Show all wells from main database
+            selectedBasketId = null;
+            filteredWells = [...allWells];
+            renderWellsPool();
+        } else {
+            // Load available baskets
+            loadAvailableBaskets();
+        }
+    };
+
+    // Load available baskets
+    async function loadAvailableBaskets() {
+        const selector = document.getElementById('basket-selector');
+        const pool = document.getElementById('wells-pool');
+        
+        try {
+            pool.innerHTML = '<div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm" role="status"></div><p class="mb-0 mt-2 small">Loading baskets...</p></div>';
+            
+            // Get current location filter
+            const locationSelector = document.getElementById('location-selector');
+            const location = locationSelector ? locationSelector.value : '';
+            
+            let url = '/api/baskets/';
+            if (location) {
+                url += `?location=${encodeURIComponent(location)}`;
+            }
+            
+            const response = await fetch(url, { credentials: 'same-origin' });
+            const data = await response.json();
+            
+            if (data.success && data.baskets) {
+                // Filter baskets that have at least one imported well
+                availableBaskets = data.baskets.filter(b => b.imported_count > 0);
+                
+                // Populate selector
+                selector.innerHTML = '<option value="">Select a basket...</option>';
+                availableBaskets.forEach(basket => {
+                    selector.innerHTML += `<option value="${basket.id}">${basket.name} (${basket.imported_count} imported wells)</option>`;
+                });
+                
+                if (availableBaskets.length === 0) {
+                    pool.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-collection" style="font-size: 2rem;"></i><p class="mb-0 mt-2 small">No baskets with imported wells found</p></div>';
+                } else {
+                    pool.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-arrow-up-circle" style="font-size: 2rem;"></i><p class="mb-0 mt-2 small">Select a basket to load wells</p></div>';
+                    // Auto-open the basket dropdown
+                    setTimeout(() => {
+                        selector.focus();
+                        if (typeof selector.showPicker === 'function') {
+                            try { selector.showPicker(); } catch(e) {}
+                        }
+                    }, 100);
+                }
+            } else {
+                pool.innerHTML = '<div class="text-center text-muted py-4"><p class="mb-0">No baskets available</p></div>';
+            }
+        } catch (error) {
+            console.error('Error loading baskets:', error);
+            pool.innerHTML = '<div class="text-center text-danger py-4"><p class="mb-0">Error loading baskets</p></div>';
+        }
+    }
+
+    // Load selected basket's imported wells
+    window.loadSelectedBasket = async function() {
+        const selector = document.getElementById('basket-selector');
+        const basketId = selector.value;
+        const pool = document.getElementById('wells-pool');
+        const basketInfoMessage = document.getElementById('basket-info-message');
+        
+        if (!basketId) {
+            selectedBasketId = null;
+            filteredWells = [];
+            pool.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-arrow-up-circle" style="font-size: 2rem;"></i><p class="mb-0 mt-2 small">Select a basket to load wells</p></div>';
+            basketInfoMessage.style.display = 'none';
+            document.getElementById('available-wells-count').textContent = '0';
+            return;
+        }
+        
+        selectedBasketId = basketId;
+        
+        try {
+            pool.innerHTML = '<div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm" role="status"></div><p class="mb-0 mt-2 small">Loading basket wells...</p></div>';
+            
+            const response = await fetch(`/api/baskets/${basketId}/`, { credentials: 'same-origin' });
+            const data = await response.json();
+            
+            if (data.success && data.basket && data.basket.wells) {
+                // Filter only imported wells
+                const importedStagedWells = data.basket.wells.filter(w => w.status === 'IMPORTED');
+                
+                // Get the corresponding Well records from the main database
+                const importedWellIds = importedStagedWells
+                    .map(sw => sw.imported_well_id)
+                    .filter(id => id !== null);
+                
+                if (importedWellIds.length > 0) {
+                    // Filter allWells to only show wells that were imported from this basket
+                    let basketWellsPool = allWells.filter(w => importedWellIds.includes(w.id));
+                    
+                    // Apply FY filter if selected
+                    const fySelector = document.getElementById('financial-year');
+                    const fyString = fySelector ? fySelector.value : '';
+                    const fyRange = parseFYToDateRange(fyString);
+                    
+                    if (fyRange) {
+                        basketWellsPool = basketWellsPool.filter(w => wellAvailableForFY(w, fyRange));
+                    }
+                    
+                    filteredWells = basketWellsPool;
+                    
+                    // Show info message
+                    basketInfoMessage.style.display = 'block';
+                    
+                    renderWellsPool();
+                } else {
+                    filteredWells = [];
+                    basketInfoMessage.style.display = 'none';
+                    pool.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-exclamation-circle" style="font-size: 2rem;"></i><p class="mb-0 mt-2 small">No imported wells in this basket</p></div>';
+                    document.getElementById('available-wells-count').textContent = '0';
+                }
+            } else {
+                pool.innerHTML = '<div class="text-center text-muted py-4"><p class="mb-0">Error loading basket</p></div>';
+            }
+        } catch (error) {
+            console.error('Error loading basket:', error);
+            pool.innerHTML = '<div class="text-center text-danger py-4"><p class="mb-0">Error loading basket</p></div>';
+        }
+    };
+
+    // Add all wells from selected basket to optimization basket
+    window.addAllBasketWellsToOptimization = function() {
+        if (!selectedBasketId) {
+            alert('Please select a basket first');
+            return;
+        }
+        
+        if (!filteredWells || filteredWells.length === 0) {
+            alert('No wells available in selected basket');
+            return;
+        }
+        
+        // Add all filtered wells to the optimization basket
+        filteredWells.forEach(well => basketWells.add(well.id));
+        updateUI();
+    };
+
+    // Clear all basket wells from optimization basket  
+    window.clearAllBasketWellsFromOptimization = function() {
+        if (!selectedBasketId) {
+            alert('Please select a basket first');
+            return;
+        }
+        
+        if (!filteredWells || filteredWells.length === 0) {
+            return;
+        }
+        
+        // Remove all filtered wells from the optimization basket
+        filteredWells.forEach(well => basketWells.delete(well.id));
+        updateUI();
+    };
+</script>
+{% endblock %}

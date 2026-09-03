@@ -1,0 +1,1226 @@
+[
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "01e435e0-6a9f-4f5f-ae76-95cdc648ce84",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Vertical",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Anklav",
+    "drilling_depth": 1750,
+    "benchmark_days": "42.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.246Z",
+    "updated_at": "2026-03-05T12:19:56.246Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "033d0262-820e-4c79-8cd4-f65d0fe504c4",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Akholjuni",
+    "drilling_depth": 1750,
+    "benchmark_days": "48.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.237Z",
+    "updated_at": "2026-03-05T12:19:56.237Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "05f9d333-9e76-4a90-a886-d7a83488ec64",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "AM",
+    "well_category": "Directional",
+    "well_depth_start": 1600,
+    "well_depth_end": 2000,
+    "field": "Ahmedabad",
+    "drilling_depth": 1745,
+    "benchmark_days": "13.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.421Z",
+    "updated_at": "2026-01-30T02:01:35.156Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "0a917753-2380-4168-ae91-1d2c6260f7f8",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "PD",
+    "well_category": "Sidetrack",
+    "well_depth_start": 500,
+    "well_depth_end": 1100,
+    "field": "Padra",
+    "drilling_depth": 764,
+    "benchmark_days": "11.70",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.319Z",
+    "updated_at": "2026-01-10T08:15:17.319Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "0d6334e8-6be9-478a-a2b2-42c2fd5c8e46",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Anklav",
+    "drilling_depth": 750,
+    "benchmark_days": "22.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.244Z",
+    "updated_at": "2026-03-05T12:19:56.244Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "13bbd44d-0bcc-4da0-91ad-063378340494",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "LN",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Linch",
+    "drilling_depth": 1250,
+    "benchmark_days": "36.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.260Z",
+    "updated_at": "2026-03-05T12:19:56.260Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "14a6bd4d-d2a9-4a25-b93f-e08efa57711d",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 1490,
+    "well_depth_end": 1680,
+    "field": "Akholjuni",
+    "drilling_depth": 1533,
+    "benchmark_days": "20.50",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.316Z",
+    "updated_at": "2026-01-16T11:58:58.608Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "1644af5d-7091-4f5f-84dd-8dfe7641e41a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "LN",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Linch",
+    "drilling_depth": 1750,
+    "benchmark_days": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.261Z",
+    "updated_at": "2026-03-05T12:19:56.261Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "189cdb79-7461-42fa-ad8e-b49c1257f7ad",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Akholjuni",
+    "drilling_depth": 750,
+    "benchmark_days": "13.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-03-05T12:19:56.268Z",
+    "updated_at": "2026-03-05T12:19:56.268Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "1bef9fed-96e3-476d-87dd-32d7a5fc3ae5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Sidetrack",
+    "well_depth_start": 2000,
+    "well_depth_end": 3000,
+    "field": "Akholjuni",
+    "drilling_depth": 2500,
+    "benchmark_days": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.241Z",
+    "updated_at": "2026-03-05T12:19:56.241Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "1f14e31e-5fe4-4470-aa85-ddfe87eae3de",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "WV",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Wavel",
+    "drilling_depth": 1250,
+    "benchmark_days": "27.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.263Z",
+    "updated_at": "2026-03-05T12:19:56.263Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "1f79fda7-feb5-412e-94a6-e2bb332e5eb0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 2500,
+    "well_depth_end": 3500,
+    "field": "Akholjuni",
+    "drilling_depth": 3000,
+    "benchmark_days": "110.00",
+    "loc_spec_factor": "HPHT",
+    "created_at": "2026-03-05T12:19:56.242Z",
+    "updated_at": "2026-03-05T12:19:56.242Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "23baae0f-54ac-4d21-89ac-a7b9256e79e3",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Kantharia",
+    "drilling_depth": 1250,
+    "benchmark_days": "33.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.253Z",
+    "updated_at": "2026-03-05T12:19:56.253Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "276a2b28-6ee1-428b-afef-ef60bccb91e5",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "BL",
+    "well_category": "Directional",
+    "well_depth_start": 1100,
+    "well_depth_end": 1250,
+    "field": "Balol",
+    "drilling_depth": 1155,
+    "benchmark_days": "14.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-28T15:47:39.492Z",
+    "updated_at": "2026-01-30T02:01:46.054Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "287c3bc6-afe7-4b8f-a095-389fadf8f6dc",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "LJ",
+    "well_category": "Directional",
+    "well_depth_start": 0,
+    "well_depth_end": 5000,
+    "field": "Langhnaj",
+    "drilling_depth": 2229,
+    "benchmark_days": "30.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:32:56.143Z",
+    "updated_at": "2026-01-30T07:32:56.143Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "28da1e24-2af8-4c20-b607-5c98a7ed7d5f",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "LW",
+    "well_category": "Directional",
+    "well_depth_start": 1050,
+    "well_depth_end": 1250,
+    "field": "Lanwa",
+    "drilling_depth": 1167,
+    "benchmark_days": "14.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-28T15:47:39.490Z",
+    "updated_at": "2026-01-30T05:46:10.862Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "2c04151b-8295-4344-8598-20e70ec05662",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Kantharia",
+    "drilling_depth": 750,
+    "benchmark_days": "18.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.250Z",
+    "updated_at": "2026-03-05T12:19:56.250Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "30724e3e-5dd0-4ef4-8d6c-06d9c0d4321b",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "BC",
+    "well_category": "Directional",
+    "well_depth_start": 1001,
+    "well_depth_end": 1300,
+    "field": "Bechraji",
+    "drilling_depth": 1080,
+    "benchmark_days": "11.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.488Z",
+    "updated_at": "2026-01-30T02:01:40.860Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "31cea332-8ec3-46aa-8530-50a6285ab9ac",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Akholjuni",
+    "drilling_depth": 1250,
+    "benchmark_days": "20.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-03-05T12:19:56.270Z",
+    "updated_at": "2026-03-05T12:19:56.270Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "33ee072a-c05e-43fe-ac60-5effd2ec585c",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "NN",
+    "well_category": "Directional",
+    "well_depth_start": 1550,
+    "well_depth_end": 2020,
+    "field": "Nandasan",
+    "drilling_depth": 1821,
+    "benchmark_days": "17.50",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.343Z",
+    "updated_at": "2026-01-30T05:46:20.247Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "355e9874-29e4-4ba9-ba1a-5b2e1dbe68aa",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Akholjuni",
+    "drilling_depth": 1250,
+    "benchmark_days": "28.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.232Z",
+    "updated_at": "2026-03-05T12:19:56.232Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "3e90c732-66a3-417a-9c22-787522c11305",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Directional",
+    "well_depth_start": 2000,
+    "well_depth_end": 2500,
+    "field": "Anklav",
+    "drilling_depth": 2250,
+    "benchmark_days": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.249Z",
+    "updated_at": "2026-03-05T12:19:56.249Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "3ed08a6c-a137-4313-8831-e13aeda48ab8",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "SK",
+    "well_category": "Directional",
+    "well_depth_start": 2150,
+    "well_depth_end": 2300,
+    "field": "South Kadi",
+    "drilling_depth": 2230,
+    "benchmark_days": "26.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-28T15:48:18.428Z",
+    "updated_at": "2026-01-30T05:45:25.791Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "3fd8d36b-7ef3-4a1d-a2de-d1d5587a8076",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "WV",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Wavel",
+    "drilling_depth": 1250,
+    "benchmark_days": "34.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.264Z",
+    "updated_at": "2026-03-05T12:19:56.264Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "43592145-1bac-4947-b639-8ffaffa7a46b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Sidetrack",
+    "well_depth_start": 1000,
+    "well_depth_end": 2000,
+    "field": "Anklav",
+    "drilling_depth": 1500,
+    "benchmark_days": "32.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.250Z",
+    "updated_at": "2026-03-05T12:19:56.250Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "48a389f7-51c8-495f-8560-97dd6a95d816",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "JR",
+    "well_category": "Directional",
+    "well_depth_start": 1450,
+    "well_depth_end": 1600,
+    "field": "Jhalora",
+    "drilling_depth": 1520,
+    "benchmark_days": "11.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.423Z",
+    "updated_at": "2026-01-30T05:44:43.877Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "491afbbf-117c-45c3-b233-e092bde28fa1",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "JN",
+    "well_category": "Directional",
+    "well_depth_start": 1515,
+    "well_depth_end": 2120,
+    "field": "Jotna",
+    "drilling_depth": 1770,
+    "benchmark_days": "16.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.494Z",
+    "updated_at": "2026-01-30T05:44:12.720Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "4ff7e047-5c4d-41ee-ab54-404d52068fea",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "SX",
+    "well_category": "Vertical",
+    "well_depth_start": 1630,
+    "well_depth_end": 1810,
+    "field": "Nawagam South",
+    "drilling_depth": 1727,
+    "benchmark_days": "31.30",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.319Z",
+    "updated_at": "2026-01-10T08:15:17.319Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "56b33171-39fc-4cee-a135-242ada9bae88",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Anklav",
+    "drilling_depth": 1250,
+    "benchmark_days": "38.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.247Z",
+    "updated_at": "2026-03-05T12:19:56.247Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "5a6e2767-bea4-4c08-b92c-2a90cc944a03",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 2000,
+    "well_depth_end": 2500,
+    "field": "Akholjuni",
+    "drilling_depth": 2250,
+    "benchmark_days": "55.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.234Z",
+    "updated_at": "2026-03-05T12:19:56.234Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "5c0b5471-a933-4db2-8ee1-ce44cc477ea0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Sidetrack",
+    "well_depth_start": 1000,
+    "well_depth_end": 2000,
+    "field": "Akholjuni",
+    "drilling_depth": 1500,
+    "benchmark_days": "30.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.240Z",
+    "updated_at": "2026-03-05T12:19:56.240Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "5d46d091-8fd7-49fb-ae66-80ab2aa561af",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "WV",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Wavel",
+    "drilling_depth": 750,
+    "benchmark_days": "19.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.262Z",
+    "updated_at": "2026-03-05T12:19:56.262Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "628f3f5f-c936-4d33-a389-7ecafbcd2305",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "WV",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Wavel",
+    "drilling_depth": 1750,
+    "benchmark_days": "48.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.265Z",
+    "updated_at": "2026-03-05T12:19:56.265Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "6fd4172a-d861-47ca-8ac3-0ed150a1047e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Anklav",
+    "drilling_depth": 1250,
+    "benchmark_days": "30.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.245Z",
+    "updated_at": "2026-03-05T12:19:56.245Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "7483ad21-fd7d-4de7-859c-a709f9046999",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Akholjuni",
+    "drilling_depth": 1250,
+    "benchmark_days": "28.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-03-05T12:19:56.267Z",
+    "updated_at": "2026-03-05T12:19:56.267Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "7a835dc0-e2d0-48d8-a306-ad75c5c97489",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "LN",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Linch",
+    "drilling_depth": 1250,
+    "benchmark_days": "28.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.259Z",
+    "updated_at": "2026-03-05T12:19:56.259Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "8159adca-b36f-4bc9-ac4e-d037ba4d95c9",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Vertical",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Kantharia",
+    "drilling_depth": 1750,
+    "benchmark_days": "36.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.252Z",
+    "updated_at": "2026-03-05T12:19:56.252Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "820e4786-9525-4706-b6de-39146f273770",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Sidetrack",
+    "well_depth_start": 1000,
+    "well_depth_end": 2000,
+    "field": "Kantharia",
+    "drilling_depth": 1500,
+    "benchmark_days": "28.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.257Z",
+    "updated_at": "2026-03-05T12:19:56.257Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "8d99e7b5-f378-4186-8ce8-4b5bfe8ffb20",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "VD 2",
+    "well_category": "Directional",
+    "well_depth_start": 1430,
+    "well_depth_end": 1595,
+    "field": "Vadatal",
+    "drilling_depth": 1499,
+    "benchmark_days": "18.30",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.320Z",
+    "updated_at": "2026-01-10T08:15:17.320Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "8dda93b8-708c-4304-974c-c01a6a120e63",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "SB",
+    "well_category": "Directional",
+    "well_depth_start": 1150,
+    "well_depth_end": 2000,
+    "field": "Sobhasan",
+    "drilling_depth": 1839,
+    "benchmark_days": "15.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.344Z",
+    "updated_at": "2026-01-30T05:46:23.867Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "9171c781-ccbd-46d4-a00d-ca333b13add0",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "LN",
+    "well_category": "Directional",
+    "well_depth_start": 1400,
+    "well_depth_end": 1800,
+    "field": "Linch",
+    "drilling_depth": 1583,
+    "benchmark_days": "14.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.497Z",
+    "updated_at": "2026-01-30T05:45:54.807Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "946433d6-668e-47e1-b0ba-0371f98b908e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Directional",
+    "well_depth_start": 1790,
+    "well_depth_end": 2020,
+    "field": "Kathana",
+    "drilling_depth": 1904,
+    "benchmark_days": "22.75",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.317Z",
+    "updated_at": "2026-01-10T08:15:17.317Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "96f3ff99-61cc-4f56-b64b-01671a440418",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "NG",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 1750,
+    "field": "Nawagam",
+    "drilling_depth": 1695,
+    "benchmark_days": "12.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.426Z",
+    "updated_at": "2026-01-30T05:44:52.602Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "9a588c9b-004e-47d5-bb17-662e25287f26",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "LJ",
+    "well_category": "Directional",
+    "well_depth_start": 2100,
+    "well_depth_end": 2350,
+    "field": "Langhnaj",
+    "drilling_depth": 1784,
+    "benchmark_days": "19.50",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.499Z",
+    "updated_at": "2026-01-30T05:45:49.862Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "9c6024d2-5da1-4dc4-a9a4-ab83c1875ec9",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 2500,
+    "well_depth_end": 3000,
+    "field": "Akholjuni",
+    "drilling_depth": 2750,
+    "benchmark_days": "85.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.239Z",
+    "updated_at": "2026-03-05T12:19:56.239Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "a2b16679-cd83-4037-8cce-e09c3eb28508",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "MW",
+    "well_category": "Directional",
+    "well_depth_start": 1850,
+    "well_depth_end": 2300,
+    "field": "Mewad",
+    "drilling_depth": 2098,
+    "benchmark_days": "20.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.341Z",
+    "updated_at": "2026-01-30T05:46:02.894Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "a6cd949f-05d1-430b-acf9-8e5ce6af63db",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "WS",
+    "well_category": "Directional",
+    "well_depth_start": 1600,
+    "well_depth_end": 1900,
+    "field": "Wadsar",
+    "drilling_depth": 1760,
+    "benchmark_days": "11.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.430Z",
+    "updated_at": "2026-01-30T05:45:20.069Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "a782ed70-cb0a-4783-965b-d1a4c0b014ce",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Kantharia",
+    "drilling_depth": 1750,
+    "benchmark_days": "45.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.254Z",
+    "updated_at": "2026-03-05T12:19:56.254Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "a9b26f2c-c689-4310-b347-96d474a5c2d5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "ND",
+    "well_category": "Directional",
+    "well_depth_start": 1530,
+    "well_depth_end": 1900,
+    "field": "Nadiad",
+    "drilling_depth": 1723,
+    "benchmark_days": "20.55",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.318Z",
+    "updated_at": "2026-01-10T08:15:17.319Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "ab9bce54-711e-4740-8449-b490c55403d4",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Kantharia",
+    "drilling_depth": 1250,
+    "benchmark_days": "26.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.251Z",
+    "updated_at": "2026-03-05T12:19:56.251Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "abe9aafa-99b3-4621-83e9-476ffee8a2f0",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "GM",
+    "well_category": "Directional",
+    "well_depth_start": 1150,
+    "well_depth_end": 1560,
+    "field": "Gamij",
+    "drilling_depth": 1330,
+    "benchmark_days": "10.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.422Z",
+    "updated_at": "2026-01-30T05:44:08.292Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "ac3f13e1-c526-4f20-8700-0a4c81c37ff2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 2000,
+    "well_depth_end": 2500,
+    "field": "Akholjuni",
+    "drilling_depth": 2250,
+    "benchmark_days": "65.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.238Z",
+    "updated_at": "2026-03-05T12:19:56.238Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "b170dfc2-191e-4280-a082-231aea0afed1",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "VD 3",
+    "well_category": "Directional",
+    "well_depth_start": 1725,
+    "well_depth_end": 2100,
+    "field": "Vadatal",
+    "drilling_depth": 1870,
+    "benchmark_days": "19.50",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.320Z",
+    "updated_at": "2026-01-10T08:15:17.320Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "b32e3d06-debf-4208-81cb-7f087f8bc8ab",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Directional",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Anklav",
+    "drilling_depth": 1750,
+    "benchmark_days": "52.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.248Z",
+    "updated_at": "2026-03-05T12:19:56.248Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "b7ed446f-8e5f-437b-b10b-451f359e41b7",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 1500,
+    "well_depth_end": 2000,
+    "field": "Akholjuni",
+    "drilling_depth": 1750,
+    "benchmark_days": "38.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.233Z",
+    "updated_at": "2026-03-05T12:19:56.233Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "c2f463a6-f4bb-489c-9e1b-84d86ec2346e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 2500,
+    "well_depth_end": 3500,
+    "field": "Akholjuni",
+    "drilling_depth": 3000,
+    "benchmark_days": "90.00",
+    "loc_spec_factor": "HPHT",
+    "created_at": "2026-03-05T12:19:56.243Z",
+    "updated_at": "2026-03-05T12:19:56.243Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "c38c3e06-3e8a-41d5-ac6e-89ab2d21187c",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "KT",
+    "well_category": "Directional",
+    "well_depth_start": 2000,
+    "well_depth_end": 2500,
+    "field": "Kantharia",
+    "drilling_depth": 2250,
+    "benchmark_days": "60.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.255Z",
+    "updated_at": "2026-03-05T12:19:56.255Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "c9d68f24-6ef4-4492-8731-6b3627fc52a9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "JN",
+    "well_category": "Directional",
+    "well_depth_start": 1830,
+    "well_depth_end": 2290,
+    "field": "Jotna",
+    "drilling_depth": 2161,
+    "benchmark_days": "29.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-28T15:47:39.496Z",
+    "updated_at": "2026-01-30T05:44:33.822Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "cc46cce2-a318-4482-86f5-d4bb5439ddc2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "LM",
+    "well_category": "Directional",
+    "well_depth_start": 1060,
+    "well_depth_end": 1770,
+    "field": "Limbodra",
+    "drilling_depth": 1340,
+    "benchmark_days": "9.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.425Z",
+    "updated_at": "2026-01-30T05:44:56.797Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "d3140b79-4fb9-4944-9c1c-f05d986e2aef",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Akholjuni",
+    "drilling_depth": 750,
+    "benchmark_days": "20.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.230Z",
+    "updated_at": "2026-03-05T12:19:56.230Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "d45cfcb2-7a6b-4395-90b5-2f29ba17ecd6",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "KL",
+    "well_category": "Directional",
+    "well_depth_start": 1600,
+    "well_depth_end": 1965,
+    "field": "Kalol",
+    "drilling_depth": 1700,
+    "benchmark_days": "13.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.424Z",
+    "updated_at": "2026-01-30T05:44:48.534Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "d72f7c2f-e3ec-458b-ac33-94f3c9efb3d5",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "SN",
+    "well_category": "Directional",
+    "well_depth_start": 1130,
+    "well_depth_end": 1180,
+    "field": "Santhal",
+    "drilling_depth": 1168,
+    "benchmark_days": "14.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.345Z",
+    "updated_at": "2026-01-30T05:46:28.377Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "d9a6209b-d509-44b5-95ef-941e45883ffe",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "PL",
+    "well_category": "Directional",
+    "well_depth_start": 1600,
+    "well_depth_end": 1750,
+    "field": "Paliyad",
+    "drilling_depth": 1730,
+    "benchmark_days": "13.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.427Z",
+    "updated_at": "2026-01-30T05:45:02.113Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "da000e47-8160-4231-81d5-d6ecf1ea271a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AV",
+    "well_category": "Directional",
+    "well_depth_start": 1175,
+    "well_depth_end": 1470,
+    "field": "Anklav",
+    "drilling_depth": 1253,
+    "benchmark_days": "13.65",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.317Z",
+    "updated_at": "2026-01-10T08:15:17.317Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "db5a6e86-2a8f-4d28-abec-bc084b9d28c5",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "LN",
+    "well_category": "Directional",
+    "well_depth_start": 1801,
+    "well_depth_end": 2400,
+    "field": "Linch",
+    "drilling_depth": 1993,
+    "benchmark_days": "17.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.498Z",
+    "updated_at": "2026-01-30T05:45:58.257Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "de548b8a-0e3c-4cee-b8f5-3422e777b410",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "pool": "NK",
+    "well_category": "Directional",
+    "well_depth_start": 1050,
+    "well_depth_end": 1250,
+    "field": "North Kadi",
+    "drilling_depth": 1209,
+    "benchmark_days": "11.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:47:39.491Z",
+    "updated_at": "2026-01-30T05:46:15.410Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "e3da91ca-59ea-4b87-a658-264c7bdca5d1",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Akholjuni",
+    "drilling_depth": 750,
+    "benchmark_days": "15.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-03-05T12:19:56.266Z",
+    "updated_at": "2026-03-05T12:19:56.266Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "ed7db658-28cc-40a5-a7fa-5c8f3ddbac71",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Vertical",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Akholjuni",
+    "drilling_depth": 1250,
+    "benchmark_days": "22.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-03-05T12:19:56.267Z",
+    "updated_at": "2026-03-05T12:19:56.267Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "ef110ef1-95c0-4508-842f-333470681c19",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "MY",
+    "well_category": "Directional",
+    "well_depth_start": 1760,
+    "well_depth_end": 1960,
+    "field": "Nawagam South",
+    "drilling_depth": 1838,
+    "benchmark_days": "25.32",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-10T08:15:17.318Z",
+    "updated_at": "2026-01-10T08:15:17.318Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "f7f35a53-4e47-40af-b426-54c6d795aa86",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "AK",
+    "well_category": "Directional",
+    "well_depth_start": 1000,
+    "well_depth_end": 1500,
+    "field": "Akholjuni",
+    "drilling_depth": 1250,
+    "benchmark_days": "35.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.235Z",
+    "updated_at": "2026-03-05T12:19:56.235Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "fa33f43f-5d69-4b5f-bbdc-6df1b86fa367",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "pool": "LN",
+    "well_category": "Vertical",
+    "well_depth_start": 500,
+    "well_depth_end": 1000,
+    "field": "Linch",
+    "drilling_depth": 750,
+    "benchmark_days": "20.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.259Z",
+    "updated_at": "2026-03-05T12:19:56.259Z"
+  }
+},
+{
+  "model": "scheduler.drillingbenchmark",
+  "pk": "fb657c98-7a74-42b1-a3eb-e04f7967e463",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "pool": "WD",
+    "well_category": "Directional",
+    "well_depth_start": 1650,
+    "well_depth_end": 2050,
+    "field": "Wadu",
+    "drilling_depth": 1760,
+    "benchmark_days": "14.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-28T15:48:18.429Z",
+    "updated_at": "2026-01-30T05:45:15.265Z"
+  }
+}
+]

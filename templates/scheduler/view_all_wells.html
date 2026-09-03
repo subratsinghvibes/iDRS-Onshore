@@ -1,0 +1,654 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}View All Wells - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Page styling */
+        body {
+            background: #f8f9fa;
+        }
+        
+        .main-content {
+            background: transparent !important;
+        }
+        
+        .view-all-page {
+            color: #212529;
+        }
+        
+        /* Table styling */
+        .table-scroll-container {
+            max-height: calc(100vh - 350px);
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        /* Table column widths for better spacing */
+        #wells-table {
+            min-width: 2200px;
+            white-space: nowrap;
+        }
+        
+        #wells-table th,
+        #wells-table td {
+            padding: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        #wells-table th:nth-child(1),
+        #wells-table td:nth-child(1) { min-width: 80px; }
+        
+        #wells-table th:nth-child(2),
+        #wells-table td:nth-child(2) { min-width: 150px; }
+        
+        #wells-table th:nth-child(3),
+        #wells-table td:nth-child(3) { min-width: 120px; }
+        
+        #wells-table th:nth-child(4),
+        #wells-table td:nth-child(4) { min-width: 120px; }
+        
+        #wells-table th:nth-child(5),
+        #wells-table td:nth-child(5) { min-width: 120px; }
+        
+        #wells-table th:nth-child(6),
+        #wells-table td:nth-child(6) { min-width: 100px; }
+        
+        #wells-table th:nth-child(7),
+        #wells-table td:nth-child(7) { min-width: 100px; }
+        
+        #wells-table th:nth-child(8),
+        #wells-table td:nth-child(8) { min-width: 140px; }
+        
+        #wells-table th:nth-child(9),
+        #wells-table td:nth-child(9) { min-width: 100px; }
+        
+        #wells-table th:nth-child(10),
+        #wells-table td:nth-child(10) { min-width: 100px; }
+        
+        #wells-table th:nth-child(11),
+        #wells-table td:nth-child(11) { min-width: 100px; }
+        
+        #wells-table th:nth-child(12),
+        #wells-table td:nth-child(12) { min-width: 100px; }
+        
+        #wells-table th:nth-child(13),
+        #wells-table td:nth-child(13) { min-width: 100px; }
+        
+        #wells-table th:nth-child(14),
+        #wells-table td:nth-child(14) { min-width: 110px; }
+        
+        #wells-table th:nth-child(15),
+        #wells-table td:nth-child(15) { min-width: 100px; }
+        
+        #wells-table th:nth-child(16),
+        #wells-table td:nth-child(16) { min-width: 80px; }
+        
+        #wells-table th:nth-child(17),
+        #wells-table td:nth-child(17) { min-width: 100px; }
+        
+        #wells-table th:nth-child(18),
+        #wells-table td:nth-child(18) { min-width: 130px; }
+        
+        #wells-table th:nth-child(19),
+        #wells-table td:nth-child(19) { min-width: 100px; }
+        
+        #wells-table th:nth-child(20),
+        #wells-table td:nth-child(20) { min-width: 140px; }
+        
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .sortable:hover {
+            background-color: #e9ecef;
+        }
+        
+        .w-actions {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        /* Page title styling */
+        .page-title-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-right: 0.75rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--adb-primary-dark);
+            margin: 0;
+        }
+        
+        .page-subtitle {
+            color: var(--adb-secondary);
+            font-size: 1rem;
+            margin: 0.25rem 0 0 3.25rem;
+        }
+        
+        .page-separator {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--adb-gray-300), transparent);
+            margin: 1.5rem 0;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(10, 47, 90, 0.1);
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            background: transparent;
+        }
+        
+        .card-header h5 {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        
+        .card-header h5 i {
+            color: var(--adb-primary) !important;
+            font-size: 0.9rem;
+        }
+        
+        .card-header .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+        }
+        
+        .card-header .btn-sm i {
+            font-size: 0.7rem;
+        }
+        
+        /* Search input styling */
+        .data-search-input {
+            width: 200px;
+            font-size: 0.75rem;
+        }
+        
+        /* Button styling */
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(10, 47, 90, 0.3);
+        }
+        
+        /* Location badge */
+        .location-badge {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border-radius: 6px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- CSRF Token for AJAX requests -->
+    {% csrf_token %}
+    
+    <div class="view-all-page">
+        <!-- Page Header -->
+        <div class="row align-items-center mb-2">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi bi-droplet page-title-icon"></i>
+                    <h1 class="page-title mb-0">All Wells</h1>
+                </div>
+                <p class="page-subtitle">
+                    Comprehensive view of all drilling wells in the system
+                </p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-3 justify-content-end">
+                    {% if can_view_all_locations %}
+                    <select class="form-select form-select-sm" id="location-selector" onchange="filterByLocation()">
+                        <option value="">All Locations</option>
+                    </select>
+                    {% else %}
+                    <span class="badge bg-primary location-badge">
+                        <i class="bi bi-geo-alt me-1"></i>{{ user_location }}
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'data_management' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Separator Line -->
+        <hr class="page-separator">
+        
+        <!-- Main Content Card -->
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-droplet me-2"></i>
+                    All Wells (<span id="total-wells-count">0</span>)
+                </h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="well-search" class="form-control form-control-sm data-search-input" placeholder="Search wells..." onkeyup="searchWells()">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-scroll-container">
+                    <table class="table table-sm table-hover mb-0" id="wells-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="sortable" onclick="sortTable(0)">
+                                    SN <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(1)">
+                                    Name <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(2)">
+                                    Location <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(3)">
+                                    Field <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(4)">
+                                    Type <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(5)">
+                                    Profile <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(6)">
+                                    Depth (m) <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(7)">
+                                    Rig Capacity (HP) <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(8)">
+                                    DRL Days <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(9)">
+                                    PT Days <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(10)">
+                                    Duration <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(11)">
+                                    Latitude <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(12)">
+                                    Longitude <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(13)">
+                                    RTD <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(14)">
+                                    BOP Stack <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(15)">
+                                    TDS <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(16)">
+                                    Footprint <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(17)">
+                                    Preferred Rig <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(18)">
+                                    Priority <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="wells-table-body">
+                            <tr>
+                                <td colspan="19" class="text-center text-muted py-4">Loading wells data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allWellsData = [];
+        let filteredWellsData = [];
+        let currentLocationFilter = '';
+        let companyCodesMap = {};
+        let sortColumn = 0;
+        let sortAscending = true;
+        
+        // Get location from data
+        function getLocationFromData(item) {
+            if (item.location_value) return item.location_value;
+            if (item.location_name) return item.location_name;
+            if (item.asset_id) {
+                const mapped = companyCodesMap[item.asset_id.toUpperCase()];
+                if (mapped) return mapped;
+                return item.asset_id;
+            }
+            return 'N/A';
+        }
+        
+        // Load company codes for mapping
+        async function loadCompanyCodes() {
+            try {
+                const response = await fetch('/api/company-codes/', { credentials: 'same-origin' });
+                if (!response.ok) return;
+                const data = await response.json();
+                const codes = Array.isArray(data) ? data : (data.results || []);
+                codes.forEach(code => {
+                    if (code.company_code && code.location) {
+                        companyCodesMap[code.company_code.toUpperCase()] = code.location;
+                        companyCodesMap[code.location.toUpperCase()] = code.location;
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load company codes:', error);
+            }
+        }
+        
+        // Load all wells
+        async function loadWells() {
+            try {
+                let allWells = [];
+                let nextUrl = '/api/wells/';
+                while (nextUrl) {
+                    const response = await fetch(nextUrl, { credentials: 'same-origin' });
+                    if (!response.ok) throw new Error('Failed to load wells');
+                    const data = await response.json();
+                    const results = Array.isArray(data) ? data : (data.results || []);
+                    allWells = allWells.concat(results);
+                    nextUrl = data.next || null;
+                }
+                allWellsData = allWells;
+                
+                // Populate location dropdown
+                populateLocationDropdown();
+                
+                // Display wells
+                filterAndDisplayWells();
+            } catch (error) {
+                console.error('Error loading wells:', error);
+                document.getElementById('wells-table-body').innerHTML = 
+                    '<tr><td colspan="19" class="text-center text-danger py-4">Error loading wells data</td></tr>';
+            }
+        }
+        
+        // Populate location dropdown
+        function populateLocationDropdown() {
+            const selector = document.getElementById('location-selector');
+            if (!selector) return;
+            
+            const locations = new Set();
+            allWellsData.forEach(well => {
+                const loc = getLocationFromData(well);
+                if (loc && loc !== 'N/A') locations.add(loc);
+            });
+            
+            const sortedLocations = Array.from(locations).sort();
+            sortedLocations.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                option.textContent = loc;
+                selector.appendChild(option);
+            });
+        }
+        
+        // Filter by location
+        function filterByLocation() {
+            const selector = document.getElementById('location-selector');
+            currentLocationFilter = selector ? selector.value : '';
+            filterAndDisplayWells();
+        }
+        
+        // Search wells
+        function searchWells() {
+            filterAndDisplayWells();
+        }
+        
+        // Filter and display wells
+        function filterAndDisplayWells() {
+            const searchTerm = document.getElementById('well-search')?.value.toLowerCase() || '';
+            
+            // Filter by location
+            filteredWellsData = currentLocationFilter 
+                ? allWellsData.filter(well => {
+                    const loc = getLocationFromData(well);
+                    return loc.toUpperCase() === currentLocationFilter.toUpperCase();
+                })
+                : [...allWellsData];
+            
+            // Filter by search term
+            if (searchTerm) {
+                filteredWellsData = filteredWellsData.filter(well => {
+                    const name = (well.name || '').toLowerCase();
+                    const assetId = getLocationFromData(well).toLowerCase();
+                    const type = (well.well_type || well.type || '').toLowerCase();
+                    return name.includes(searchTerm) || assetId.includes(searchTerm) || type.includes(searchTerm);
+                });
+            }
+            
+            // Sort data
+            sortTableData();
+            
+            // Display
+            displayWells();
+        }
+        
+        // Get priority badge class
+        function getPriorityBadgeClass(priority) {
+            const p = (priority || '').toUpperCase();
+            if (p === 'HIGH') return 'danger';
+            if (p === 'MEDIUM') return 'warning';
+            if (p === 'LOW') return 'success';
+            return 'secondary';
+        }
+        
+        // Display wells in table
+        function displayWells() {
+            const tableBody = document.getElementById('wells-table-body');
+            document.getElementById('total-wells-count').textContent = filteredWellsData.length;
+            
+            if (filteredWellsData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="19" class="text-center text-muted py-4">No wells found</td></tr>';
+                return;
+            }
+            
+            const html = filteredWellsData.map(well => `
+                <tr>
+                    <td>${well.sn || 'N/A'}</td>
+                    <td><strong>${well.name || 'N/A'}</strong></td>
+                    <td>${getLocationFromData(well)}</td>
+                    <td>${well.field_name || well.fieldName || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-${(well.well_type || well.type) === 'EXP' ? 'info' : 'primary'}">
+                            ${well.well_type || well.type || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">
+                            ${well.well_profile || well.profile || 'N/A'}
+                        </span>
+                    </td>
+                    <td>${well.depth ? Number(well.depth).toLocaleString() : 'N/A'}</td>
+                    <td>${well.rig_capacity_required_hp ? Number(well.rig_capacity_required_hp).toLocaleString() : 'N/A'}</td>
+                    <td>${well.drl_days || well.drlDays || 'N/A'}</td>
+                    <td>${well.pt_days || well.ptDays || 'N/A'}</td>
+                    <td>${well.duration || 'N/A'}</td>
+                    <td>${well.latitude || 'N/A'}</td>
+                    <td>${well.longitude || 'N/A'}</td>
+                    <td>${well.rtd || 'N/A'}</td>
+                    <td>${well.bop_stack || well.bopStack || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-${well.tds_requirement === 'Y' ? 'success' : 'secondary'}">
+                            ${well.tds_requirement === 'Y' ? 'Yes' : 'No'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-${well.footprint === 'Mobile' ? 'primary' : 'secondary'}">
+                            ${well.footprint || 'N/A'}
+                        </span>
+                    </td>
+                    <td>${well.preferred_rig || well.preferredRig || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-${getPriorityBadgeClass(well.priority)}">
+                            ${well.priority || 'N/A'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Sort table
+        function sortTable(columnIndex) {
+            if (sortColumn === columnIndex) {
+                sortAscending = !sortAscending;
+            } else {
+                sortColumn = columnIndex;
+                sortAscending = true;
+            }
+            
+            sortTableData();
+            displayWells();
+        }
+        
+        // Sort table data
+        function sortTableData() {
+            filteredWellsData.sort((a, b) => {
+                let valA, valB;
+                
+                switch (sortColumn) {
+                    case 0: // SN
+                        valA = Number(a.sn || 0);
+                        valB = Number(b.sn || 0);
+                        break;
+                    case 1: // Name
+                        valA = (a.name || '').toLowerCase();
+                        valB = (b.name || '').toLowerCase();
+                        break;
+                    case 2: // Location
+                        valA = getLocationFromData(a).toLowerCase();
+                        valB = getLocationFromData(b).toLowerCase();
+                        break;
+                    case 3: // Field
+                        valA = (a.field_name || a.fieldName || '').toLowerCase();
+                        valB = (b.field_name || b.fieldName || '').toLowerCase();
+                        break;
+                    case 4: // Type
+                        valA = (a.well_type || a.type || '').toLowerCase();
+                        valB = (b.well_type || b.type || '').toLowerCase();
+                        break;
+                    case 5: // Profile
+                        valA = (a.well_profile || a.profile || '').toLowerCase();
+                        valB = (b.well_profile || b.profile || '').toLowerCase();
+                        break;
+                    case 6: // Depth
+                        valA = Number(a.depth || 0);
+                        valB = Number(b.depth || 0);
+                        break;
+                    case 7: // Rig Capacity
+                        valA = Number(a.rig_capacity_required_hp || 0);
+                        valB = Number(b.rig_capacity_required_hp || 0);
+                        break;
+                    case 8: // DRL Days
+                        valA = Number(a.drl_days || a.drlDays || 0);
+                        valB = Number(b.drl_days || b.drlDays || 0);
+                        break;
+                    case 9: // PT Days
+                        valA = Number(a.pt_days || a.ptDays || 0);
+                        valB = Number(b.pt_days || b.ptDays || 0);
+                        break;
+                    case 10: // Duration
+                        valA = Number(a.duration || 0);
+                        valB = Number(b.duration || 0);
+                        break;
+                    case 11: // Latitude
+                        valA = Number(a.latitude || 0);
+                        valB = Number(b.latitude || 0);
+                        break;
+                    case 12: // Longitude
+                        valA = Number(a.longitude || 0);
+                        valB = Number(b.longitude || 0);
+                        break;
+                    case 13: // RTD
+                        valA = new Date(a.rtd || 0);
+                        valB = new Date(b.rtd || 0);
+                        break;
+                    case 14: // BOP Stack
+                        valA = Number(a.bop_stack || a.bopStack || 0);
+                        valB = Number(b.bop_stack || b.bopStack || 0);
+                        break;
+                    case 15: // TDS
+                        valA = (a.tds_requirement || '').toLowerCase();
+                        valB = (b.tds_requirement || '').toLowerCase();
+                        break;
+                    case 16: // Footprint
+                        valA = (a.footprint || '').toLowerCase();
+                        valB = (b.footprint || '').toLowerCase();
+                        break;
+                    case 17: // Preferred Rig
+                        valA = (a.preferred_rig || a.preferredRig || '').toLowerCase();
+                        valB = (b.preferred_rig || b.preferredRig || '').toLowerCase();
+                        break;
+                    case 18: // Priority
+                        const priorityOrder = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+                        valA = priorityOrder[(a.priority || '').toUpperCase()] || 0;
+                        valB = priorityOrder[(b.priority || '').toUpperCase()] || 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        // View well details (placeholder)
+        function viewWellDetails(wellId) {
+            alert('View details for well: ' + wellId + '\n(This feature can be implemented to show a modal with full well details)');
+        }
+        
+        // Edit well
+        function editWell(wellId) {
+            // Redirect to data management page and trigger edit modal
+            window.location.href = '/data/?edit_well=' + wellId;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadCompanyCodes();
+            await loadWells();
+        });
+    </script>
+{% endblock %}

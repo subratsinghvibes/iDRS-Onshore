@@ -1,0 +1,1563 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staged Wells Management - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* CRITICAL: Ensure Bootstrap Icons always display correctly */
+        .staged-wells-page i.bi,
+        .staged-wells-page .bi::before,
+        .modal i.bi,
+        .modal .bi::before {
+            -webkit-text-fill-color: currentColor !important;
+            background: none !important;
+            background-clip: initial !important;
+            -webkit-background-clip: initial !important;
+            font-family: "bootstrap-icons" !important;
+        }
+        
+        /* Compact table styling */
+        #staged-wells-table {
+            font-size: 0.85rem;
+        }
+        
+        #staged-wells-table thead th {
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        #staged-wells-table thead th.sortable-header:hover {
+            background-color: #e9ecef;
+            user-select: none;
+        }
+        
+        #staged-wells-table tbody td {
+            padding: 0.4rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        /* Actions column - narrower */
+        #staged-wells-table th:last-child,
+        #staged-wells-table td:last-child {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+        }
+        
+        /* Page header styling is centralized in style.css */
+        /* Stats card styles are centralized in style.css */
+        
+        /* Status badges */
+        .status-badge {
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-imported {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        /* Button and table styling centralized in style.css */
+        
+        /* Modern Modal Styling */
+        .modern-modal .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .modern-modal .modal-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .modern-modal .modal-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .modern-modal .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        
+        .modern-modal .modal-body {
+            padding: 1.5rem;
+            max-height: 68vh;
+            overflow-y: auto;
+        }
+        
+        .modern-section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            padding-bottom: 0.625rem;
+            margin-bottom: 0.875rem;
+            border-bottom: 2px solid #e5e7eb;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .modern-modal .form-label {
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.8125rem;
+            margin-bottom: 0.375rem;
+        }
+        
+        .modern-modal .form-control,
+        .modern-modal .form-select {
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .modern-modal .form-control:focus,
+        .modern-modal .form-select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        .modern-modal .modal-footer {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+            border-top: 2px solid #e5e7eb;
+            padding: 1rem 1.5rem;
+        }
+        
+        .missing-field {
+            color: #ef4444;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        /* CRITICAL FIX: Proper z-index hierarchy to ensure modal appears above sidebar */
+        #editModal {
+            z-index: 1060 !important;
+        }
+        
+        #editModal .modal-backdrop {
+            z-index: 1055 !important;
+        }
+        
+        #editModal .modal-dialog {
+            z-index: 1061 !important;
+        }
+        
+        /* Ensure sidebar stays below modal */
+        .sidebar {
+            z-index: 1000 !important;
+        }
+        
+        /* Prevent body scroll lock issues */
+        body.modal-open {
+            overflow: hidden !important;
+            padding-right: 0 !important;
+        }
+        
+        /* Ensure modal content is clickable and visible */
+        .modern-modal .modal-content {
+            position: relative;
+            z-index: 1062 !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Fix modal body scrolling */
+        .modern-modal .modal-body {
+            position: relative;
+            pointer-events: auto !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 staged-wells-page">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h1 class="page-title mb-2">Staged Wells Management</h1>
+            <p class="page-subtitle mb-0">Complete additional fields for uploaded wells before finalizing them to the wells database</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <!-- Location Filter -->
+            <select class="form-select form-select-sm" id="location-selector" style="width: auto; min-width: 180px;">
+                <option value="">All Locations</option>
+            </select>
+            <a href="{% url 'basket_creation' %}" class="btn btn-outline-primary btn-sm" id="baskets-btn">
+                <i class="bi bi-basket me-2"></i>Baskets
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <!-- Enhanced Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-muted">Pending</div>
+                        <div class="h6 text-success" id="pending-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-muted">Completed</div>
+                        <div class="h6 text-success" id="completed-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-muted">Imported</div>
+                        <div class="h6 text-success" id="imported-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-warning">Missing Coords</div>
+                        <div class="h6 text-warning" id="missing-coords-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-danger">Missing Location</div>
+                        <div class="h6 text-danger" id="missing-location-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="clean-card h-100">
+                <div class="clean-card-body">
+                    <div class="text-center">
+                        <div class="text-xs text-muted">Total Wells</div>
+                        <div class="h6 text-success" id="total-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Action Buttons -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    
+                    <!-- Status Filter Buttons -->
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary btn-sm active" data-filter="all">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>All Wells
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-filter="PENDING">
+                            <i class="bi bi-clock me-1"></i>Pending
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-filter="COMPLETED">
+                            <i class="bi bi-check-circle me-1"></i>Completed
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-filter="IMPORTED">
+                            <i class="bi bi-database me-1"></i>Imported
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Management and Action Buttons -->
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-warning btn-sm" id="set-blank-rtd-btn" title="Set RTD date for all wells with blank RTD">
+                        <i class="bi bi-calendar-plus me-1"></i>Set Blank RTD Dates
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="finalize-all-btn">
+                        <i class="bi bi-check-all me-1"></i>Finalize All Completed
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="delete-all-staged-btn" title="Delete all staged wells currently shown">
+                        <i class="bi bi-trash me-1"></i>Delete All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staged Wells Table -->
+    <div class="section-card">
+        <div class="section-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover dataTable mb-0" id="staged-wells-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable-header" data-sort-key="name" style="cursor:pointer;">Well Name <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="location_value" style="cursor:pointer;">Location <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="field_name" style="cursor:pointer;">Field <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="well_type" style="cursor:pointer;">Type <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="depth" style="cursor:pointer;">Depth (m) <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="rtd" style="cursor:pointer;">RTD <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="priority" style="cursor:pointer;">Priority <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th class="sortable-header" data-sort-key="status" style="cursor:pointer;">Status <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th>Missing</th>
+                            <th class="sortable-header" data-sort-key="uploaded_by_username" style="cursor:pointer;">Uploaded By <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size:0.7rem;"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staged-wells-tbody">
+                        <tr>
+                            <td colspan="11" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading staged wells...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block modals %}
+<!-- Set Blank RTD Modal -->
+<div class="modal fade modern-modal" id="setBlankRtdModal" tabindex="-1" aria-labelledby="setBlankRtdModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setBlankRtdModalLabel"><i class="bi bi-calendar-plus me-2"></i>Set RTD for Wells with Blank RTD</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">This will set the Ready-To-Drill (RTD) date for all wells that currently have a blank RTD value.</p>
+                <div class="mb-3">
+                    <label for="bulk-rtd-date" class="form-label">RTD Date</label>
+                    <input type="date" class="form-control" id="bulk-rtd-date" required>
+                </div>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span id="blank-rtd-count">0</span> well(s) with blank RTD will be updated.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirm-set-rtd-btn">
+                    <i class="bi bi-check-lg me-1"></i>Set RTD Dates
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal - placed in modals block for proper z-index layering at body root level -->
+<div class="modal fade modern-modal" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel"><i class="bi bi-pencil-square me-2"></i>Complete Well Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-well-id">
+                    
+                    <!-- Basic Information Section -->
+                    <div class="modern-section-title"><i class="bi bi-info-circle me-2"></i>Basic Information (from CSV)</div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Well Name:</strong></p>
+                            <p class="text-muted" id="display-name">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Location:</strong></p>
+                            <p class="text-muted" id="display-location">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Asset ID:</strong></p>
+                            <p class="text-muted" id="display-asset">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Type:</strong></p>
+                            <p class="text-muted" id="display-type">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Depth:</strong></p>
+                            <p class="text-muted"><span id="display-depth">-</span> m</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>RTD (Ready to Drill):</strong></p>
+                            <p class="text-muted" id="display-rtd">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Coordinates Section -->
+                    <div class="modern-section-title"><i class="bi bi-geo-alt me-2"></i>GPS Coordinates</div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="latitude" class="form-label">Latitude (Decimal Degrees) *</label>
+                            <input type="number" class="form-control" id="latitude" step="0.000001" min="-90" max="90" required>
+                            <small class="form-text text-muted">Example: 22.221219</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="longitude" class="form-label">Longitude (Decimal Degrees) *</label>
+                            <input type="number" class="form-control" id="longitude" step="0.000001" min="-180" max="180" required>
+                            <small class="form-text text-muted">Example: 73.022318</small>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="modern-section-title"><i class="bi bi-clipboard-check me-2"></i>Additional Information (Required)</div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="field_name" class="form-label">Field Name</label>
+                            <input type="text" class="form-control" id="field_name" placeholder="Enter field name for benchmark lookup">
+                            <small class="form-text text-muted">Used for auto-calculating DRL Days and PT Days</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="well_profile" class="form-label">Well Profile *</label>
+                            <select class="form-select" id="well_profile" required>
+                                <option value="">Select...</option>
+                                <option value="VE">Vertical</option>
+                                <option value="DI">Directional</option>
+                                <option value="SD">Sidetrack</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rig_capacity_required_hp" class="form-label">Rig Capacity Required (HP) *</label>
+                            <input type="number" class="form-control" id="rig_capacity_required_hp" min="1" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="drl_days" class="form-label">DRL Days *</label>
+                            <input type="number" class="form-control" id="drl_days" min="0" step="0.01" required>
+                            <small class="form-text text-muted">Auto-calculated from benchmark</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="pt_days" class="form-label">PT Days *</label>
+                            <input type="number" class="form-control" id="pt_days" min="0" step="0.01" required>
+                            <small class="form-text text-muted">Auto-calculated from rig norms</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="duration" class="form-label">Duration (Days) *</label>
+                            <input type="number" class="form-control" id="duration" min="1" required>
+                            <small class="form-text text-muted">Auto-calculated (DRL + PT)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-info btn-sm" id="autoCalculateBtn">
+                                <i class="bi bi-calculator me-1"></i>Auto-Calculate Days
+                            </button>
+                            <small class="text-muted ms-2">Calculate DRL Days, PT Days, and Duration based on field name</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="bop_stack" class="form-label">BOP Stack *</label>
+                            <input type="number" class="form-control" id="bop_stack" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tds_requirement" class="form-label">TDS Requirement *</label>
+                            <select class="form-select" id="tds_requirement" required>
+                                <option value="">Select...</option>
+                                <option value="Y">Yes</option>
+                                <option value="N">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="footprint" class="form-label">Footprint *</label>
+                            <select class="form-select" id="footprint" required>
+                                <option value="">Select...</option>
+                                <option value="Mobile">Mobile</option>
+                                <option value="Fixed">Fixed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="preferred_rig" class="form-label">Preferred Rig</label>
+                            <input type="text" class="form-control" id="preferred_rig">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="expected_potential" class="form-label">Expected Potential</label>
+                            <input type="text" class="form-control" id="expected_potential">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let stagedWells = [];
+    let currentFilter = 'all';
+    let currentLocationFilter = '';
+    let editModal;
+    let benchmarks = []; // Store benchmark data for well profile matching
+    let rigsData = []; // Store rig data for capacity/BOP learning
+    let rigCapacityCache = {}; // Cache: {location: [{drilling_capacity_m, rig_capacity_hp, bop_stack}, ...]}
+    
+    // Sorting state
+    let sortKey = null;
+    let sortAscending = true;
+    
+    // Get location from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLocation = urlParams.get('location');
+    if (urlLocation) {
+        currentLocationFilter = urlLocation;
+    }
+    
+    // Wait for DOM to be fully loaded before initializing modal
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize modal after DOM is ready
+        const modalElement = document.getElementById('editModal');
+        if (modalElement) {
+            editModal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            
+            // CRITICAL FIX: Clean up modal state on hide to prevent backdrop lock
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                // Remove any orphaned backdrops
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                
+                // Reset body state
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+                
+                // Reset modal dialog position
+                const modalDialog = this.querySelector('.modal-dialog');
+                if (modalDialog) {
+                    modalDialog.style.transform = '';
+                }
+            });
+            
+            // CRITICAL FIX: Ensure proper cleanup when modal is shown
+            modalElement.addEventListener('show.bs.modal', function() {
+                // Remove any existing backdrops first
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+            });
+        }
+        
+        // Setup other event listeners
+        setupAutoCalculation();
+        loadBenchmarks(); // Load benchmarks for well profile matching
+        loadRigsData(); // Load rigs data for capacity/BOP learning
+        loadStagedWells();
+        setupFilterButtons();
+        setupFinalizeAllButton();
+        setupSetBlankRtdButton();
+        setupDeleteAllButton();
+        setupSaveButton();
+        
+        // Setup Baskets button to pass location
+        setupBasketsButton();
+        
+        // Setup sortable headers
+        document.querySelectorAll('.sortable-header').forEach(th => {
+            th.addEventListener('click', function() {
+                const key = this.dataset.sortKey;
+                if (sortKey === key) {
+                    sortAscending = !sortAscending;
+                } else {
+                    sortKey = key;
+                    sortAscending = true;
+                }
+                // Update header icons
+                document.querySelectorAll('.sortable-header i').forEach(icon => {
+                    icon.className = 'bi bi-arrow-down-up ms-1 text-muted';
+                    icon.style.fontSize = '0.7rem';
+                });
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.className = sortAscending ? 'bi bi-arrow-up ms-1 text-primary' : 'bi bi-arrow-down ms-1 text-primary';
+                    icon.style.fontSize = '0.7rem';
+                }
+                renderTable();
+            });
+        });
+    });
+    
+    function loadBenchmarks() {
+        // Load benchmarks from API for well profile matching
+        fetch('/api/benchmarks/')
+            .then(response => response.json())
+            .then(response => {
+                // API returns {data: benchmarks} not just benchmarks
+                benchmarks = response.data || [];
+                console.log('Benchmarks loaded:', benchmarks.length);
+            })
+            .catch(error => {
+                console.error('Error loading benchmarks:', error);
+                benchmarks = []; // Set to empty array on error
+            });
+    }
+    
+    function loadRigsData() {
+        // Load rigs from API for capacity/BOP learning
+        fetch('/api/rigs/', { credentials: 'same-origin' })
+            .then(response => response.json())
+            .then(data => {
+                // Handle paginated response from DRF ViewSet
+                if (Array.isArray(data)) {
+                    rigsData = data;
+                } else if (data && Array.isArray(data.results)) {
+                    // Paginated response - extract results array
+                    rigsData = data.results;
+                } else {
+                    console.warn('Unexpected rigs data format:', data);
+                    rigsData = [];
+                }
+                console.log('Rigs loaded:', rigsData.length);
+                buildRigCapacityCache();
+            })
+            .catch(error => {
+                console.error('Error loading rigs:', error);
+                rigsData = [];
+            });
+    }
+    
+    function buildRigCapacityCache() {
+        // Build a cache table of location -> [{drilling_capacity_m, rig_capacity_hp, bop_stack}]
+        // This creates a lookup table grouped by location with sorted drilling capacities
+        rigCapacityCache = {};
+        
+        if (!Array.isArray(rigsData)) {
+            console.error('rigsData is not an array:', rigsData);
+            return;
+        }
+        
+        rigsData.forEach(rig => {
+            // Use asset_id to match well's location_value (asset_id is the location identifier in rigs)
+            const location = rig.asset_id || '';
+            if (!location) return;
+            
+            if (!rigCapacityCache[location]) {
+                rigCapacityCache[location] = [];
+            }
+            
+            // Check if this combination already exists
+            const exists = rigCapacityCache[location].some(entry => 
+                entry.drilling_capacity_m === rig.drilling_capacity_m &&
+                entry.rig_capacity_hp === rig.rig_capacity_hp &&
+                entry.bop_stack === rig.bop_stack
+            );
+            
+            if (!exists) {
+                rigCapacityCache[location].push({
+                    drilling_capacity_m: rig.drilling_capacity_m,
+                    rig_capacity_hp: rig.rig_capacity_hp,
+                    bop_stack: rig.bop_stack
+                });
+            }
+        });
+        
+        // Sort each location's entries by drilling_capacity_m ascending
+        for (const location in rigCapacityCache) {
+            rigCapacityCache[location].sort((a, b) => a.drilling_capacity_m - b.drilling_capacity_m);
+        }
+        
+        console.log('Rig capacity cache built:', rigCapacityCache);
+    }
+    
+    function findMatchingRigCapacity(wellLocation, wellDepth) {
+        // Find the minimum drilling capacity that can handle the well depth
+        // Returns {rig_capacity_hp, bop_stack} or null if no match
+        
+        console.log('==== Rig Capacity Matching ====');
+        console.log('Well Location:', wellLocation);
+        console.log('Well Depth:', wellDepth);
+        console.log('Available locations in cache:', Object.keys(rigCapacityCache));
+        
+        // Try exact match first, then case-insensitive match
+        let locationEntries = rigCapacityCache[wellLocation];
+        
+        if (!locationEntries || locationEntries.length === 0) {
+            // Try case-insensitive match
+            const wellLocationLower = (wellLocation || '').toLowerCase();
+            for (const cacheLocation of Object.keys(rigCapacityCache)) {
+                if (cacheLocation.toLowerCase() === wellLocationLower) {
+                    locationEntries = rigCapacityCache[cacheLocation];
+                    console.log('Found case-insensitive match:', cacheLocation);
+                    break;
+                }
+            }
+        }
+        
+        if (!locationEntries || locationEntries.length === 0) {
+            console.log('No rigs found for location:', wellLocation);
+            return null;
+        }
+        
+        console.log('Available rigs for location:', locationEntries);
+        
+        // Find the first (minimum) drilling capacity >= well depth
+        for (const entry of locationEntries) {
+            if (entry.drilling_capacity_m >= wellDepth) {
+                console.log(`✓ MATCH! Drilling Capacity: ${entry.drilling_capacity_m}m >= ${wellDepth}m`);
+                console.log(`  -> Rig Capacity: ${entry.rig_capacity_hp} HP, BOP Stack: ${entry.bop_stack}`);
+                return {
+                    rig_capacity_hp: entry.rig_capacity_hp,
+                    bop_stack: entry.bop_stack,
+                    drilling_capacity_m: entry.drilling_capacity_m
+                };
+            }
+        }
+        
+        console.log('No matching drilling capacity found for depth:', wellDepth);
+        return null;
+    }
+    
+    function setupAutoCalculation() {
+        // Auto-calculate duration when DRL and PT days change
+        const drlDaysInput = document.getElementById('drl_days');
+        const ptDaysInput = document.getElementById('pt_days');
+        
+        if (drlDaysInput && ptDaysInput) {
+            drlDaysInput.addEventListener('input', calculateDuration);
+            ptDaysInput.addEventListener('input', calculateDuration);
+        }
+    }
+
+    function calculateDuration() {
+        const drlDays = parseFloat(document.getElementById('drl_days').value) || 0;
+        const ptDays = parseFloat(document.getElementById('pt_days').value) || 0;
+        document.getElementById('duration').value = Math.ceil(drlDays + ptDays);
+    }
+
+    function setupFilterButtons() {
+        document.querySelectorAll('[data-filter]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active and outline classes from all buttons
+                document.querySelectorAll('[data-filter]').forEach(b => {
+                    b.classList.remove('active', 'btn-primary');
+                    b.classList.add('btn-outline-secondary');
+                });
+                // Add active to clicked button
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('active', 'btn-primary');
+                currentFilter = this.dataset.filter;
+                renderTable();
+            });
+        });
+        
+        // Setup location filter
+        const locationSelector = document.getElementById('location-selector');
+        if (locationSelector) {
+            locationSelector.addEventListener('change', function() {
+                currentLocationFilter = this.value;
+                updateStats();
+                renderTable();
+            });
+        }
+    }
+
+    function setupFinalizeAllButton() {
+        document.getElementById('finalize-all-btn').addEventListener('click', function() {
+            if (!confirm('Are you sure you want to finalize all completed wells? This will import them to the wells database.')) {
+                return;
+            }
+
+            fetch('/api/staged-wells/finalize-all/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully imported ${data.imported_count} wells. Skipped: ${data.skipped_count}`);
+                    if (data.errors.length > 0) {
+                        console.error('Errors:', data.errors);
+                    }
+                    // Signal /data/ page to refresh when it gains focus
+                    localStorage.setItem('idrs_wells_imported', Date.now().toString());
+                    loadStagedWells();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error finalizing wells');
+            });
+        });
+    }
+
+    function setupSetBlankRtdButton() {
+        const setBlankRtdBtn = document.getElementById('set-blank-rtd-btn');
+        const setBlankRtdModal = new bootstrap.Modal(document.getElementById('setBlankRtdModal'));
+        
+        setBlankRtdBtn.addEventListener('click', function() {
+            // Count wells with blank RTD
+            const blankRtdWells = stagedWells.filter(well => !well.rtd || well.rtd === '');
+            document.getElementById('blank-rtd-count').textContent = blankRtdWells.length;
+            
+            if (blankRtdWells.length === 0) {
+                alert('No wells with blank RTD found.');
+                return;
+            }
+            
+            // Set default date to today
+            document.getElementById('bulk-rtd-date').valueAsDate = new Date();
+            setBlankRtdModal.show();
+        });
+        
+        document.getElementById('confirm-set-rtd-btn').addEventListener('click', function() {
+            const rtdDate = document.getElementById('bulk-rtd-date').value;
+            if (!rtdDate) {
+                alert('Please select a date.');
+                return;
+            }
+            
+            const blankRtdWells = stagedWells.filter(well => !well.rtd || well.rtd === '');
+            const wellIds = blankRtdWells.map(well => well.id);
+            
+            fetch('/api/staged-wells/bulk-set-rtd/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                body: JSON.stringify({
+                    well_ids: wellIds,
+                    rtd: rtdDate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully updated RTD for ${data.updated_count} well(s).`);
+                    setBlankRtdModal.hide();
+                    loadStagedWells();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating RTD dates');
+            });
+        });
+    }
+
+    function setupSaveButton() {
+        document.getElementById('save-btn').addEventListener('click', function() {
+            const form = document.getElementById('edit-form');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const wellId = document.getElementById('edit-well-id').value;
+            const formData = {
+                field_name: document.getElementById('field_name').value || null,
+                latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+                longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+                well_profile: document.getElementById('well_profile').value,
+                rig_capacity_required_hp: parseInt(document.getElementById('rig_capacity_required_hp').value),
+                drl_days: parseFloat(document.getElementById('drl_days').value),
+                pt_days: parseFloat(document.getElementById('pt_days').value),
+                duration: parseInt(document.getElementById('duration').value),
+                bop_stack: parseInt(document.getElementById('bop_stack').value),
+                tds_requirement: document.getElementById('tds_requirement').value,
+                footprint: document.getElementById('footprint').value,
+                preferred_rig: document.getElementById('preferred_rig').value || null,
+                expected_potential: document.getElementById('expected_potential').value || null
+            };
+
+            fetch(`/api/staged-wells/${wellId}/update/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal with proper cleanup
+                    editModal.hide();
+                    
+                    // Force cleanup in case Bootstrap doesn't do it properly
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.removeProperty('overflow');
+                        document.body.style.removeProperty('padding-right');
+                    }, 300);
+                    
+                    loadStagedWells();
+                } else {
+                    alert('Error saving: ' + JSON.stringify(data));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving changes');
+            });
+        });
+    }
+
+    function loadStagedWells() {
+        fetch('/api/staged-wells/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    stagedWells = data.staged_wells;
+                    updateLocationDropdown();
+                    updateStats();
+                    renderTable();
+                } else {
+                    console.error('Error loading staged wells:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('staged-wells-tbody').innerHTML = `
+                    <tr>
+                        <td colspan="11" class="text-center text-danger py-5">Error loading staged wells</td>
+                    </tr>
+                `;
+            });
+    }
+    
+    function updateLocationDropdown() {
+        const selector = document.getElementById('location-selector');
+        if (!selector) return;
+        
+        // Collect unique locations
+        const locations = new Set();
+        stagedWells.forEach(well => {
+            if (well.location_value) locations.add(well.location_value);
+        });
+        
+        // Sort and build options
+        const sortedLocs = Array.from(locations).sort();
+        
+        // Clear and rebuild
+        selector.innerHTML = '<option value="">All Locations</option>';
+        sortedLocs.forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc;
+            opt.textContent = loc;
+            selector.appendChild(opt);
+        });
+        
+        // Set the value from URL parameter if available
+        if (currentLocationFilter && sortedLocs.includes(currentLocationFilter)) {
+            selector.value = currentLocationFilter;
+        }
+    }
+    
+    function setupBasketsButton() {
+        const basketsBtn = document.getElementById('baskets-btn');
+        if (basketsBtn) {
+            basketsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const baseUrl = this.getAttribute('href');
+                if (currentLocationFilter) {
+                    const url = new URL(baseUrl, window.location.origin);
+                    url.searchParams.set('location', currentLocationFilter);
+                    window.location.href = url.toString();
+                } else {
+                    window.location.href = baseUrl;
+                }
+            });
+        }
+    }
+
+    function updateStats() {
+        let filteredWells = stagedWells;
+        
+        // Filter by location if selected
+        if (currentLocationFilter) {
+            filteredWells = stagedWells.filter(w => w.location_value === currentLocationFilter);
+        }
+        
+        const pending = filteredWells.filter(w => w.status === 'PENDING').length;
+        const completed = filteredWells.filter(w => w.status === 'COMPLETED').length;
+        const imported = filteredWells.filter(w => w.status === 'IMPORTED').length;
+        const missingCoords = filteredWells.filter(w => w.latitude === null || w.longitude === null).length;
+        const missingLocation = filteredWells.filter(w => !w.location).length;
+        
+        document.getElementById('pending-count').textContent = pending;
+        document.getElementById('completed-count').textContent = completed;
+        document.getElementById('imported-count').textContent = imported;
+        document.getElementById('missing-coords-count').textContent = missingCoords;
+        document.getElementById('missing-location-count').textContent = missingLocation;
+        document.getElementById('total-count').textContent = filteredWells.length;
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('staged-wells-tbody');
+        
+        let filteredWells = stagedWells;
+        
+        // Filter by status
+        if (currentFilter !== 'all') {
+            filteredWells = filteredWells.filter(w => w.status === currentFilter);
+        }
+        
+        // Filter by location
+        if (currentLocationFilter) {
+            filteredWells = filteredWells.filter(w => w.location_value === currentLocationFilter);
+        }
+
+        // Apply sorting
+        if (sortKey) {
+            filteredWells = [...filteredWells].sort((a, b) => {
+                let aVal = a[sortKey] || '';
+                let bVal = b[sortKey] || '';
+                // Numeric sort for depth
+                if (sortKey === 'depth') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                    return sortAscending ? aVal - bVal : bVal - aVal;
+                }
+                // String sort for everything else
+                aVal = String(aVal).toLowerCase();
+                bVal = String(bVal).toLowerCase();
+                const cmp = aVal.localeCompare(bVal);
+                return sortAscending ? cmp : -cmp;
+            });
+        }
+
+        if (filteredWells.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="11" class="text-center py-5 text-muted">No staged wells found</td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filteredWells.map(well => `
+            <tr>
+                <td><strong>${well.name}</strong></td>
+                <td>${well.location_value ? `<span class="text-success">${well.location_value}</span>` : '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Missing</span>'}</td>
+                <td>${well.field_name || '<span class="text-muted">-</span>'}</td>
+                <td>${well.well_type}</td>
+                <td>${well.depth}</td>
+                <td>${well.rtd}</td>
+                <td><span class="badge bg-${well.priority === 'HIGH' ? 'danger' : well.priority === 'MEDIUM' ? 'warning text-dark' : 'secondary'}">${well.priority}</span></td>
+                <td><span class="status-badge status-${well.status.toLowerCase()}">${well.status}</span></td>
+                <td>${well.missing_fields.length > 0 ? `<span class="missing-field"><i class="bi bi-exclamation-circle me-1"></i>${well.missing_fields.length} </span>` : '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Complete</span>'}</td>
+                <td>${well.uploaded_by_username || 'N/A'}</td>
+                <td class="text-nowrap">
+                    ${well.status !== 'IMPORTED' ? `
+                        <button class="btn btn-primary" onclick="editWell('${well.id}')" title="Edit" style="padding: 0.15rem 0.4rem; font-size: 0.75rem;">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        ${well.is_ready_to_import ? `
+                            <button class="btn btn-success ms-1" onclick="finalizeWell('${well.id}')" title="Finalize" style="padding: 0.15rem 0.4rem; font-size: 0.75rem;">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-danger ms-1" onclick="deleteWell('${well.id}')" title="Delete" style="padding: 0.15rem 0.4rem; font-size: 0.75rem;">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    ` : '<span class="text-muted"><i class="bi bi-check2-circle me-1"></i>Imported</span>'}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function setupWellProfileDropdown(well) {
+        const wellProfileSelect = document.getElementById('well_profile');
+        const wellName = well.name || '';
+        const wellLocation = well.location_value || '';
+        
+        // Get first 2 characters of well name
+        const wellPrefix = wellName.substring(0, 2).toUpperCase();
+        
+        console.log('==== Well Profile Matching ====');
+        console.log('Well Name:', wellName);
+        console.log('Well Location:', wellLocation);
+        console.log('Well Prefix (first 2 chars):', wellPrefix);
+        console.log('Benchmarks available:', benchmarks ? benchmarks.length : 0);
+        
+        // Find matching benchmarks (location must match AND first 2 digits of pool match first 2 of well name)
+        const matchedProfiles = [];
+        const wellCategoryMap = {
+            'Directional': 'DI',
+            'Vertical': 'VE',
+            'Sidetrack': 'SD'
+        };
+        
+        if (benchmarks && benchmarks.length > 0) {
+            console.log('Sample benchmark:', benchmarks[0]);
+            benchmarks.forEach(benchmark => {
+                const poolPrefix = (benchmark.pool || '').substring(0, 2).toUpperCase();
+                const benchmarkLocation = benchmark.location || '';
+                
+                console.log(`Checking - Location: ${benchmarkLocation}, Pool: ${benchmark.pool} (prefix: ${poolPrefix}), Category: ${benchmark.well_category}`);
+                
+                // MATCH CRITERIA: 1. Location must match, 2. First 2 digits of pool must match first 2 of well name
+                if (benchmarkLocation === wellLocation && poolPrefix === wellPrefix && benchmark.well_category) {
+                    const profileCode = wellCategoryMap[benchmark.well_category];
+                    if (profileCode && !matchedProfiles.includes(profileCode)) {
+                        matchedProfiles.push(profileCode);
+                        console.log(`✓ MATCH! Location: ${benchmarkLocation}, Pool: ${benchmark.pool}, Category: ${benchmark.well_category} -> ${profileCode}`);
+                    }
+                }
+            });
+        } else {
+            console.warn('No benchmarks loaded or benchmarks array is empty');
+        }
+        
+        console.log('Matched profiles:', matchedProfiles);
+        
+        // Update dropdown based on matches
+        if (matchedProfiles.length === 1) {
+            // Only one match - auto-select it
+            wellProfileSelect.value = matchedProfiles[0];
+            console.log(`Auto-selected profile: ${matchedProfiles[0]}`);
+        } else if (matchedProfiles.length > 1) {
+            // Multiple matches - filter dropdown to show only matched options
+            const allOptions = wellProfileSelect.querySelectorAll('option');
+            allOptions.forEach(option => {
+                if (option.value === '') {
+                    // Keep the "Select..." option
+                    option.style.display = '';
+                } else if (matchedProfiles.includes(option.value)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            // Set to existing value if available, otherwise clear selection
+            wellProfileSelect.value = well.well_profile || '';
+            console.log(`Filtered dropdown to show: ${matchedProfiles.join(', ')}`);
+        } else {
+            // No match - show all options and let user decide
+            const allOptions = wellProfileSelect.querySelectorAll('option');
+            allOptions.forEach(option => {
+                option.style.display = '';
+            });
+            wellProfileSelect.value = well.well_profile || '';
+            console.log('No match found - showing all options');
+        }
+    }
+    
+    async function editWell(wellId) {
+        const well = stagedWells.find(w => w.id === wellId);
+        if (!well) return;
+
+        // Set hidden ID
+        document.getElementById('edit-well-id').value = wellId;
+
+        // Display basic info
+        document.getElementById('display-name').textContent = well.name;
+        document.getElementById('display-location').textContent = well.location_value || 'Missing - Asset ID not matched';
+        document.getElementById('display-asset').textContent = well.asset_id;
+        document.getElementById('display-type').textContent = well.well_type;
+        document.getElementById('display-depth').textContent = well.depth;
+        
+        // Display RTD - format date for display
+        let rtdDisplay = '-';
+        if (well.rtd) {
+            const rtdDate = new Date(well.rtd);
+            if (!isNaN(rtdDate.getTime())) {
+                rtdDisplay = rtdDate.toLocaleDateString('en-IN', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+        }
+        document.getElementById('display-rtd').textContent = rtdDisplay;
+
+        // Set coordinate values (editable)
+        document.getElementById('latitude').value = well.latitude || '';
+        document.getElementById('longitude').value = well.longitude || '';
+
+        // Set form values
+        document.getElementById('field_name').value = well.field_name || '';
+        
+        // Setup well profile dropdown with matching logic
+        setupWellProfileDropdown(well);
+        
+        // Smart auto-populate Rig Capacity and BOP Stack from rig data
+        // Only auto-populate if fields are empty (don't override user's existing values)
+        const rigCapacityField = document.getElementById('rig_capacity_required_hp');
+        const bopStackField = document.getElementById('bop_stack');
+        
+        // Set existing values first
+        rigCapacityField.value = well.rig_capacity_required_hp || '';
+        bopStackField.value = well.bop_stack || '';
+        
+        // Wait for rigs data to load if not already loaded
+        if (!rigsData || rigsData.length === 0) {
+            console.log('Rigs not loaded yet, loading...');
+            try {
+                const response = await fetch('/api/rigs/', { credentials: 'same-origin' });
+                const data = await response.json();
+                // Handle paginated response from DRF ViewSet
+                if (Array.isArray(data)) {
+                    rigsData = data;
+                } else if (data && Array.isArray(data.results)) {
+                    rigsData = data.results;
+                } else {
+                    console.warn('Unexpected rigs data format:', data);
+                    rigsData = [];
+                }
+                buildRigCapacityCache();
+                console.log('Rigs loaded:', rigsData.length);
+            } catch (error) {
+                console.error('Error loading rigs:', error);
+                rigsData = [];
+            }
+        }
+        
+        // Auto-populate if fields are empty and we have location/depth
+        if (well.location_value && well.depth) {
+            const matchedRig = findMatchingRigCapacity(well.location_value, well.depth);
+            if (matchedRig) {
+                // Auto-populate Rig Capacity if empty
+                if (!well.rig_capacity_required_hp) {
+                    rigCapacityField.value = matchedRig.rig_capacity_hp;
+                }
+                // Auto-populate BOP Stack if empty
+                if (!well.bop_stack) {
+                    bopStackField.value = matchedRig.bop_stack;
+                }
+                console.log(`Auto-populated from rig data: Capacity=${matchedRig.rig_capacity_hp}HP, BOP=${matchedRig.bop_stack}`);
+            } else {
+                console.log('No matching rig found for location:', well.location_value, 'depth:', well.depth);
+            }
+        }
+        
+        document.getElementById('drl_days').value = well.drl_days || '';
+        document.getElementById('pt_days').value = well.pt_days || '';
+        document.getElementById('duration').value = well.duration || '';
+        
+        // Set TDS Requirement with default 'N' (No) if empty
+        document.getElementById('tds_requirement').value = well.tds_requirement || 'N';
+        
+        // Set Footprint with default 'Fixed' if empty
+        document.getElementById('footprint').value = well.footprint || 'Fixed';
+        
+        document.getElementById('preferred_rig').value = well.preferred_rig || '';
+        document.getElementById('expected_potential').value = well.expected_potential || '';
+        
+        // Setup auto-calculate button
+        document.getElementById('autoCalculateBtn').onclick = function() {
+            autoCalculateWellDays(well);
+        };
+
+        // Clean up any existing modals/backdrops before showing
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+        
+        editModal.show();
+    }
+
+    function finalizeWell(wellId) {
+        if (!confirm('Are you sure you want to finalize this well? It will be imported to the wells database.')) {
+            return;
+        }
+
+        fetch(`/api/staged-wells/${wellId}/finalize/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('idrs_csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Well ${data.well_sn} successfully imported!`);
+                // Signal /data/ page to refresh when it gains focus
+                localStorage.setItem('idrs_wells_imported', Date.now().toString());
+                loadStagedWells();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error finalizing well');
+        });
+    }
+
+    function setupDeleteAllButton() {
+        document.getElementById('delete-all-staged-btn').addEventListener('click', function() {
+            const totalCount = stagedWells.length;
+            if (totalCount === 0) {
+                alert('No staged wells found to delete.');
+                return;
+            }
+
+            const importedCount = stagedWells.filter(w => w.status === 'IMPORTED').length;
+            const nonImportedCount = totalCount - importedCount;
+
+            let confirmMsg = `Are you sure you want to delete ALL ${totalCount} staged well(s)?`;
+            if (importedCount > 0) {
+                confirmMsg += `\n\nThis includes:\n• ${nonImportedCount} pending/completed well(s)\n• ${importedCount} imported well(s)`;
+                confirmMsg += `\n\nImported staged wells will be removed from this list.`;
+            }
+            if (!confirm(confirmMsg)) return;
+
+            let url = '/api/staged-wells/bulk-delete/?include_imported=true';
+            if (currentLocationFilter) {
+                url += `&location=${encodeURIComponent(currentLocationFilter)}`;
+            }
+
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    // Signal other tabs (data management page) to refresh combos
+                    localStorage.setItem('idrs_staged_deleted', Date.now().toString());
+                    loadStagedWells();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting staged wells. Please try again.');
+            });
+        });
+    }
+
+    function deleteWell(wellId) {
+        if (!confirm('Are you sure you want to delete this staged well?')) {
+            return;
+        }
+
+        fetch(`/api/staged-wells/${wellId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('idrs_csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.setItem('idrs_staged_deleted', Date.now().toString());
+                loadStagedWells();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting well');
+        });
+    }
+    
+    async function autoCalculateWellDays(well) {
+        console.log('Auto-calculate triggered for well:', well.name);
+        
+        // Wait for benchmarks to load if not already loaded
+        if (!benchmarks || benchmarks.length === 0) {
+            console.log('Benchmarks not loaded, waiting...');
+            try {
+                const response = await fetch('/api/benchmarks/');
+                const data = await response.json();
+                benchmarks = data.data || [];
+                console.log('Benchmarks loaded:', benchmarks.length);
+            } catch (error) {
+                console.error('Error loading benchmarks:', error);
+                benchmarks = [];
+            }
+        }
+        
+        // Wait for rigs data to load if not already loaded
+        if (!rigsData || rigsData.length === 0) {
+            console.log('Rigs not loaded, waiting...');
+            try {
+                const response = await fetch('/api/rigs/', { credentials: 'same-origin' });
+                const data = await response.json();
+                // Handle paginated response from DRF ViewSet
+                if (Array.isArray(data)) {
+                    rigsData = data;
+                } else if (data && Array.isArray(data.results)) {
+                    rigsData = data.results;
+                } else {
+                    console.warn('Unexpected rigs data format:', data);
+                    rigsData = [];
+                }
+                buildRigCapacityCache();
+                console.log('Rigs loaded:', rigsData.length);
+            } catch (error) {
+                console.error('Error loading rigs:', error);
+                rigsData = [];
+            }
+        }
+        
+        // Update well profile matching
+        setupWellProfileDropdown(well);
+        
+        // Smart auto-populate Rig Capacity and BOP Stack from rig data
+        const rigCapacityField = document.getElementById('rig_capacity_required_hp');
+        const bopStackField = document.getElementById('bop_stack');
+        
+        if (well.location_value && well.depth) {
+            const matchedRig = findMatchingRigCapacity(well.location_value, well.depth);
+            if (matchedRig) {
+                // Only update if field is empty or user confirms override
+                if (!rigCapacityField.value || rigCapacityField.value === '') {
+                    rigCapacityField.value = matchedRig.rig_capacity_hp;
+                }
+                if (!bopStackField.value || bopStackField.value === '') {
+                    bopStackField.value = matchedRig.bop_stack;
+                }
+                console.log(`Smart-populated from rig data: Capacity=${matchedRig.rig_capacity_hp}HP, BOP=${matchedRig.bop_stack}`);
+            }
+        }
+        
+        const fieldName = document.getElementById('field_name').value;
+        const wellProfile = document.getElementById('well_profile').value || 'DI'; // Get selected well profile
+        const depth = well.depth;
+        
+        console.log('Selected well profile:', wellProfile);
+        
+        if (!fieldName) {
+            alert('Please enter a Field Name first');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/calculate-well-parameters/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                body: JSON.stringify({
+                    field_name: fieldName,
+                    well_profile: wellProfile, // Use actual well profile from form
+                    depth: depth,
+                    // Provide location and well type for PT days lookup
+                    location: well.location || null,
+                    location_value: well.location_value || null,
+                    well_type: well.well_type || null
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.drl_days !== null) {
+                    // DRL days is now rounded up to integer
+                    document.getElementById('drl_days').value = data.drl_days;
+                }
+                if (data.pt_days !== null) {
+                    document.getElementById('pt_days').value = Number(data.pt_days).toFixed(2);
+                }
+                if (data.duration !== null) {
+                    document.getElementById('duration').value = data.duration;
+                }
+                
+                if (data.drl_days !== null) {
+                    alert('✓ Auto-calculated successfully!\n\n' + 
+                          'DRL Days: ' + data.drl_days + '\n' +
+                          'PT Days: ' + Number(data.pt_days).toFixed(2) + '\n' +
+                          'Duration: ' + data.duration + ' days');
+                } else {
+                    alert('⚠ ' + data.message + '\n\nPlease add benchmark data for this field or enter values manually.');
+                }
+            } else {
+                alert('Error calculating parameters: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error calculating parameters');
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

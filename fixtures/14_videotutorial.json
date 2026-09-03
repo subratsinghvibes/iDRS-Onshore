@@ -1,0 +1,102 @@
+[
+{
+  "model": "scheduler.videotutorial",
+  "pk": "77dfc525-2e16-40b7-b56e-8be9bd1441c6",
+  "fields": {
+    "title": "Scheduling Walkthrough",
+    "description": "",
+    "category": "scheduling",
+    "video_file": "tutorials/videos/Scheduling_and_Schedules.mov",
+    "optimized_video": "tutorials/videos/optimized_Scheduling_and_Schedules.mov",
+    "compressed_video": "tutorials/videos/compressed_Scheduling_and_Schedules.mp4",
+    "processing_status": "completed",
+    "processing_error": "",
+    "thumbnail": "tutorials/thumbnails/thumb_77dfc525-2e16-40b7-b56e-8be9bd1441c6.jpg",
+    "duration_minutes": 1,
+    "order": 3,
+    "is_active": true,
+    "uploaded_by": 12,
+    "created_at": "2026-02-12T07:04:21.825Z",
+    "updated_at": "2026-02-12T07:06:23.075Z",
+    "view_count": 0,
+    "original_size_mb": "112.67",
+    "optimized_size_mb": "112.66",
+    "compressed_size_mb": "5.03"
+  }
+},
+{
+  "model": "scheduler.videotutorial",
+  "pk": "977e0c8f-9b9a-4fa0-91b5-8d4080c45820",
+  "fields": {
+    "title": "Demo Video for Director (T&FS)",
+    "description": "",
+    "category": "getting_started",
+    "video_file": "tutorials/videos/iDRS_for_TFS.mov",
+    "optimized_video": "tutorials/videos/optimized_iDRS_for_TFS.mov",
+    "compressed_video": "tutorials/videos/compressed_iDRS_for_TFS.mp4",
+    "processing_status": "completed",
+    "processing_error": "",
+    "thumbnail": "tutorials/thumbnails/thumb_977e0c8f-9b9a-4fa0-91b5-8d4080c45820.jpg",
+    "duration_minutes": 1,
+    "order": 1,
+    "is_active": true,
+    "uploaded_by": 12,
+    "created_at": "2026-02-25T11:26:33.917Z",
+    "updated_at": "2026-02-25T11:27:50.393Z",
+    "view_count": 0,
+    "original_size_mb": "141.56",
+    "optimized_size_mb": "141.56",
+    "compressed_size_mb": "5.41"
+  }
+},
+{
+  "model": "scheduler.videotutorial",
+  "pk": "9c35bf0c-c1c3-44b0-8687-ad95f8685ec4",
+  "fields": {
+    "title": "Data Management Walkthrough",
+    "description": "",
+    "category": "data_management",
+    "video_file": "tutorials/videos/Data_Management.mov",
+    "optimized_video": "tutorials/videos/optimized_Data_Management.mov",
+    "compressed_video": "tutorials/videos/compressed_Data_Management.mp4",
+    "processing_status": "completed",
+    "processing_error": "",
+    "thumbnail": "tutorials/thumbnails/thumb_9c35bf0c-c1c3-44b0-8687-ad95f8685ec4.jpg",
+    "duration_minutes": 2,
+    "order": 2,
+    "is_active": true,
+    "uploaded_by": 12,
+    "created_at": "2026-02-12T07:03:32.721Z",
+    "updated_at": "2026-02-12T07:06:07.746Z",
+    "view_count": 1,
+    "original_size_mb": "202.55",
+    "optimized_size_mb": "202.54",
+    "compressed_size_mb": "8.51"
+  }
+},
+{
+  "model": "scheduler.videotutorial",
+  "pk": "fa85c4a0-0c65-4846-b58c-00cacfdd59ec",
+  "fields": {
+    "title": "Quick Start Guide",
+    "description": "",
+    "category": "getting_started",
+    "video_file": "tutorials/videos/iDRS_Merged_Video_aI2eSi7.mov",
+    "optimized_video": "tutorials/videos/optimized_iDRS_Merged_Video_aI2eSi7.mov",
+    "compressed_video": "tutorials/videos/compressed_iDRS_Merged_Video_aI2eSi7.mp4",
+    "processing_status": "completed",
+    "processing_error": "",
+    "thumbnail": "tutorials/thumbnails/ChatGPT_Image_Feb_5_2026_at_10_51_31_AM.png",
+    "duration_minutes": 17,
+    "order": 1,
+    "is_active": true,
+    "uploaded_by": 12,
+    "created_at": "2026-02-05T05:21:58.788Z",
+    "updated_at": "2026-02-09T15:16:41.084Z",
+    "view_count": 21,
+    "original_size_mb": "691.85",
+    "optimized_size_mb": "694.17",
+    "compressed_size_mb": "47.30"
+  }
+}
+]

@@ -1,0 +1,712 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Interactive Drilling Rig Scheduler</title>
+    
+    <!-- Bootstrap Icons -->
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --nav-gradient-start: #A11D23;
+            --nav-gradient-end: #1B5E20;
+            --nav-gradient-angle: 35deg;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --color-white: #ffffff;
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-400: #9ca3af;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-gray-900: #111827;
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            background: linear-gradient(var(--nav-gradient-angle), var(--nav-gradient-start), var(--nav-gradient-end));
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background shapes */
+        .bg-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-shapes .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-shapes .shape:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-shapes .shape:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        .bg-shapes .shape:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+        }
+
+        /* Left Panel - Branding */
+        .brand-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--color-white);
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-content {
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .brand-logo .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand-logo .logo-icon i {
+            font-size: 36px;
+        }
+
+        .brand-logo h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-tagline {
+            font-size: 20px;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .brand-features {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: left;
+        }
+
+        .brand-feature {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius-lg);
+            backdrop-filter: blur(10px);
+            transition: transform var(--transition-fast);
+        }
+
+        .brand-feature:hover {
+            transform: translateX(8px);
+        }
+
+        .brand-feature .feature-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .brand-feature .feature-icon i {
+            font-size: 22px;
+        }
+
+        .brand-feature .feature-text h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .brand-feature .feature-text p {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* Right Panel - Login Form */
+        .login-panel {
+            width: 520px;
+            min-height: 100vh;
+            background: var(--color-white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            position: relative;
+            z-index: 1;
+            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .login-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .login-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-gray-900);
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            font-size: 16px;
+            color: var(--color-gray-500);
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-gray-700);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group label i {
+            font-size: 16px;
+            color: var(--color-gray-400);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px;
+            padding-left: 48px;
+            border: 2px solid var(--color-gray-200);
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--color-gray-900);
+            transition: all var(--transition-fast);
+            background: var(--color-gray-50);
+        }
+
+        .input-wrapper .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: var(--color-gray-400);
+            transition: color var(--transition-fast);
+        }
+
+        .input-wrapper .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: var(--color-gray-400);
+            cursor: pointer;
+            transition: color var(--transition-fast);
+        }
+
+        .input-wrapper .password-toggle:hover {
+            color: var(--nav-gradient-start);
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--nav-gradient-start);
+            background: var(--color-white);
+            box-shadow: 0 0 0 4px rgba(161, 29, 35, 0.1);
+        }
+
+        .input-wrapper input:focus + .input-icon {
+            color: var(--nav-gradient-start);
+        }
+
+        .form-error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--border-radius);
+            color: #dc2626;
+            font-size: 14px;
+        }
+
+        .form-error i {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .field-error {
+            font-size: 13px;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-error i {
+            font-size: 14px;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--nav-gradient-start);
+            cursor: pointer;
+        }
+
+        .remember-me span {
+            font-size: 14px;
+            color: var(--color-gray-600);
+        }
+
+        .forgot-password {
+            font-size: 14px;
+            color: var(--nav-gradient-start);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--transition-fast);
+        }
+
+        .forgot-password:hover {
+            color: var(--nav-gradient-end);
+        }
+
+        .submit-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--nav-gradient-start), var(--nav-gradient-end));
+            color: var(--color-white);
+            border: none;
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            box-shadow: 0 4px 14px rgba(161, 29, 35, 0.35);
+        }
+
+        .submit-btn i {
+            font-size: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(161, 29, 35, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid var(--color-gray-200);
+            text-align: center;
+        }
+
+        .login-footer p {
+            font-size: 14px;
+            color: var(--color-gray-500);
+        }
+
+        .login-footer a {
+            color: var(--nav-gradient-start);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--color-gray-500);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+
+        .back-home i {
+            font-size: 16px;
+        }
+
+        .back-home:hover {
+            color: var(--nav-gradient-start);
+        }
+
+        /* ONGC Logos Section */
+        .ongc-branding {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+
+        .ongc-branding .logos-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 12px;
+        }
+
+        .ongc-branding .logo-left {
+        }
+
+        .ongc-branding .separator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 55px;
+            position: relative;
+        }
+
+        .ongc-branding .separator::before {
+            content: '';
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 0%, var(--nav-gradient-start) 20%, var(--nav-gradient-end) 80%, transparent 100%);
+        }
+
+        .ongc-branding .separator::after {
+            content: '◆';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--nav-gradient-start);
+            font-size: 8px;
+        }
+
+        .ongc-branding .logo-right {
+        }
+
+        .ongc-branding img {
+            height: 50px;
+            width: auto;
+            transition: transform var(--transition-fast);
+            display: block;
+        }
+
+        .ongc-branding img:hover {
+            transform: scale(1.05);
+        }
+
+        .ongc-branding .tagline {
+            font-size: 11px;
+            color: var(--color-gray-500);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .brand-panel {
+                display: none;
+            }
+
+            .login-panel {
+                width: 100%;
+                max-width: 480px;
+                margin: 0 auto;
+                box-shadow: var(--shadow-xl);
+                border-radius: var(--border-radius-lg);
+                min-height: auto;
+                margin-top: 40px;
+                margin-bottom: 40px;
+            }
+
+            body {
+                padding: 20px;
+                align-items: flex-start;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-panel {
+                padding: 32px 24px;
+                margin-top: 20px;
+            }
+
+            .login-header h2 {
+                font-size: 24px;
+            }
+
+            .form-options {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <!-- Brand Panel -->
+    <div class="brand-panel">
+        <div class="brand-content">
+            <div class="brand-logo">
+                <div class="logo-icon">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <h1>iDRS</h1>
+            </div>
+            <p class="brand-tagline">
+                Interactive Drilling Rig Scheduler - Optimizing Operations
+            </p>
+            <div class="brand-features">
+                <div class="brand-feature">
+                    <div class="feature-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Smart Scheduling</h3>
+                        <p>Intelligent rig and well assignment optimization</p>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Real-time Analytics</h3>
+                        <p>Interactive Gantt charts and performance insights</p>
+                    </div>
+                </div>
+                <div class="brand-feature">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Secure Access</h3>
+                        <p>Role-based permissions and data protection</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Panel -->
+    <div class="login-panel">
+        <!-- ONGC Branding -->
+        <div class="ongc-branding">
+            <div class="logos-container">
+                <div class="logo-left">
+                    <img src="{% static 'images/logo-old.png' %}" alt="ONGC Logo">
+                </div>
+                <div class="separator"></div>
+                <div class="logo-right">
+                    <img src="{% static 'images/logo-new.png' %}" alt="ONGC Logo">
+                </div>
+            </div>
+            <div class="tagline">Oil and Natural Gas Corporation Limited</div>
+        </div>
+
+        <div class="login-header">
+            <h2>Welcome to iDRS</h2>
+            <p>Sign in to access the drilling scheduler</p>
+        </div>
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            
+            {% if form.errors or messages %}
+            <div class="form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                <span>Invalid username or password. Please try again.</span>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_username">
+                    Username
+                </label>
+                <div class="input-wrapper">
+                    <input type="text" 
+                           name="username" 
+                           id="id_username" 
+                           placeholder="Enter your username"
+                           value="{{ form.username.value|default:'' }}"
+                           autocomplete="username"
+                           required>
+                    <i class="bi bi-person input-icon"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">
+                    Password
+                </label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                           name="password" 
+                           id="id_password" 
+                           placeholder="Enter your password"
+                           autocomplete="current-password"
+                           required>
+                    <i class="bi bi-lock input-icon"></i>
+                    <i class="bi bi-eye password-toggle" onclick="togglePassword()" id="toggleIcon"></i>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" name="remember">
+                    <span>Remember me</span>
+                </label>
+            </div>
+
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <button type="submit" class="submit-btn">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Sign In
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p>Product of Project DOT</p>
+            <p>Offshore Logistics | Digital & Technology, Delhi</p>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('id_password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye');
+                toggleIcon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye-slash');
+                toggleIcon.classList.add('bi-eye');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1419 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rig Building Norms - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'vendor/datatables/css/dataTables.bootstrap5.min.css' %}">
+    
+    <style>
+        /* CRITICAL: Ensure Bootstrap Icons display correctly */
+        .rignorms-page i.bi,
+        .rignorms-page .bi::before,
+        .modal i.bi,
+        .modal .bi::before {
+            -webkit-text-fill-color: currentColor !important;
+            background: none !important;
+            background-clip: initial !important;
+            -webkit-background-clip: initial !important;
+            font-family: "bootstrap-icons" !important;
+        }
+        
+        /* Compact table styling */
+        #normsTable,
+        #adjustmentsTable {
+            font-size: 0.85rem;
+        }
+        
+        #normsTable thead th,
+        #adjustmentsTable thead th {
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        #normsTable tbody td,
+        #adjustmentsTable tbody td {
+            padding: 0.4rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        /* Action buttons - extra small and square */
+        #normsTable .btn-xs,
+        #adjustmentsTable .btn-xs {
+            padding: 0.25rem 0.35rem;
+            font-size: 0.7rem;
+            line-height: 1;
+            min-width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #normsTable .btn-xs i,
+        #adjustmentsTable .btn-xs i {
+            font-size: 0.7rem;
+        }
+        
+        /* Footer controls for norms table */
+        #normsTableFooter {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 1rem 0 0 0 !important;
+            margin-top: 1rem !important;
+            border-top: 1px solid #e5e7eb !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        #normsTableFooter > div {
+            flex: 0 0 auto !important;
+        }
+        
+        #normsTableLength {
+            min-width: 200px !important;
+        }
+        
+        #normsTableInfo {
+            flex: 1 !important;
+            text-align: center !important;
+        }
+        
+        #normsTablePagination {
+            min-width: 200px !important;
+            text-align: right !important;
+        }
+        
+        /* Footer controls for adjustments table */
+        #adjTableFooter {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 1rem 0 0 0 !important;
+            margin-top: 1rem !important;
+            border-top: 1px solid #e5e7eb !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        #adjTableFooter > div {
+            flex: 0 0 auto !important;
+        }
+        
+        #adjTableLength {
+            min-width: 200px !important;
+        }
+        
+        #adjTableInfo {
+            flex: 1 !important;
+            text-align: center !important;
+        }
+        
+        #adjTablePagination {
+            min-width: 200px !important;
+            text-align: right !important;
+        }
+        
+        /* Global footer overrides */
+        .dataTables_wrapper .dataTables_length,
+        #normsTableLength .dataTables_length,
+        #adjTableLength .dataTables_length {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length label,
+        #normsTableLength .dataTables_length label,
+        #adjTableLength .dataTables_length label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin: 0 !important;
+            font-size: 0.875rem !important;
+            color: #6b7280 !important;
+            white-space: nowrap !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        #normsTableLength .dataTables_length select,
+        #adjTableLength .dataTables_length select {
+            border: 1px solid #d1d5db !important;
+            border-radius: 4px !important;
+            padding: 0.25rem 1.75rem 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            min-width: 60px !important;
+            margin: 0 0.25rem !important;
+        }
+        
+        .dataTables_wrapper .dataTables_info,
+        #normsTableInfo .dataTables_info,
+        #adjTableInfo .dataTables_info {
+            color: #6b7280 !important;
+            font-size: 0.875rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate,
+        #normsTablePagination .dataTables_paginate,
+        #adjTablePagination .dataTables_paginate {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button,
+        #normsTablePagination .dataTables_paginate .paginate_button,
+        #adjTablePagination .dataTables_paginate .paginate_button {
+            padding: 0.25rem 0.5rem !important;
+            margin: 0 2px !important;
+            font-size: 0.875rem !important;
+        }
+        
+        /* Page header styling is centralized in style.css */
+        
+        /* Stats Cards */
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+        }
+        
+        /* DataTable styling - Match benchmark theme */
+        .dataTables_wrapper {
+            padding: 0;
+        }
+        
+        /* Hide default DataTables controls */
+        .dataTables_wrapper .dataTables_filter {
+            display: none;
+        }
+        
+        /* FORCE single line for length control - no wrapping allowed */
+        .dataTables_wrapper .dataTables_length,
+        #showEntriesContainer .dataTables_length,
+        #adjShowEntriesContainer .dataTables_length {
+            margin: 0 !important;
+            padding: 0 !important;
+            display: inline-block !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length label,
+        #showEntriesContainer .dataTables_length label,
+        #adjShowEntriesContainer .dataTables_length label {
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 0.3rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0.875rem !important;
+            color: #6b7280 !important;
+            white-space: nowrap !important;
+            width: auto !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        #showEntriesContainer .dataTables_length select,
+        #adjShowEntriesContainer .dataTables_length select {
+            border: 1.5px solid #d1d5db !important;
+            border-radius: 6px !important;
+            padding: 0.25rem 1.5rem 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            width: auto !important;
+            min-width: 65px !important;
+            max-width: 80px !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+        
+        .dataTables_wrapper .dataTables_info,
+        #tableInfoContainer .dataTables_info,
+        #adjTableInfoContainer .dataTables_info {
+            color: #6b7280 !important;
+            font-size: 0.875rem !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            white-space: nowrap !important;
+            display: inline-block !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate,
+        #paginationContainer .dataTables_paginate,
+        #adjPaginationContainer .dataTables_paginate {
+            padding: 0 !important;
+            margin: 0 !important;
+            white-space: nowrap !important;
+            display: inline-block !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .pagination,
+        #paginationContainer .dataTables_paginate .pagination,
+        #adjPaginationContainer .dataTables_paginate .pagination {
+            margin: 0 !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+        }
+        
+        /* Custom search in header */
+        .custom-search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .custom-search-wrapper label {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+        
+        .custom-search-wrapper input {
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            width: 250px;
+        }
+        
+        .custom-search-wrapper input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+        
+        /* Bottom controls wrapper - FORCE single line */
+        .table-bottom-controls {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 1rem 0 !important;
+            flex-wrap: nowrap !important;
+            gap: 2rem !important;
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
+        
+        .table-bottom-controls > div {
+            display: inline-flex !important;
+            align-items: center !important;
+            flex-shrink: 0 !important;
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+        }
+        
+        #showEntriesContainer,
+        #adjShowEntriesContainer {
+            min-width: fit-content !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            display: inline-flex !important;
+        }
+        
+        #tableInfoContainer,
+        #adjTableInfoContainer {
+            min-width: fit-content !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+        
+        #paginationContainer,
+        #adjPaginationContainer {
+            min-width: fit-content !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+        
+        .table-bottom-controls .d-flex {
+            gap: 1.5rem !important;
+            flex-wrap: nowrap !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate {
+            padding-top: 1rem;
+        }
+        
+        /* DataTable base styles are centralized in style.css */
+        
+        /* Specific column widths for adjustments table */
+        #adjustmentsTable td:nth-child(1) {
+            max-width: 400px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        
+        #adjustmentsTable td:nth-child(2) {
+            max-width: 120px;
+            white-space: nowrap;
+        }
+        
+        #adjustmentsTable td:nth-child(3) {
+            max-width: 150px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        #adjustmentsTable td:nth-child(4) {
+            max-width: 150px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        #adjustmentsTable td:nth-child(5) {
+            max-width: 250px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        #adjustmentsTable td:nth-child(6) {
+            max-width: 80px;
+            white-space: nowrap;
+        }
+        
+        #adjustmentsTable td:nth-child(7) {
+            max-width: 100px;
+            white-space: nowrap;
+        }
+        
+        /* Action buttons - Icon only */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        
+        .modal-title {
+            color: white;
+        }
+        
+        .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .form-control {
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Section Separator */
+        .section-separator {
+            position: relative;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #e5e7eb 20%, #10b981 50%, #e5e7eb 80%, transparent 100%);
+            border-radius: 1px;
+        }
+        
+        /* Table Responsive - Remove horizontal scroll */
+        .table-responsive {
+            overflow-x: visible !important;
+        }
+        
+        #adjustmentsTable {
+            table-layout: fixed;
+            width: 100% !important;
+        }
+        
+        #adjustmentsTable th,
+        #adjustmentsTable td {
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        .section-separator-dots {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 0 12px;
+        }
+        
+        .section-separator-dots span {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        
+        .section-separator-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .section-separator-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+        }
+        
+        /* Section card/header styles are centralized in style.css */
+        
+        /* FORCE single line for length control - no wrapping allowed */
+        .dataTables_wrapper .dataTables_length,
+        #showEntriesContainer .dataTables_length,
+        #adjShowEntriesContainer .dataTables_length {
+            margin: 0 !important;
+            padding: 0 !important;
+            display: inline-block !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length label,
+        #showEntriesContainer .dataTables_length label,
+        #adjShowEntriesContainer .dataTables_length label {
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 0.3rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0.875rem !important;
+            color: #6b7280 !important;
+            white-space: nowrap !important;
+            width: auto !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        #showEntriesContainer .dataTables_length select,
+        #adjShowEntriesContainer .dataTables_length select {
+            border: 1.5px solid #d1d5db !important;
+            border-radius: 6px !important;
+            padding: 0.25rem 1.5rem 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            width: auto !important;
+            min-width: 65px !important;
+            max-width: 80px !important;
+            margin: 0 0.3rem !important;
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+        
+        #showEntriesContainer,
+        #adjShowEntriesContainer {
+            min-width: fit-content !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="rignorms-page container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h1 class="page-title mb-2">Rig Building Norms</h1>
+            <p class="page-subtitle mb-0">Manage rig norms (rig name and days)</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" id="location-selector" style="width: auto; min-width: 180px;">
+                <option value="">All Locations</option>
+            </select>
+            <button onclick="history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+    
+    <!-- Rig Norm Records Section Card -->
+    <div class="section-card">
+        <div class="section-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-table" style="color: var(--adb-primary);"></i>
+                <h5 class="mb-0">Rig Norm Records</h5>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search rig norms..." style="width: 200px;">
+                <button class="btn btn-outline-primary" id="addNormBtnHeader">
+                    <i class="bi bi-plus-lg me-2"></i>Add Rig Norm
+                </button>
+                <button class="btn btn-sm btn-outline-secondary collapse-icon" type="button" data-bs-toggle="collapse" data-bs-target="#normSection" aria-expanded="true" aria-controls="normSection" style="padding: 0.15rem 0.4rem;">
+                    <i class="bi bi-chevron-down" id="normToggleIcon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="collapse show" id="normSection">
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table id="normsTable" class="table table-sm table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Rig Name</th>
+                                <th>Norm Time (days)</th>
+                                <th>Top Drive</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="normsTableBody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- DataTable Footer -->
+                <div id="normsTableFooter">
+                    <div id="normsTableLength"></div>
+                    <div id="normsTableInfo"></div>
+                    <div id="normsTablePagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Section Separator -->
+    <div class="section-separator my-4">
+        <div class="section-separator-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    
+    <!-- Adjustment Rules Section Card -->
+    <div class="section-card">
+        <div class="section-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-sliders" style="color: var(--adb-primary);"></i>
+                <h5 class="mb-0">Adjustment Rules</h5>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <input type="text" id="adjustmentSearchInput" class="form-control" placeholder="Search adjustments..." style="width: 200px;">
+                <button class="btn btn-outline-primary" id="addAdjustmentBtnHeader">
+                    <i class="bi bi-plus-lg me-2"></i>Add Adjustment Rule
+                </button>
+                <button class="btn btn-sm btn-outline-secondary collapse-icon" type="button" data-bs-toggle="collapse" data-bs-target="#adjustmentSection" aria-expanded="true" aria-controls="adjustmentSection" style="padding: 0.15rem 0.4rem;">
+                    <i class="bi bi-chevron-down" id="adjustmentToggleIcon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="collapse show" id="adjustmentSection">
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table id="adjustmentsTable" class="table table-sm table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Condition / Scenario</th>
+                                <th>Category</th>
+                                <th>Adjustment</th>
+                                <th>Type</th>
+                                <th>Notes</th>
+                                <th>Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adjustmentsTableBody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- DataTable Footer -->
+                <div id="adjTableFooter">
+                    <div id="adjTableLength"></div>
+                    <div id="adjTableInfo"></div>
+                    <div id="adjTablePagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Add/Edit Norm Modal -->
+<div class="modal fade" id="normModal" tabindex="-1" aria-labelledby="normModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="normModalLabel">Add Rig Norm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="normForm">
+                    <input type="hidden" id="normId">
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                        <select class="form-select" id="location" required>
+                            <option value="">Select Location</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rigName" class="form-label">Rig Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="rigName" placeholder="e.g., E-760, Mobile rigs, IPS-M700" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="days" class="form-label">Norm Time (days) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="days" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="topDrive" class="form-label">Top Drive</label>
+                        <select class="form-select" id="topDrive" required>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rigType" class="form-label">Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="rigType" required>
+                            <option value="Fixed">Fixed</option>
+                            <option value="Mobile">Mobile</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNormBtn">Save Norm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Adjustment Rule Modal -->
+<div class="modal fade" id="adjustmentModal" tabindex="-1" aria-labelledby="adjustmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adjustmentModalLabel">Add Adjustment Rule</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adjustmentForm">
+                    <input type="hidden" id="adjustmentId">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="adjCondition" class="form-label">Condition / Scenario <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="adjCondition" rows="2" placeholder="e.g., Rig dragged within a radius of 25 m for adjacent well in cluster" required></textarea>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="adjCategory" class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="adjCategory" required>
+                                <option value="cluster_movement">Cluster Movement</option>
+                                <option value="transportation">Transportation</option>
+                                <option value="equipment">Equipment Related</option>
+                                <option value="weather">Weather/Monsoon</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="adjType" class="form-label">Adjustment Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="adjType" required>
+                                <option value="replace">Replace Base Norm (e.g., 2 days instead)</option>
+                                <option value="add">Add to Base Norm (e.g., +1 day)</option>
+                                <option value="included">Included (No Extra Days)</option>
+                                <option value="per_unit">Per Unit Addition (e.g., +1 day per 50 km)</option>
+                                <option value="conversion">Conversion Rule (e.g., 0.7 ratio)</option>
+                                <option value="conditional">Conditional Rule</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="adjValue" class="form-label">Adjustment Value</label>
+                            <input type="number" class="form-control" id="adjValue" step="0.01" placeholder="e.g., 2, 0.7, 1">
+                            <div class="form-text">Numeric value (days, ratio, etc.)</div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="adjDisplay" class="form-label">Display Text <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="adjDisplay" placeholder="e.g., +1 day, 2 days, 0.7 ratio" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="adjUnit" class="form-label">Unit (for per-unit)</label>
+                            <input type="text" class="form-control" id="adjUnit" placeholder="e.g., 50 km">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="adjMinDistance" class="form-label">Min Distance (m)</label>
+                            <input type="number" class="form-control" id="adjMinDistance" step="0.01" placeholder="e.g., 0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="adjMaxDistance" class="form-label">Max Distance (m)</label>
+                            <input type="number" class="form-control" id="adjMaxDistance" step="0.01" placeholder="e.g., 25">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="adjMaxDepth" class="form-label">Max Depth (m)</label>
+                            <input type="number" class="form-control" id="adjMaxDepth" step="0.01" placeholder="e.g., 3500">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="adjRigType" class="form-label">Applies to Rig Type</label>
+                            <select class="form-select" id="adjRigType">
+                                <option value="">All Rig Types</option>
+                                <option value="Mobile">Mobile</option>
+                                <option value="Fixed">Fixed</option>
+                                <option value="Type-I">Type-I</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="adjPriority" class="form-label">Priority</label>
+                            <input type="number" class="form-control" id="adjPriority" value="0" placeholder="0">
+                            <div class="form-text">Higher = first</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="adjActive" class="form-label">Status</label>
+                            <select class="form-select" id="adjActive">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adjNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="adjNotes" rows="2" placeholder="Additional notes or clarifications"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveAdjustmentBtn">Save Adjustment Rule</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables JS -->
+<script src="{% static 'vendor/jquery-3.7.1.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<script>
+    let normsTable;
+    let adjustmentsTable;
+    let norms = [];
+    let adjustments = [];
+    let normsTableInitialized = false;
+    let adjustmentsTableInitialized = false;
+    let currentLocationFilter = '';
+    
+    // Get location from URL parameter
+    function getLocationFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('location') || '';
+    }
+    
+    function initializeNormsTable() {
+        if (normsTableInitialized) return;
+        
+        normsTable = $('#normsTable').DataTable({
+            responsive: false,
+            autoWidth: false,
+            pageLength: 25,
+            order: [[0, 'asc']],
+            dom: 'lrtip', // Remove default search and show entries from top
+            language: {
+                emptyTable: "No rig norms found. Click 'Add Rig Norm' to create one."
+            }
+        });
+        
+        // Move Norms DataTable controls to footer
+        $('#normsTable_length').appendTo('#normsTableLength');
+        $('#normsTable_info').appendTo('#normsTableInfo');
+        $('#normsTable_paginate').appendTo('#normsTablePagination');
+        
+        normsTableInitialized = true;
+    }
+    
+    function initializeAdjustmentsTable() {
+        if (adjustmentsTableInitialized) return;
+        
+        adjustmentsTable = $('#adjustmentsTable').DataTable({
+            responsive: false,
+            pageLength: 10,
+            order: [[1, 'asc'], [0, 'asc']],
+            autoWidth: false,
+            dom: 'lrtip', // Remove default search and show entries from top
+            language: {
+                emptyTable: "No adjustment rules found. Click 'Add Adjustment Rule' to create one."
+            },
+            columnDefs: [
+                { width: '10%', targets: 0, className: 'text-nowrap' },
+                { width: '25%', targets: 1, className: 'text-wrap' },
+                { width: '10%', targets: 2, className: 'text-nowrap' },
+                { width: '12%', targets: 3, className: 'text-wrap' },
+                { width: '12%', targets: 4, className: 'text-wrap' },
+                { width: '15%', targets: 5, className: 'text-wrap' },
+                { width: '6%', targets: 6, className: 'text-center text-nowrap' },
+                { width: '10%', targets: 7, className: 'text-center text-nowrap' }
+            ]
+        });
+        
+        // Move Adjustments DataTable controls to footer
+        $('#adjustmentsTable_length').appendTo('#adjTableLength');
+        $('#adjustmentsTable_info').appendTo('#adjTableInfo');
+        $('#adjustmentsTable_paginate').appendTo('#adjTablePagination');
+        
+        adjustmentsTableInitialized = true;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Adjustments DataTable immediately (since it's shown by default)
+        initializeAdjustmentsTable();
+        
+        // Initialize Norms DataTable after a short delay to ensure DOM is ready
+        setTimeout(function() {
+            if (!normsTableInitialized) {
+                initializeNormsTable();
+                loadNorms();
+            }
+        }, 100);
+        
+        // Initialize Adjustments DataTable when collapse is shown (backup)
+        $('#adjustmentSection').on('shown.bs.collapse', function() {
+            if (!adjustmentsTableInitialized) {
+                initializeAdjustmentsTable();
+                loadAdjustments();
+            }
+        });
+        
+        // Load data for sections that are already shown
+        if ($('#adjustmentSection').hasClass('show')) {
+            loadAdjustments();
+        }
+        
+        loadLocations();
+        
+        // Initialize location filter from URL
+        currentLocationFilter = getLocationFromURL();
+        
+        // Location filter change event
+        $('#location-selector').change(function() {
+            currentLocationFilter = $(this).val();
+            renderNormsTable();
+            renderAdjustmentsTable();
+        });
+        
+        // Custom search functionality for norms
+        $('#searchInput').on('keyup', function() {
+            if (normsTableInitialized) {
+                normsTable.search(this.value).draw();
+            }
+        });
+        
+        // Custom search functionality for adjustments
+        $('#adjustmentSearchInput').on('keyup', function() {
+            if (adjustmentsTableInitialized) {
+                adjustmentsTable.search(this.value).draw();
+            }
+        });
+        
+        // Toggle icon rotation for norm section collapse
+        $('#normSection').on('show.bs.collapse', function() {
+            $('#normToggleIcon').removeClass('bi-chevron-right').addClass('bi-chevron-down');
+        }).on('hide.bs.collapse', function() {
+            $('#normToggleIcon').removeClass('bi-chevron-down').addClass('bi-chevron-right');
+        });
+        
+        // Toggle icon rotation for adjustment section collapse
+        $('#adjustmentSection').on('show.bs.collapse', function() {
+            $('#adjustmentToggleIcon').removeClass('bi-chevron-right').addClass('bi-chevron-down');
+        }).on('hide.bs.collapse', function() {
+            $('#adjustmentToggleIcon').removeClass('bi-chevron-down').addClass('bi-chevron-right');
+        });
+        
+        // Prevent collapse when clicking on search input or add buttons
+        $('.section-header').on('click', function(e) {
+            if (!$(e.target).closest('button[data-bs-toggle="collapse"]').length) {
+                e.stopPropagation();
+            }
+        });
+        
+        $('#searchInput, #addNormBtnHeader, #adjustmentSearchInput, #addAdjustmentBtnHeader').on('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Event listeners for norms (both old and new buttons)
+        $('#addNormBtn, #addNormBtnHeader').on('click', showAddModal);
+        
+        // Event listeners for norms (both old and new buttons)
+        $('#addNormBtn, #addNormBtnHeader').on('click', showAddModal);
+        $('#saveNormBtn').on('click', saveNorm);
+        
+        // Event listeners for adjustments (both old and new buttons)
+        $('#addAdjustmentBtn, #addAdjustmentBtnHeader').on('click', showAddAdjustmentModal);
+        $('#saveAdjustmentBtn').on('click', saveAdjustment);
+        
+        // Add cleanup event listeners for modals to prevent backdrop lock
+        const normModalEl = document.getElementById('normModal');
+        const adjustmentModalEl = document.getElementById('adjustmentModal');
+        
+        if (normModalEl) {
+            normModalEl.addEventListener('hidden.bs.modal', function() {
+                // Remove any lingering backdrops
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+        }
+        
+        if (adjustmentModalEl) {
+            adjustmentModalEl.addEventListener('hidden.bs.modal', function() {
+                // Remove any lingering backdrops
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+        }
+    });
+    
+    // ===================== NORMS FUNCTIONS =====================
+    
+    async function loadNorms() {
+        try {
+            const response = await fetch('/api/rig-norms/');
+            const result = await response.json();
+            
+            norms = result.data || [];
+            updateLocationFilter();
+            renderNormsTable();
+        } catch (error) {
+            console.error('Error loading norms:', error);
+            showAlert('Error loading rig norms', 'danger');
+        }
+    }
+    
+    function renderNormsTable() {
+        if (!normsTableInitialized) return;
+        
+        normsTable.clear();
+        
+        // Filter by location if selected
+        const filteredNorms = currentLocationFilter 
+            ? norms.filter(norm => norm.location === currentLocationFilter)
+            : norms;
+        
+        const rows = filteredNorms.map(norm => [
+            norm.location || '',
+            norm.rig_name,
+            norm.days,
+            norm.top_drive ? 'Yes' : 'No',
+            norm.rig_type,
+            `
+                <button class="btn btn-xs btn-warning me-1" onclick="editNorm('${norm.id}')" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-xs btn-danger" onclick="deleteNorm('${norm.id}')" title="Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `
+        ]);
+        
+        normsTable.rows.add(rows);
+        normsTable.draw();
+    }
+    
+    function showAddModal() {
+        document.getElementById('normModalLabel').textContent = 'Add Rig Norm';
+        document.getElementById('normForm').reset();
+        document.getElementById('normId').value = '';
+        
+        const modalEl = document.getElementById('normModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+    
+    function editNorm(id) {
+        const norm = norms.find(n => n.id === id);
+        if (!norm) return;
+        
+        document.getElementById('normModalLabel').textContent = 'Edit Rig Norm';
+        document.getElementById('normId').value = norm.id;
+        document.getElementById('location').value = norm.location || '';
+        document.getElementById('rigName').value = norm.rig_name;
+        document.getElementById('days').value = norm.days;
+        document.getElementById('topDrive').value = norm.top_drive ? 'true' : 'false';
+        document.getElementById('rigType').value = norm.rig_type;
+        
+        const modalEl = document.getElementById('normModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+    
+    async function saveNorm() {
+        const form = document.getElementById('normForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const normId = document.getElementById('normId').value;
+        const data = {
+            location: document.getElementById('location').value,
+            rig_name: document.getElementById('rigName').value,
+            days: parseInt(document.getElementById('days').value),
+            top_drive: document.getElementById('topDrive').value === 'true',
+            rig_type: document.getElementById('rigType').value
+        };
+        
+        try {
+            const url = normId 
+                ? `/api/rig-norms/${normId}/update/`
+                : '/api/rig-norms/create/';
+            
+            const response = await fetch(url, {
+                method: normId ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showAlert(result.message || 'Rig norm saved successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('normModal')).hide();
+                loadNorms();
+            } else {
+                showAlert(result.error || 'Error saving rig norm', 'danger');
+            }
+        } catch (error) {
+            console.error('Error saving norm:', error);
+            showAlert('Error saving rig norm', 'danger');
+        }
+    }
+    
+    async function deleteNorm(id) {
+        if (!confirm('Are you sure you want to delete this rig norm?')) return;
+        
+        try {
+            const response = await fetch(`/api/rig-norms/${id}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showAlert(result.message || 'Rig norm deleted successfully', 'success');
+                loadNorms();
+            } else {
+                showAlert(result.error || 'Error deleting rig norm', 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting norm:', error);
+            showAlert('Error deleting rig norm', 'danger');
+        }
+    }
+    
+    // ===================== ADJUSTMENTS FUNCTIONS =====================
+    
+    async function loadAdjustments() {
+        try {
+            const response = await fetch('/api/rig-adjustments/');
+            const result = await response.json();
+            
+            adjustments = result.data || [];
+            renderAdjustmentsTable();
+        } catch (error) {
+            console.error('Error loading adjustments:', error);
+            showAlert('Error loading adjustment rules', 'danger');
+        }
+    }
+    
+    function renderAdjustmentsTable() {
+        if (!adjustmentsTableInitialized) return;
+        
+        adjustmentsTable.clear();
+        
+        // Filter by location if selected
+        const filteredAdjustments = currentLocationFilter 
+            ? adjustments.filter(adj => adj.location === currentLocationFilter)
+            : adjustments;
+        
+        const rows = filteredAdjustments.map(adj => [
+            adj.location || '-',
+            adj.condition,
+            adj.category_display,
+            `<strong>${adj.adjustment_display}</strong>`,
+            adj.adjustment_type_display,
+            adj.notes || '-',
+            adj.is_active 
+                ? '<span class="badge bg-success">Active</span>' 
+                : '<span class="badge bg-secondary">Inactive</span>',
+            `
+                <button class="btn btn-xs btn-warning me-1" onclick="editAdjustment('${adj.id}')" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-xs btn-danger" onclick="deleteAdjustment('${adj.id}')" title="Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `
+        ]);
+        
+        adjustmentsTable.rows.add(rows);
+        adjustmentsTable.draw();
+    }
+    
+    function showAddAdjustmentModal() {
+        document.getElementById('adjustmentModalLabel').textContent = 'Add Adjustment Rule';
+        document.getElementById('adjustmentForm').reset();
+        document.getElementById('adjustmentId').value = '';
+        document.getElementById('adjActive').value = 'true';
+        document.getElementById('adjPriority').value = '0';
+        
+        const modalEl = document.getElementById('adjustmentModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+    
+    function editAdjustment(id) {
+        const adj = adjustments.find(a => a.id === id);
+        if (!adj) return;
+        
+        document.getElementById('adjustmentModalLabel').textContent = 'Edit Adjustment Rule';
+        document.getElementById('adjustmentId').value = adj.id;
+        document.getElementById('adjCondition').value = adj.condition;
+        document.getElementById('adjCategory').value = adj.category;
+        document.getElementById('adjType').value = adj.adjustment_type;
+        document.getElementById('adjValue').value = adj.adjustment_value || '';
+        document.getElementById('adjDisplay').value = adj.adjustment_display;
+        document.getElementById('adjUnit').value = adj.unit || '';
+        document.getElementById('adjMinDistance').value = adj.min_distance || '';
+        document.getElementById('adjMaxDistance').value = adj.max_distance || '';
+        document.getElementById('adjMaxDepth').value = adj.max_depth || '';
+        document.getElementById('adjRigType').value = adj.applies_to_rig_type || '';
+        document.getElementById('adjPriority').value = adj.priority || 0;
+        document.getElementById('adjActive').value = adj.is_active ? 'true' : 'false';
+        document.getElementById('adjNotes').value = adj.notes || '';
+        
+        const modalEl = document.getElementById('adjustmentModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+    
+    async function saveAdjustment() {
+        const form = document.getElementById('adjustmentForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const adjustmentId = document.getElementById('adjustmentId').value;
+        const data = {
+            condition: document.getElementById('adjCondition').value,
+            category: document.getElementById('adjCategory').value,
+            adjustment_type: document.getElementById('adjType').value,
+            adjustment_value: document.getElementById('adjValue').value ? parseFloat(document.getElementById('adjValue').value) : null,
+            adjustment_display: document.getElementById('adjDisplay').value,
+            unit: document.getElementById('adjUnit').value || null,
+            min_distance: document.getElementById('adjMinDistance').value ? parseFloat(document.getElementById('adjMinDistance').value) : null,
+            max_distance: document.getElementById('adjMaxDistance').value ? parseFloat(document.getElementById('adjMaxDistance').value) : null,
+            max_depth: document.getElementById('adjMaxDepth').value ? parseFloat(document.getElementById('adjMaxDepth').value) : null,
+            applies_to_rig_type: document.getElementById('adjRigType').value || null,
+            priority: parseInt(document.getElementById('adjPriority').value) || 0,
+            is_active: document.getElementById('adjActive').value === 'true',
+            notes: document.getElementById('adjNotes').value || null
+        };
+        
+        try {
+            const url = adjustmentId 
+                ? `/api/rig-adjustments/${adjustmentId}/update/`
+                : '/api/rig-adjustments/create/';
+            
+            const response = await fetch(url, {
+                method: adjustmentId ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showAlert(result.message || 'Adjustment rule saved successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('adjustmentModal')).hide();
+                loadAdjustments();
+            } else {
+                showAlert(result.error || 'Error saving adjustment rule', 'danger');
+            }
+        } catch (error) {
+            console.error('Error saving adjustment:', error);
+            showAlert('Error saving adjustment rule', 'danger');
+        }
+    }
+    
+    async function deleteAdjustment(id) {
+        if (!confirm('Are you sure you want to delete this adjustment rule?')) return;
+        
+        try {
+            const response = await fetch(`/api/rig-adjustments/${id}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('idrs_csrftoken')
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showAlert(result.message || 'Adjustment rule deleted successfully', 'success');
+                loadAdjustments();
+            } else {
+                showAlert(result.error || 'Error deleting adjustment rule', 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting adjustment:', error);
+            showAlert('Error deleting adjustment rule', 'danger');
+        }
+    }
+    
+    // ===================== UTILITY FUNCTIONS =====================
+    
+    function showAlert(message, type) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        const container = document.querySelector('.rignorms-page');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    async function loadLocations() {
+        try {
+            const response = await fetch('/api/company-codes/locations/');
+            const data = await response.json();
+            
+            const locationSelect = document.getElementById('location');
+            locationSelect.innerHTML = '<option value="">Select Location</option>';
+            
+            if (data.locations) {
+                data.locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    option.textContent = location;
+                    locationSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading locations:', error);
+        }
+    }
+    
+    function updateLocationFilter() {
+        // Extract unique locations from actual norms data
+        const uniqueLocations = [...new Set(norms.map(norm => norm.location).filter(loc => loc))].sort();
+        
+        const filterSelect = document.getElementById('location-selector');
+        filterSelect.innerHTML = '<option value="">All Locations</option>';
+        
+        uniqueLocations.forEach(location => {
+            const filterOption = document.createElement('option');
+            filterOption.value = location;
+            filterOption.textContent = location;
+            filterSelect.appendChild(filterOption);
+        });
+        
+        // Set filter from URL if present
+        if (currentLocationFilter && uniqueLocations.includes(currentLocationFilter)) {
+            filterSelect.value = currentLocationFilter;
+        } else if (currentLocationFilter && !uniqueLocations.includes(currentLocationFilter)) {
+            currentLocationFilter = '';
+        }
+    }
+</script>
+{% endblock %}

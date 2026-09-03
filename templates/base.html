@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Interactive Drilling Rig Scheduler{% endblock %}</title>
+    {% load static %}
+    
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- Bootstrap CSS (Local only - no CDN) -->
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    
+    <!-- Bootstrap Icons (Local only - no CDN) -->
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Header Bar -->
+    <header class="top-header">
+        <div class="top-header-left">
+            <button class="mobile-menu-btn d-lg-none" id="sidebarToggleMobile">
+                <i class="bi bi-list"></i>
+            </button>
+            <img src="{% static 'images/logo-old.png' %}" alt="ONGC Logo Old" class="header-logo">
+            <div class="header-divider"></div>
+            <img src="{% static 'images/logo-new.png' %}" alt="ONGC Logo New" class="header-logo">
+        </div>
+        <div class="top-header-center">
+            <i class="bi bi-gear-fill header-icon"></i>
+            <span class="header-app-name">iDRS</span>
+        </div>
+        <div class="top-header-right">
+            <!-- Profile Dropdown -->
+            <div class="profile-dropdown" id="profileDropdown">
+                <button class="profile-trigger" id="profileTrigger">
+                    <div class="header-user-info">
+                        <span class="header-username">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="header-role">{% if user.is_staff %}Admin{% else %}User{% endif %}</span>
+                    </div>
+                    <div class="header-avatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="profile-menu" id="profileMenu">
+                    <div class="profile-menu-header">
+                        <div class="profile-menu-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="profile-menu-info">
+                            <div class="profile-menu-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="profile-menu-email">{{ user.email }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-menu-divider"></div>
+                    {% if user.is_staff or user.is_superuser %}
+                    <a href="/admin/" class="profile-menu-item" target="_blank">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Admin Panel</span>
+                    </a>
+                    <div class="profile-menu-divider"></div>
+                    {% endif %}
+                    <a href="#" class="profile-menu-item" onclick="logout(); return false;">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar Blue Gradient Background -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <!-- Hamburger toggle button at edge -->
+        <button class="sidebar-edge-toggle d-none d-lg-block" id="sidebarToggle" title="Toggle Sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-light d-lg-none sidebar-mobile-close" id="sidebarClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <!-- Collapse button as nav item - only visible when sidebar is collapsed -->
+                <li class="nav-item sidebar-toggle-item">
+                    <a class="nav-link" href="javascript:void(0);" id="sidebarToggleNav" title="Expand Sidebar">
+                        <i class="bi bi-chevron-right"></i>
+                        <span class="sidebar-text">Expand</span>
+                    </a>
+                </li>
+                
+                <!-- Home -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'index' or request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                        <i class="bi bi-house-door"></i>
+                        <span class="sidebar-text">Home</span>
+                    </a>
+                </li>
+
+                <!-- Data Management -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'data_management' %}active{% endif %}" href="{% url 'data_management' %}">
+                        <i class="bi bi-database"></i>
+                        <span class="sidebar-text">Data Management</span>
+                    </a>
+                </li>
+
+                <!-- Section: Create Schedule -->
+                <li class="sidebar-divider">
+                    <hr class="sidebar-separator">
+                    <span class="sidebar-section-title">Create Schedule</span>
+                </li>
+                <li class="nav-item sidebar-sub-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'scheduling' %}active{% endif %}" href="{% url 'scheduling' %}">
+                        <i class="bi bi-calendar-check"></i>
+                        <span class="sidebar-text">Scheduling</span>
+                    </a>
+                </li>
+                <li class="nav-item sidebar-sub-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'schedules_list' %}active{% endif %}" href="{% url 'schedules_list' %}">
+                        <i class="bi bi-list-ul"></i>
+                        <span class="sidebar-text">Schedules</span>
+                    </a>
+                </li>
+                <li class="nav-item sidebar-sub-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'interactive_gantt' %}active{% endif %}" href="{% url 'interactive_gantt' %}">
+                        <i class="bi bi-bar-chart-steps"></i>
+                        <span class="sidebar-text">Interactive Gantt</span>
+                    </a>
+                </li>
+
+                <!-- Section: Production -->
+                <li class="sidebar-divider">
+                    <hr class="sidebar-separator">
+                    <span class="sidebar-section-title">Production</span>
+                </li>
+                <li class="nav-item sidebar-sub-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'sem_dashboard' or request.resolver_match.url_name == 'sem_detail' %}active{% endif %}" href="{% url 'sem_dashboard' %}">
+                        <i class="bi bi-play-circle"></i>
+                        <span class="sidebar-text">Execution</span>
+                    </a>
+                </li>
+
+                <!-- Movement Maps -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'schedule_maps' %}active{% endif %}" href="{% url 'schedule_maps' %}">
+                        <i class="bi bi-geo-alt"></i>
+                        <span class="sidebar-text">Movement Maps</span>
+                    </a>
+                </li>
+                
+                <!-- Help & Support Section -->
+                <li class="sidebar-divider">
+                    <hr class="sidebar-separator">
+                    <span class="sidebar-section-title">Help & Support</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'video_tutorials' or request.resolver_match.url_name == 'video_tutorial_detail' %}active{% endif %}" href="{% url 'video_tutorials' %}">
+                        <i class="bi bi-play-circle"></i>
+                        <span class="sidebar-text">Video Tutorials</span>
+                    </a>
+                </li>
+                
+                {% if user.is_staff or user.is_superuser %}
+                <!-- Admin Section Separator -->
+                <li class="sidebar-divider">
+                    <hr class="sidebar-separator">
+                    <span class="sidebar-section-title">Admin Tools</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'er_diagram' %}active{% endif %}" href="{% url 'er_diagram' %}">
+                        <i class="bi bi-diagram-3"></i>
+                        <span class="sidebar-text">ER Diagram</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'database_viewer' or request.resolver_match.url_name == 'database_table_detail' %}active{% endif %}" href="{% url 'database_viewer' %}">
+                        <i class="bi bi-database"></i>
+                        <span class="sidebar-text">Database Viewer</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'company_codes' %}active{% endif %}" href="{% url 'company_codes' %}">
+                        <i class="bi bi-building"></i>
+                        <span class="sidebar-text">Company Codes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}" href="{% url 'user_management' %}">
+                        <i class="bi bi-people"></i>
+                        <span class="sidebar-text">User Management</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'activity_dashboard' %}active{% endif %}" href="{% url 'activity_dashboard' %}">
+                        <i class="bi bi-activity"></i>
+                        <span class="sidebar-text">Activity Tracker</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+    <!-- Floating AppSense Button - Available to all users across all pages -->
+    {% if EXTERNAL_APP_ENABLED|default:True %}
+    <button class="floating-appsense-btn" onclick="openExternalApp(event)" title="{{ EXTERNAL_APP_NAME|default:'AppSense' }}">
+        <i class="bi bi-bug"></i>
+    </button>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Alerts Container -->
+    <div id="alerts-container" class="position-fixed top-0 end-0" style="z-index: 1055; margin-top: 20px; margin-right: 20px; min-width: 300px;">
+    </div>
+
+    <!-- Modals Block - at body level for proper Bootstrap functionality -->
+    {% block modals %}{% endblock %}
+
+    <!-- Bootstrap JS (Local only - no CDN) -->
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    
+    <!-- Refresh page on back/forward navigation so data is always current -->
+    <script>
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- External App Link Function -->
+    <script>
+        async function openExternalApp(event) {
+            event.preventDefault();
+            
+            try {
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                
+                // Call server-side endpoint to generate signed URL
+                const response = await fetch('/api/get-appsense-url/', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to generate AppSense URL');
+                }
+                
+                // Open the signed URL in new tab
+                const newWindow = window.open(data.url, '_blank');
+                
+                // Check if popup was blocked
+                if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                    alert('Popup blocked! Please allow popups for this site and try again.');
+                }
+            } catch (error) {
+                console.error('Error opening external app:', error);
+                alert('Failed to open external app. Error: ' + error.message + '\n\nPlease check the browser console for details or contact your administrator.');
+            }
+        }
+    </script>
+    
+    <!-- Sidebar JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarToggleNav = document.getElementById('sidebarToggleNav');
+            const sidebarToggleMobile = document.getElementById('sidebarToggleMobile');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            
+            // Profile dropdown functionality
+            const profileTrigger = document.getElementById('profileTrigger');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            if (profileTrigger && profileDropdown) {
+                profileTrigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('open');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (!profileDropdown.contains(e.target)) {
+                        profileDropdown.classList.remove('open');
+                    }
+                });
+                
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        profileDropdown.classList.remove('open');
+                    }
+                });
+            }
+            
+            // Desktop toggle function
+            function toggleSidebarCollapse() {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('sidebar-collapsed');
+                
+                // Toggle backdrop collapsed state
+                if (sidebarBackdrop) {
+                    sidebarBackdrop.classList.toggle('collapsed');
+                }
+                
+                // Update toggle button - hamburger menu stays the same
+                if (sidebar.classList.contains('collapsed')) {
+                    if (sidebarToggle) sidebarToggle.title = 'Expand Sidebar';
+                } else {
+                    if (sidebarToggle) sidebarToggle.title = 'Collapse Sidebar';
+                }
+                
+                // Save state
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }
+            
+            // Desktop toggle - edge button
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebarCollapse);
+            }
+            
+            // Desktop toggle - nav item (when collapsed)
+            if (sidebarToggleNav) {
+                sidebarToggleNav.addEventListener('click', toggleSidebarCollapse);
+            }
+            
+            // Mobile toggle
+            if (sidebarToggleMobile) {
+                sidebarToggleMobile.addEventListener('click', function() {
+                    sidebar.classList.add('show');
+                    sidebarOverlay.classList.add('show');
+                });
+            }
+            
+            // Close sidebar
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            }
+            
+            if (sidebarClose) {
+                sidebarClose.addEventListener('click', closeSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+            
+            // Restore sidebar state
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed && sidebarToggle) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('sidebar-collapsed');
+                if (sidebarBackdrop) {
+                    sidebarBackdrop.classList.add('collapsed');
+                }
+                sidebarToggle.title = 'Expand Sidebar';
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                }
+            });
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear all localStorage data
+                localStorage.removeItem('mpi_last_search');
+                // Simply redirect to logout URL (configured to accept GET requests)
+                window.location.href = '/logout/';
+            }
+        }
+
+        // ========================================
+        // Global Error Handling
+        // ========================================
+
+        // Intercept all fetch calls to handle common errors gracefully
+        (function() {
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                return originalFetch.apply(this, args).then(response => {
+                    // Handle session expired (401)
+                    if (response.status === 401) {
+                        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+                        if (url.startsWith('/api/')) {
+                            showGlobalAlert('Your session has expired. Redirecting to login...', 'warning');
+                            setTimeout(() => { window.location.href = '/login/'; }, 2000);
+                        }
+                    }
+                    // Handle database lock (503)
+                    if (response.status === 503) {
+                        response.clone().json().then(data => {
+                            if (data.error && data.error.toLowerCase().includes('busy')) {
+                                showGlobalAlert(data.error, 'warning');
+                            }
+                        }).catch(() => {});
+                    }
+                    return response;
+                }).catch(error => {
+                    // Network errors (server down, optimizer running, etc.)
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        showGlobalAlert('Unable to connect to the server. Please check if the server is running and try again.', 'danger');
+                    }
+                    throw error;
+                });
+            };
+        })();
+
+        // Show a dismissible alert banner at the top of the page
+        function showGlobalAlert(message, type) {
+            type = type || 'danger';
+            // Remove any existing global alert
+            const existing = document.getElementById('global-error-alert');
+            if (existing) existing.remove();
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'global-error-alert';
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99999;min-width:400px;max-width:700px;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+            alertDiv.innerHTML = `
+                <strong>${type === 'danger' ? 'Error' : type === 'warning' ? 'Warning' : 'Info'}:</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // Auto-dismiss after 8 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.classList.remove('show');
+                    setTimeout(() => alertDiv.remove(), 300);
+                }
+            }, 8000);
+        }
+
+        // Handle unhandled promise rejections (e.g., from async/await code)
+        window.addEventListener('unhandledrejection', function(event) {
+            const error = event.reason;
+            if (error && error.message && error.message.includes('Failed to fetch')) {
+                event.preventDefault();
+                showGlobalAlert('Unable to connect to the server. Please try again in a moment.', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,741 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<!-- Additional CSS for index page if needed -->
+{% endblock %}
+
+{% block content %}
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="mb-5">
+            <!-- Enhanced Header Section -->
+            <div class="page-header-section mb-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="page-header-content">
+                            <h2 class="page-title mb-2">
+                                <i class="bi bi-speedometer2 me-3"></i>
+                                Dashboard
+                            </h2>
+                                                        <p class="dashboard-subtitle">
+                                Interactive Drilling Rig Scheduler - Real-time Operations Overview
+                            </p>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="page-header-actions">
+                            <span class="badge bg-success px-3 py-2">
+                                <i class="bi bi-activity me-1"></i>
+                                System Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <hr class="page-divider">
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Rigs
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-rigs">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-tools fs-2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Wells
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-wells">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-circle-fill fs-2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Active Schedules
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-schedules">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-calendar3 fs-2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Optimization Score
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="optimization-score">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-graph-up fs-2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Schedules -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Recent Schedules</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="recent-schedules-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Assignments</th>
+                                            <th>Total Cost (Cr)</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Management Section -->
+        <section id="data-management" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">
+                        <i class="bi bi-database me-2"></i>
+                        Data Management
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Rig Data Upload -->
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-tools me-2"></i>
+                                Rig Data
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="rig-upload-form" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="rig-file" class="form-label">Upload Rigs CSV</label>
+                                    <input type="file" class="form-control" id="rig-file" name="rigs_file" accept=".csv" required>
+                                    <div class="form-text">Upload CSV file with rig data</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload me-1"></i>
+                                    Upload Rigs
+                                </button>
+                            </form>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Current Rigs: <span id="current-rigs-count" class="badge bg-secondary">0</span></span>
+                                <button class="btn btn-outline-primary btn-sm" onclick="loadRigs()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Well Data Upload -->
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-circle-fill me-2"></i>
+                                Well Data
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="well-upload-form" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="well-file" class="form-label">Upload Wells CSV</label>
+                                    <input type="file" class="form-control" id="well-file" name="wells_file" accept=".csv" required>
+                                    <div class="form-text">Upload CSV file with well data</div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-upload me-1"></i>
+                                    Upload Wells
+                                </button>
+                            </form>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Current Wells: <span id="current-wells-count" class="badge bg-secondary">0</span></span>
+                                <button class="btn btn-outline-success btn-sm" onclick="loadWells()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Individual Rig and Well Management -->
+            <div class="row mt-4">
+                <!-- Rig Management -->
+                <div class="col-lg-6">
+                    <div class="card shadow">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-tools me-2"></i>
+                                Manage Rigs
+                            </h5>
+                            <div>
+                                <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addRigModal">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    Add Rig
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="removeAllRigs()" title="Remove All Rigs">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Remove All
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Capacity</th>
+                                            <th>Daily Cost</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rigs-table-body">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Well Management -->
+                <div class="col-lg-6">
+                    <div class="card shadow">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-circle-fill me-2"></i>
+                                Manage Wells
+                            </h5>
+                            <div>
+                                <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addWellModal">
+                                    <i class="bi bi-plus-lg me-1"></i>
+                                    Add Well
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="removeAllWells()" title="Remove All Wells">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Remove All
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Asset ID</th>
+                                            <th>Type</th>
+                                            <th>Priority</th>
+                                            <th>Duration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="wells-table-body">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Loading...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Rig Modal -->
+        <div class="modal fade" id="addRigModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-tools me-2"></i>
+                            Add New Rig
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-rig-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-name" class="form-label">Rig Name *</label>
+                                        <input type="text" class="form-control" id="rig-name" name="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-type" class="form-label">Rig Type *</label>
+                                        <select class="form-select" id="rig-type" name="rig_type" required>
+                                            <option value="">Select Type</option>
+                                            <option value="Mobile">Mobile</option>
+                                            <option value="Fixed">Fixed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-capacity" class="form-label">Capacity (HP) *</label>
+                                        <input type="number" class="form-control" id="rig-capacity" name="rig_capacity_hp" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-daily-cost" class="form-label">Daily Cost (INR) *</label>
+                                        <input type="number" class="form-control" id="rig-daily-cost" name="daily_cost_inr" min="0" step="0.01" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-start-date" class="form-label">Start Date *</label>
+                                        <input type="date" class="form-control" id="rig-start-date" name="start_date" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-end-date" class="form-label">End Date *</label>
+                                        <input type="date" class="form-control" id="rig-end-date" name="end_date" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-drilling-capacity" class="form-label">Drilling Capacity (m) *</label>
+                                        <input type="number" class="form-control" id="rig-drilling-capacity" name="drilling_capacity_m" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="rig-bop-stack" class="form-label">BOP Stack *</label>
+                                        <input type="number" class="form-control" id="rig-bop-stack" name="bop_stack" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-tds" class="form-label">TDS Available</label>
+                                        <select class="form-select" id="rig-tds" name="tds_availability">
+                                            <option value="Y">Yes</option>
+                                            <option value="N">No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-hpht" class="form-label">HPHT Suitable</label>
+                                        <select class="form-select" id="rig-hpht" name="hpht_suitability">
+                                            <option value="N">No</option>
+                                            <option value="Y">Yes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-crew" class="form-label">Crew Availability</label>
+                                        <select class="form-select" id="rig-crew" name="crew_availability">
+                                            <option value="OK">OK</option>
+                                            <option value="NOT_OK">Not OK</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-ilm-fixed" class="form-label">ILM Fixed Cost</label>
+                                        <input type="number" class="form-control" id="rig-ilm-fixed" name="ilm_cost_fixed" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-ilm-per-km" class="form-label">ILM Per KM</label>
+                                        <input type="number" class="form-control" id="rig-ilm-per-km" name="ilm_cost_per_km" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="rig-ilm-cluster" class="form-label">ILM Cluster Cost</label>
+                                        <input type="number" class="form-control" id="rig-ilm-cluster" name="ilm_cost_cluster" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveRig()">
+                            <i class="bi bi-check-lg me-1"></i>
+                            Save Rig
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Well Modal -->
+        <div class="modal fade" id="addWellModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-circle-fill me-2"></i>
+                            Add New Well
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-well-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-sn" class="form-label">Serial Number *</label>
+                                        <input type="number" class="form-control" id="well-sn" name="sn" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-asset-id" class="form-label">Asset ID *</label>
+                                        <input type="text" class="form-control" id="well-asset-id" name="asset_id" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-name" class="form-label">Well Name *</label>
+                                        <input type="text" class="form-control" id="well-name" name="name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-type" class="form-label">Well Type *</label>
+                                        <select class="form-select" id="well-type" name="well_type" required>
+                                            <option value="">Select Type</option>
+                                            <option value="EXP">Exploration</option>
+                                            <option value="Dev">Development</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-profile" class="form-label">Well Profile *</label>
+                                        <select class="form-select" id="well-profile" name="well_profile" required>
+                                            <option value="">Select Profile</option>
+                                            <option value="DI">Directional</option>
+                                            <option value="VE">Vertical</option>
+                                            <option value="SD">Sidetrack</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-priority" class="form-label">Priority *</label>
+                                        <select class="form-select" id="well-priority" name="priority" required>
+                                            <option value="">Select Priority</option>
+                                            <option value="HIGH">High</option>
+                                            <option value="MEDIUM">Medium</option>
+                                            <option value="LOW">Low</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-depth" class="form-label">Depth (m) *</label>
+                                        <input type="number" class="form-control" id="well-depth" name="depth" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-rig-capacity" class="form-label">Required Rig Capacity (HP) *</label>
+                                        <input type="number" class="form-control" id="well-rig-capacity" name="rig_capacity_required_hp" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="well-drl-days" class="form-label">Drilling Days *</label>
+                                        <input type="number" class="form-control" id="well-drl-days" name="drl_days" min="0" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="well-pt-days" class="form-label">Testing Days *</label>
+                                        <input type="number" class="form-control" id="well-pt-days" name="pt_days" min="0" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="well-duration" class="form-label">Total Duration *</label>
+                                        <input type="number" class="form-control" id="well-duration" name="duration" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-latitude" class="form-label">Latitude *</label>
+                                        <input type="number" class="form-control" id="well-latitude" name="latitude" step="0.000001" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-longitude" class="form-label">Longitude *</label>
+                                        <input type="number" class="form-control" id="well-longitude" name="longitude" step="0.000001" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-rtd" class="form-label">Ready To Drill Date *</label>
+                                        <input type="date" class="form-control" id="well-rtd" name="rtd" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-bop-stack" class="form-label">BOP Stack *</label>
+                                        <input type="number" class="form-control" id="well-bop-stack" name="bop_stack" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-tds" class="form-label">TDS Requirement</label>
+                                        <select class="form-select" id="well-tds" name="tds_requirement">
+                                            <option value="N">No</option>
+                                            <option value="Y">Yes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="well-footprint" class="form-label">Footprint *</label>
+                                        <select class="form-select" id="well-footprint" name="footprint" required>
+                                            <option value="">Select Footprint</option>
+                                            <option value="Mobile">Mobile</option>
+                                            <option value="Fixed">Fixed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" onclick="saveWell()">
+                            <i class="bi bi-check-lg me-1"></i>
+                            Save Well
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduling Section -->
+        <section id="scheduling" class="mb-5">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="mb-4">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Schedule Optimization
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0">Create New Schedule</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="schedule-form">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="schedule-name" class="form-label">Schedule Name</label>
+                                            <input type="text" class="form-control" id="schedule-name" name="name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="time-limit" class="form-label">Time Limit (seconds)</label>
+                                            <input type="number" class="form-control" id="time-limit" name="time_limit_seconds" value="60" min="10" max="300">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="selected-rigs" class="form-label">Select Rigs</label>
+                                            <select class="form-select" id="selected-rigs" name="rig_ids" multiple size="8">
+                                                <option disabled>Loading rigs...</option>
+                                            </select>
+                                            <div class="form-text">Hold Ctrl/Cmd to select multiple rigs</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="selected-wells" class="form-label">Select Wells</label>
+                                            <select class="form-select" id="selected-wells" name="well_ids" multiple size="8">
+                                                <option disabled>Loading wells...</option>
+                                            </select>
+                                            <div class="form-text">Hold Ctrl/Cmd to select multiple wells</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-play-circle me-2"></i>
+                                            Start Optimization
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="selectAllRigs()">
+                                            Select All Rigs
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="selectAllWells()">
+                                            Select All Wells
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0">Optimization Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="optimization-status" class="text-center text-muted">
+                                <i class="bi bi-hourglass-split fs-1"></i>
+                                <p class="mt-2">Ready to optimize</p>
+                            </div>
+                            
+                            <div id="optimization-progress" style="display: none;">
+                                <div class="progress mb-3">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 100%">
+                                        Optimizing...
+                                    </div>
+                                </div>
+                                <p class="text-center text-muted">Please wait while the algorithm runs...</p>
+                            </div>
+                            
+                            <div id="optimization-results" style="display: none;">
+                                <h6>Results:</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Assignments:</strong> <span id="result-assignments">-</span></li>
+                                    <li><strong>Unassigned:</strong> <span id="result-unassigned">-</span></li>
+                                    <li><strong>Total Cost:</strong> <span id="result-cost">-</span> Cr</li>
+                                    <li><strong>Solve Time:</strong> <span id="result-time">-</span>s</li>
+                                </ul>
+                                <button class="btn btn-success btn-sm mt-2" onclick="viewGanttChart()">
+                                    <i class="bi bi-bar-chart me-1"></i>
+                                    View Gantt Chart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Plotly.js - Latest version -->
+    <script src="{% static 'vendor/plotly-2.26.0.min.js' %}"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/main.js' %}?v=2"></script>
+{% endblock %}

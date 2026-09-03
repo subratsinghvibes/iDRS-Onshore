@@ -1,0 +1,681 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About the Scheduler - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Page header styling is centralized in style.css */
+        
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-header i {
+            margin-right: 0.8rem;
+            font-size: 1.4rem;
+        }
+        
+        .section-body {
+            padding: 1.5rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .feature-card {
+            background: #f8f9fc;
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 1.2rem;
+            transition: all 0.3s ease;
+            border-left: 4px solid #1cc88a;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(28, 200, 138, 0.2);
+        }
+        
+        .feature-icon {
+            color: #1cc88a;
+            font-size: 1.8rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            color: #0A2F5A;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .feature-description {
+            color: #6c757d;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .workflow-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .workflow-step {
+            background: white;
+            border: 1px solid #e3e6f0;
+            border-radius: 8px;
+            padding: 1.2rem;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .workflow-step:hover {
+            box-shadow: 0 4px 15px rgba(10, 47, 90, 0.1);
+            border-color: #0A2F5A;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #0A2F5A 0%, #3b82f6 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            color: #0A2F5A;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .tech-tag {
+            background: linear-gradient(135deg, #1cc88a 0%, #17a673 100%);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.2rem;
+            text-align: center;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card.primary {
+            border-left-color: #0A2F5A;
+        }
+        
+        .stat-card.success {
+            border-left-color: #1cc88a;
+        }
+        
+        .stat-card.info {
+            border-left-color: #36b9cc;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        
+        .stat-card.primary .stat-number {
+            color: #0A2F5A;
+        }
+        
+        .stat-card.success .stat-number {
+            color: #1cc88a;
+        }
+        
+        .stat-card.info .stat-number {
+            color: #36b9cc;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .feature-grid,
+            .workflow-container {
+                grid-template-columns: 1fr;
+            }
+        }
+            color: #4e73df;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.35rem;
+            margin: 1.5rem 0;
+        }
+        
+        .highlight-box h5 {
+            color: white;
+            font-weight: 700;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            border: 1px solid #4a5568;
+            border-radius: 0.35rem;
+            padding: 1rem;
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        
+        .code-block .code-keyword {
+            color: #63b3ed;
+        }
+        
+        .code-block .code-string {
+            color: #68d391;
+        }
+        
+        .code-block .code-comment {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e3e6f0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list li i {
+            color: #1cc88a;
+            margin-right: 0.75rem;
+            font-size: 1rem;
+            margin-top: 0.1rem;
+            flex-shrink: 0;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.35rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            text-decoration: none;
+        }
+        
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+    <!-- Main About Heading -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <h1 class="about-main-heading">
+                <i class="bi bi-gear-wide-connected me-3"></i>
+                Interactive Drilling Rig Scheduler
+            </h1>
+            <p class="about-subtitle">
+                Advanced optimization engine for drilling operations using Google OR-Tools CP-SAT solver
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-2 justify-content-end">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Application Overview -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="overview-section p-4" style="background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(25, 135, 84, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(220, 53, 69, 0.1);">
+                    <h2 class="mb-4" style="color: #dc3545; font-weight: 600;">
+                        <i class="bi bi-cpu-fill me-2"></i>Interactive Drilling Rig Scheduler (iDRS v8.0)
+                    </h2>
+                    
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <p class="lead mb-3" style="font-size: 1.1rem; line-height: 1.6;">
+                                <strong>iDRS</strong> is an advanced, enterprise-grade optimization platform that revolutionizes drilling operations through 
+                                sophisticated constraint programming and intelligent resource allocation. Built on Google OR-Tools' CP-SAT solver, 
+                                it delivers optimal rig-to-well assignments while managing complex operational constraints across multi-year planning horizons.
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-lightning-charge-fill text-warning me-3 mt-1"></i>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">Real-Time Optimization</h6>
+                                            <small class="text-muted">Sub-30 second solve times for 1000+ wells across 50+ rigs with dynamic constraint handling</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-globe-americas text-primary me-3 mt-1"></i>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">Geographical Intelligence</h6>
+                                            <small class="text-muted">Advanced mapping with Plotly/Folium integration for movement optimization and path visualization</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-calendar-event text-success me-3 mt-1"></i>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">Dynamic Scheduling</h6>
+                                            <small class="text-muted">Interactive Gantt charts with real-time updates, RTD compliance, and availability management</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-shield-check text-info me-3 mt-1"></i>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">Constraint Enforcement</h6>
+                                            <small class="text-muted">Multi-dimensional compatibility validation, ILM management, and financial optimization</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-4">
+                            <div class="tech-stack-overview p-3" style="background: rgba(255, 255, 255, 0.8); border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);">
+                                <h6 class="fw-bold mb-3 text-center">
+                                    <i class="bi bi-stack me-2"></i>Technology Stack
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <span class="badge bg-danger-subtle text-danger w-100 py-2">Django 5.1.5</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-primary-subtle text-primary w-100 py-2">Python 3.10+</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-warning-subtle text-warning w-100 py-2">OR-Tools</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-success-subtle text-success w-100 py-2">CP-SAT</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-info-subtle text-info w-100 py-2">Plotly 5.24</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="badge bg-secondary-subtle text-secondary w-100 py-2">Bootstrap 5</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 text-center">
+                                    <div class="row g-1">
+                                        <div class="col-4">
+                                            <div class="p-2" style="background: rgba(220, 53, 69, 0.1); border-radius: 6px;">
+                                                <small class="fw-bold d-block">99.9%</small>
+                                                <small class="text-muted">Uptime</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2" style="background: rgba(25, 135, 84, 0.1); border-radius: 6px;">
+                                                <small class="fw-bold d-block">&lt;30s</small>
+                                                <small class="text-muted">Solve</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2" style="background: rgba(13, 110, 253, 0.1); border-radius: 6px;">
+                                                <small class="fw-bold d-block">10+yr</small>
+                                                <small class="text-muted">Horizon</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-light border-0 mb-0" style="background: rgba(255, 255, 255, 0.6);">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-2">
+                                            <i class="bi bi-bullseye text-danger me-2"></i>Core Capabilities
+                                        </h6>
+                                        <p class="mb-0 small">
+                                            <strong>Multi-Constraint Optimization:</strong> RTD compliance • Rig-Well compatibility • ILM management • Financial optimization • 
+                                            Resource availability • Geographical constraints • Time windows • Capacity limitations
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-md-end">
+                                        <span class="badge bg-danger-subtle text-danger px-3 py-2">
+                                            <i class="bi bi-graph-up me-1"></i>Enterprise Ready
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="content-section">
+            <h3 class="section-header">
+                <i class="bi bi-info-circle"></i>
+                System Overview
+            </h3>
+            <div class="section-body">
+                <p class="lead mb-3">
+                    The <strong>Interactive Drilling Rig Scheduler (iDRS)</strong> leverages Google OR-Tools CP-SAT solver 
+                    to optimize drilling operations through advanced constraint programming.
+                </p>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                        <div class="feature-title">CP-SAT Optimization</div>
+                        <div class="feature-description">
+                            Advanced constraint programming solver for complex scheduling problems
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <div class="feature-title">Geographical Mapping</div>
+                        <div class="feature-description">
+                            Visual representation of rig movements and well locations
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="feature-title">Gantt Visualization</div>
+                        <div class="feature-description">
+                            Interactive timeline view of drilling operations and schedules
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="feature-title">Constraint Enforcement</div>
+                        <div class="feature-description">
+                            Ensures operational constraints and compatibility requirements
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Section -->
+        <div class="content-section">
+            <h3 class="section-header">
+                <i class="bi bi-gear"></i>
+                Optimization Workflow
+            </h3>
+            <div class="section-body">
+                <div class="workflow-container">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Data Input</div>
+                        <div class="step-description">
+                            Process rig specifications, well requirements, and operational constraints
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Model Setup</div>
+                        <div class="step-description">
+                            Initialize CP-SAT solver with decision variables and constraints
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Optimization</div>
+                        <div class="step-description">
+                            Solve for optimal rig-to-well assignments minimizing costs
+                        </div>
+                    </div>
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Visualization</div>
+                        <div class="step-description">
+                            Generate Gantt charts and geographical maps for analysis
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="content-section">
+            <h3 class="section-header">
+                <i class="bi bi-code-slash"></i>
+                Technical Specifications
+            </h3>
+            <div class="section-body">
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-database"></i>
+                        </div>
+                        <div class="feature-title">Data Processing</div>
+                        <div class="feature-description">
+                            Pandas DataFrame integration for rig and well data management
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-puzzle"></i>
+                        </div>
+                        <div class="feature-title">Constraint Programming</div>
+                        <div class="feature-description">
+                            Google OR-Tools CP-SAT solver for optimal resource allocation
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="feature-title">Cost Optimization</div>
+                        <div class="feature-description">
+                            Multi-objective optimization for duration and movement costs
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="feature-title">Time Constraints</div>
+                        <div class="feature-description">
+                            RTD compliance and availability window management
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </div>
+                        <div class="feature-title">ILM Management</div>
+                        <div class="feature-description">
+                            Inter-Location Movement constraints and travel optimization
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="feature-title">Compatibility</div>
+                        <div class="feature-description">
+                            Rig-to-well compatibility validation and enforcement
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tech-tags mt-4">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Django</span>
+                    <span class="tech-tag">Google OR-Tools</span>
+                    <span class="tech-tag">CP-SAT</span>
+                    <span class="tech-tag">Pandas</span>
+                    <span class="tech-tag">Plotly</span>
+                    <span class="tech-tag">Folium</span>
+                    <span class="tech-tag">Bootstrap</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="content-section">
+            <h3 class="section-header">
+                <i class="bi bi-star"></i>
+                Key Features & Capabilities
+            </h3>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="feature-card h-100">
+                            <div class="feature-icon">
+                                <i class="bi bi-lightning"></i>
+                            </div>
+                            <div class="feature-title">Advanced Optimization</div>
+                            <div class="feature-description">
+                                • Multi-constraint optimization engine<br>
+                                • Real-time solution generation<br>
+                                • Scalable to 1000+ wells/rigs<br>
+                                • 10-year planning horizon
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-card h-100">
+                            <div class="feature-icon">
+                                <i class="bi bi-eye"></i>
+                            </div>
+                            <div class="feature-title">Interactive Visualization</div>
+                            <div class="feature-description">
+                                • Dynamic Gantt charts<br>
+                                • Geographical mapping<br>
+                                • Real-time updates<br>
+                                • Export capabilities
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+    </div>
+
+    <div style="height: 50px;"></div>
+</div>
+{% endblock %}

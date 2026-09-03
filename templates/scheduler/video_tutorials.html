@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Video Tutorials - iDRS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tutorial-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: white;
+        height: 100%;
+    }
+    
+    .tutorial-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .tutorial-thumbnail {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+    
+    .tutorial-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .tutorial-body {
+        padding: 1.25rem;
+    }
+    
+    .tutorial-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .tutorial-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .tutorial-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        padding-top: 0.75rem;
+        border-top: 1px solid #f3f4f6;
+    }
+    
+    .category-section {
+        margin-bottom: 3rem;
+    }
+    
+    .category-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .category-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6b7280;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #d1d5db;
+        margin-bottom: 1rem;
+    }
+    
+    .play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #667eea;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .tutorial-card:hover .play-overlay {
+        opacity: 1;
+    }
+    
+    .tutorial-thumbnail-wrapper {
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="bi bi-play-circle me-2"></i>Video Tutorials
+                    </h1>
+                    <p class="text-muted mb-0">Learn how to use iDRS with our step-by-step video guides</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if tutorials_by_category %}
+        {% for category, tutorials in tutorials_by_category.items %}
+        <div class="category-section">
+            <div class="category-header">
+                <div class="category-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="bi bi-folder-fill text-white"></i>
+                </div>
+                <h2 class="category-title">{{ category }}</h2>
+            </div>
+            
+            <div class="row g-4">
+                {% for tutorial in tutorials %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <a href="{% url 'video_tutorial_detail' tutorial.id %}" class="text-decoration-none">
+                        <div class="tutorial-card">
+                            <div class="tutorial-thumbnail-wrapper">
+                                <div class="tutorial-thumbnail">
+                                    {% if tutorial.thumbnail %}
+                                        <img src="{{ tutorial.thumbnail.url }}" alt="{{ tutorial.title }}">
+                                    {% else %}
+                                        <i class="bi bi-play-circle-fill"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="play-overlay">
+                                    <i class="bi bi-play-fill"></i>
+                                </div>
+                            </div>
+                            <div class="tutorial-body">
+                                <h3 class="tutorial-title">{{ tutorial.title }}</h3>
+                                {% if tutorial.description %}
+                                    <p class="tutorial-description">{{ tutorial.description }}</p>
+                                {% endif %}
+                                <div class="tutorial-meta">
+                                    <span>
+                                        {% if tutorial.duration_minutes %}
+                                            <i class="bi bi-clock me-1"></i>{{ tutorial.duration_minutes }} min
+                                        {% else %}
+                                            <i class="bi bi-clock me-1"></i>Duration varies
+                                        {% endif %}
+                                    </span>
+                                    <span>
+                                        <i class="bi bi-eye me-1"></i>{{ tutorial.view_count }} views
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-camera-video"></i>
+            <h3>No Tutorials Available</h3>
+            <p>Video tutorials will appear here once they are uploaded by administrators.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,615 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Interactive Gantt - Intelligent Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* CRITICAL: Bootstrap Icons Override - Must be loaded first */
+        /* Maximum specificity override for Bootstrap Icons */
+        html body .bi, html body i.bi, 
+        html body [class^="bi-"], html body [class*=" bi-"],
+        .gantt-page .bi, .gantt-page i.bi {
+            font-family: "Bootstrap Icons" !important;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+        }
+        
+        .bi::before, i.bi::before,
+        html body .bi::before, html body i.bi::before {
+            font-family: "Bootstrap Icons" !important;
+            font-style: normal !important;
+        }
+        
+        /* Navigation Icons Fix - Maximum specificity */
+        html body .sidebar .bi, html body .navbar .bi, html body nav .bi,
+        html body .sidebar i.bi, html body .navbar i.bi, html body nav i.bi {
+            font-family: "Bootstrap Icons" !important;
+            font-style: normal !important;
+        }
+        
+        /* Reset and base styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        /* Page header styling is centralized in style.css */
+        
+        /* Page Layout - Fix overlapping */
+        .gantt-page {
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Right Column Layout - Prevent expansion */
+        .col-lg-5 {
+            flex: 0 0 41.66667%;
+            max-width: 41.66667%;
+        }
+        
+        /* Left Column - Gantt Chart */
+        .col-lg-7 {
+            flex: 0 0 58.33333%;
+            max-width: 58.33333%;
+            padding-right: 15px;
+        }
+        
+        .gantt-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            height: 600px;
+            overflow: auto;
+            position: relative;
+        }
+        
+        #scheduleList {
+            max-height: 450px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 0.5rem;
+        }
+        
+        /* Right Column - Schedule Statistics (Top) */
+        .col-lg-5 .stats-card:first-child {
+            min-height: 120px;
+            max-height: 120px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        #scheduleStats {
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 70px;
+            font-size: 0.875rem;
+            padding-right: 0.5rem;
+        }
+        
+        /* Right Column - Schedule List (Bottom) */
+        .col-lg-5 .stats-card:last-child {
+            flex-grow: 1;
+            max-height: calc(600px - 140px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stats-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .task-details {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .priority-high { color: #dc3545; font-weight: bold; }
+        .priority-medium { color: #fd7e14; font-weight: bold; }
+        .priority-low { color: #28a745; font-weight: bold; }
+        
+        /* Alert info */
+        .alert-info {
+            background-color: #e7f3ff;
+            border-color: #b3d9ff;
+            color: #0c5aa6;
+        }
+        
+        .stats-card .card-body {
+            padding: 0.75rem;
+        }
+        
+        .stats-card h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        
+        .info-panel {
+            background: linear-gradient(135deg, #191654 0%, #43c6ac 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+    
+    <!-- Frappe Gantt CSS loaded after our Bootstrap Icons overrides -->
+    <link rel="stylesheet" href="{% static 'css/frappe-gantt.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="gantt-page">
+        <!-- Enhanced Header Section -->
+        <div class="page-header-section mb-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="page-header-content">
+                        <h2 class="page-title mb-2">
+                            <i class="bi bi-calendar-range-fill me-3"></i>
+                            Dynamic Interactive Drilling Rig Scheduler
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Intelligent scheduling optimization for drilling operations with real-time Gantt visualization
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-end">
+                        <div class="toolbar-section">
+                            <button id="optimizeBtn" class="btn btn-primary me-2">
+                                <i class="bi bi-cpu-fill me-2"></i>Optimize Schedule
+                            </button>
+                            <button id="clearBtn" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="row">
+            <!-- Left Column - Gantt Chart -->
+            <div class="col-lg-7">
+                <div class="gantt-container">
+                    <div id="loadingSpinner" class="d-flex justify-content-center align-items-center h-100">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div id="gantt" style="display: none;"></div>
+                    
+                    <div id="noDataMessage" class="alert alert-info text-center" style="display: none;">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        No schedules available. Create a schedule to view the Gantt chart.
+                    </div>
+                </div>
+                
+                <!-- Task Details Panel -->
+                <div id="taskDetails" class="task-details">
+                    <h5><i class="bi bi-info-circle-fill me-2"></i>Task Details</h5>
+                    <div id="taskContent"></div>
+                </div>
+            </div>
+
+            <!-- Right Column - Statistics and Controls -->
+            <div class="col-lg-5">
+                <!-- Schedule Statistics -->
+                <div class="stats-card">
+                    <h6><i class="bi bi-bar-chart-fill me-2"></i>Schedule Statistics</h6>
+                    <div id="scheduleStats">
+                        <p class="text-muted mb-0">Select a schedule to view statistics</p>
+                    </div>
+                </div>
+
+                <!-- Schedule List -->
+                <div class="stats-card">
+                    <h6><i class="bi bi-list-ul me-2"></i>Available Schedules</h6>
+                    <div id="scheduleList">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading schedules...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End gantt-page -->
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Frappe Gantt JS -->
+    <script src="{% static 'js/frappe-gantt.min.js' %}?v=20250901"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        class InteractiveGanttChart {
+            constructor() {
+                this.gantt = null;
+                this.currentSchedule = null;
+                this.schedules = [];
+                this.tasks = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadSchedules();
+                this.bindEvents();
+                this.showNoDataMessage();
+            }
+
+            bindEvents() {
+                document.getElementById('optimizeBtn').addEventListener('click', () => this.optimizeSchedule());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearView());
+            }
+
+            async loadSchedules() {
+                try {
+                    const response = await fetch('/api/schedules/');
+                    if (!response.ok) throw new Error('Failed to fetch schedules');
+                    
+                    this.schedules = await response.json();
+                    this.renderScheduleList();
+                } catch (error) {
+                    console.error('Error loading schedules:', error);
+                    this.renderScheduleError();
+                }
+            }
+
+            renderScheduleList() {
+                const listContainer = document.getElementById('scheduleList');
+                
+                if (this.schedules.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            No schedules found. Create a new schedule to get started.
+                        </div>
+                    `;
+                    return;
+                }
+
+                listContainer.innerHTML = this.schedules.map(schedule => `
+                    <div class="list-group-item list-group-item-action schedule-item" 
+                         data-schedule-id="${schedule.id}" 
+                         style="cursor: pointer; border-left: 4px solid ${this.getPriorityColor(schedule.priority)};">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${schedule.name}</h6>
+                            <small class="priority-${schedule.priority}">${schedule.priority.toUpperCase()}</small>
+                        </div>
+                        <p class="mb-1">${schedule.description || 'No description available'}</p>
+                        <small>Created: ${new Date(schedule.created_at).toLocaleDateString()}</small>
+                    </div>
+                `).join('');
+
+                // Add click handlers for schedule items
+                document.querySelectorAll('.schedule-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const scheduleId = e.currentTarget.dataset.scheduleId;
+                        this.loadSchedule(scheduleId);
+                    });
+                });
+            }
+
+            renderScheduleError() {
+                document.getElementById('scheduleList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Error loading schedules. Please try again.
+                    </div>
+                `;
+            }
+
+            async loadSchedule(scheduleId) {
+                try {
+                    this.currentSchedule = scheduleId;
+                    this.showLoadingSpinner();
+                    
+                    const response = await fetch(`/api/schedules/${scheduleId}/tasks/`);
+                    if (!response.ok) throw new Error('Failed to fetch schedule tasks');
+                    
+                    this.tasks = await response.json();
+                    await this.renderGanttChart();
+                    await this.loadScheduleStatistics();
+                    
+                    // Update active schedule in list
+                    document.querySelectorAll('.schedule-item').forEach(item => {
+                        item.classList.toggle('active', item.dataset.scheduleId === scheduleId);
+                    });
+                    
+                } catch (error) {
+                    console.error('Error loading schedule:', error);
+                    this.showErrorMessage('Failed to load schedule data');
+                }
+            }
+
+            async loadScheduleStatistics() {
+                try {
+                    const response = await fetch(`/api/schedules/${this.currentSchedule}/statistics/`);
+                    if (!response.ok) throw new Error('Failed to fetch statistics');
+                    
+                    const stats = await response.json();
+                    this.renderStatistics(stats);
+                } catch (error) {
+                    console.error('Error loading statistics:', error);
+                    this.renderStatisticsError();
+                }
+            }
+
+            renderStatistics(stats) {
+                const statsContainer = document.getElementById('scheduleStats');
+                statsContainer.innerHTML = `
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Total Tasks:</strong> ${stats.total_tasks || 0}<br>
+                            <strong>Completed:</strong> ${stats.completed_tasks || 0}<br>
+                            <strong>In Progress:</strong> ${stats.in_progress_tasks || 0}
+                        </div>
+                        <div class="col-6">
+                            <strong>Duration:</strong> ${stats.total_duration || '0 days'}<br>
+                            <strong>Efficiency:</strong> ${stats.efficiency || '0%'}<br>
+                            <strong>Cost Est.:</strong> $${stats.estimated_cost || '0'}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderStatisticsError() {
+                document.getElementById('scheduleStats').innerHTML = `
+                    <div class="text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Error loading statistics
+                    </div>
+                `;
+            }
+
+            async renderGanttChart() {
+                if (this.tasks.length === 0) {
+                    this.showNoDataMessage();
+                    return;
+                }
+
+                const ganttTasks = this.tasks.map(task => ({
+                    id: task.id,
+                    name: task.name,
+                    start: task.start_date,
+                    end: task.end_date,
+                    progress: task.progress || 0,
+                    custom_class: `priority-${task.priority} well-${task.well_type}`
+                }));
+
+                const ganttContainer = document.getElementById('gantt');
+                const loadingSpinner = document.getElementById('loadingSpinner');
+                const noDataMessage = document.getElementById('noDataMessage');
+                
+                // Hide other elements
+                loadingSpinner.style.display = 'none';
+                noDataMessage.style.display = 'none';
+                
+                // Show gantt container
+                ganttContainer.style.display = 'block';
+                ganttContainer.innerHTML = ''; // Clear previous chart
+
+                this.gantt = new Gantt(ganttContainer, ganttTasks, {
+                    header_height: 50,
+                    column_width: 30,
+                    step: 24,
+                    view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+                    bar_height: 20,
+                    bar_corner_radius: 3,
+                    arrow_curve: 5,
+                    padding: 18,
+                    view_mode: 'Day',
+                    date_format: 'YYYY-MM-DD',
+                    on_click: (task) => {
+                        this.showTaskDetails(task);
+                    },
+                    on_date_change: (task, start, end) => {
+                        this.updateTaskDates(task, start, end);
+                    },
+                    on_progress_change: (task, progress) => {
+                        this.updateTaskProgress(task, progress);
+                    },
+                    on_view_change: (mode) => {
+                        console.log('View mode changed to:', mode);
+                    }
+                });
+            }
+
+            showTaskDetails(task) {
+                const taskData = this.tasks.find(t => t.id == task.id);
+                if (!taskData) return;
+
+                const taskContent = document.getElementById('taskContent');
+                taskContent.innerHTML = `
+                    <div class="task-info">
+                        <h6>${taskData.name}</h6>
+                        <p><strong>Well:</strong> ${taskData.well_name}</p>
+                        <p><strong>Rig:</strong> ${taskData.rig_name}</p>
+                        <p><strong>Priority:</strong> <span class="priority-${taskData.priority}">${taskData.priority.toUpperCase()}</span></p>
+                        <p><strong>Duration:</strong> ${taskData.duration} days</p>
+                        <p><strong>Start:</strong> ${new Date(taskData.start_date).toLocaleDateString()}</p>
+                        <p><strong>End:</strong> ${new Date(taskData.end_date).toLocaleDateString()}</p>
+                        <p><strong>Progress:</strong> ${taskData.progress || 0}%</p>
+                        <p><strong>Status:</strong> ${taskData.status}</p>
+                    </div>
+                `;
+                
+                document.getElementById('taskDetails').style.display = 'block';
+            }
+
+            async updateTaskDates(task, start, end) {
+                try {
+                    const response = await fetch(`/api/tasks/${task.id}/update-dates/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken(),
+                        },
+                        body: JSON.stringify({
+                            start_date: start.toISOString().split('T')[0],
+                            end_date: end.toISOString().split('T')[0]
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('Task dates updated successfully');
+                        await this.loadScheduleStatistics(); // Refresh statistics
+                    }
+                } catch (error) {
+                    console.error('Error updating task dates:', error);
+                }
+            }
+
+            async updateTaskProgress(task, progress) {
+                try {
+                    const response = await fetch(`/api/tasks/${task.id}/update-progress/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken(),
+                        },
+                        body: JSON.stringify({ progress: progress })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('Task progress updated successfully');
+                        await this.loadScheduleStatistics(); // Refresh statistics
+                    }
+                } catch (error) {
+                    console.error('Error updating task progress:', error);
+                }
+            }
+
+            async optimizeSchedule() {
+                if (!this.currentSchedule) {
+                    alert('Please select a schedule first');
+                    return;
+                }
+
+                try {
+                    const optimizeBtn = document.getElementById('optimizeBtn');
+                    optimizeBtn.disabled = true;
+                    optimizeBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Optimizing...';
+                    
+                    const response = await fetch(`/api/schedules/${this.currentSchedule}/optimize/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': this.getCSRFToken(),
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Optimization result:', result);
+                        
+                        // Reload the schedule to show optimized results
+                        await this.loadSchedule(this.currentSchedule);
+                        
+                        alert('Schedule optimized successfully!');
+                    } else {
+                        throw new Error('Optimization failed');
+                    }
+                } catch (error) {
+                    console.error('Error optimizing schedule:', error);
+                    alert('Error optimizing schedule. Please try again.');
+                } finally {
+                    const optimizeBtn = document.getElementById('optimizeBtn');
+                    optimizeBtn.disabled = false;
+                    optimizeBtn.innerHTML = '<i class="bi bi-cpu-fill me-2"></i>Optimize Schedule';
+                }
+            }
+
+            clearView() {
+                this.currentSchedule = null;
+                this.tasks = [];
+                this.gantt = null;
+                
+                document.getElementById('taskDetails').style.display = 'none';
+                document.getElementById('scheduleStats').innerHTML = '<p class="text-muted mb-0">Select a schedule to view statistics</p>';
+                
+                // Remove active class from schedule items
+                document.querySelectorAll('.schedule-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                this.showNoDataMessage();
+            }
+
+            showLoadingSpinner() {
+                document.getElementById('loadingSpinner').style.display = 'flex';
+                document.getElementById('gantt').style.display = 'none';
+                document.getElementById('noDataMessage').style.display = 'none';
+            }
+
+            showNoDataMessage() {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('gantt').style.display = 'none';
+                document.getElementById('noDataMessage').style.display = 'block';
+            }
+
+            showErrorMessage(message) {
+                const ganttContainer = document.getElementById('gantt');
+                const loadingSpinner = document.getElementById('loadingSpinner');
+                const noDataMessage = document.getElementById('noDataMessage');
+                
+                loadingSpinner.style.display = 'none';
+                ganttContainer.style.display = 'none';
+                
+                noDataMessage.innerHTML = `
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    ${message}
+                `;
+                noDataMessage.style.display = 'block';
+            }
+
+            getPriorityColor(priority) {
+                const colors = {
+                    'high': '#e74c3c',
+                    'medium': '#f39c12',
+                    'low': '#27ae60'
+                };
+                return colors[priority] || '#6c757d';
+            }
+
+            getCSRFToken() {
+                return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            }
+        }
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            new InteractiveGanttChart();
+        });
+    </script>
+{% endblock %}

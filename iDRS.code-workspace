@@ -1,0 +1,26 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.pythonPath": ".venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "python.terminal.useEnvFile": true,
+        "python.envFile": "${workspaceFolder}/.env",
+        "task.allowAutomaticTasks": "on"
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Start Django Server (Port 8011)",
+                "runOptions": {
+                    "runOn": "folderOpen"
+                }
+            }
+        ]
+    }
+}

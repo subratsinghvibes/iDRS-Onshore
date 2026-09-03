@@ -1,0 +1,978 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}View All Rigs - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Page styling */
+        body {
+            background: #f8f9fa;
+        }
+        
+        .main-content {
+            background: transparent !important;
+        }
+        
+        .view-all-page {
+            color: #212529;
+        }
+        
+        /* Table styling */
+        .table-scroll-container {
+            max-height: calc(100vh - 350px);
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        /* Table column widths for better spacing */
+        #rigs-table {
+            min-width: 2250px;
+            white-space: nowrap;
+        }
+        
+        #rigs-table th,
+        #rigs-table td {
+            padding: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        #rigs-table th:nth-child(1),
+        #rigs-table td:nth-child(1) { min-width: 150px; }
+        
+        #rigs-table th:nth-child(2),
+        #rigs-table td:nth-child(2) { min-width: 120px; }
+        
+        #rigs-table th:nth-child(3),
+        #rigs-table td:nth-child(3) { min-width: 100px; }
+        
+        #rigs-table th:nth-child(4),
+        #rigs-table td:nth-child(4) { min-width: 110px; }
+        
+        #rigs-table th:nth-child(5),
+        #rigs-table td:nth-child(5) { min-width: 110px; }
+        
+        #rigs-table th:nth-child(6),
+        #rigs-table td:nth-child(6) { min-width: 130px; }
+        
+        #rigs-table th:nth-child(7),
+        #rigs-table td:nth-child(7) { min-width: 150px; }
+        
+        #rigs-table th:nth-child(8),
+        #rigs-table td:nth-child(8) { min-width: 150px; }
+        
+        #rigs-table th:nth-child(9),
+        #rigs-table td:nth-child(9) { min-width: 140px; }
+        
+        #rigs-table th:nth-child(10),
+        #rigs-table td:nth-child(10) { min-width: 140px; }
+        
+        #rigs-table th:nth-child(11),
+        #rigs-table td:nth-child(11) { min-width: 80px; }
+        
+        #rigs-table th:nth-child(12),
+        #rigs-table td:nth-child(12) { min-width: 130px; }
+        
+        #rigs-table th:nth-child(13),
+        #rigs-table td:nth-child(13) { min-width: 120px; }
+        
+        #rigs-table th:nth-child(14),
+        #rigs-table td:nth-child(14) { min-width: 140px; }
+        
+        #rigs-table th:nth-child(15),
+        #rigs-table td:nth-child(15) { min-width: 100px; }
+        
+        #rigs-table th:nth-child(16),
+        #rigs-table td:nth-child(16) { min-width: 80px; }
+        
+        #rigs-table th:nth-child(17),
+        #rigs-table td:nth-child(17) { min-width: 140px; }
+        
+        #rigs-table th:nth-child(18),
+        #rigs-table td:nth-child(18) { min-width: 100px; }
+        
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .sortable:hover {
+            background-color: #e9ecef;
+        }
+        
+        .w-actions {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        /* Page title styling */
+        .page-title-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-right: 0.75rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--adb-primary-dark);
+            margin: 0;
+        }
+        
+        .page-subtitle {
+            color: var(--adb-secondary);
+            font-size: 1rem;
+            margin: 0.25rem 0 0 3.25rem;
+        }
+        
+        .page-separator {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--adb-gray-300), transparent);
+            margin: 1.5rem 0;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(10, 47, 90, 0.1);
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            background: transparent;
+        }
+        
+        .card-header h5 {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        
+        .card-header h5 i {
+            color: var(--adb-primary) !important;
+            font-size: 0.9rem;
+        }
+        
+        .card-header .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+        }
+        
+        .card-header .btn-sm i {
+            font-size: 0.7rem;
+        }
+        
+        /* Search input styling */
+        .data-search-input {
+            width: 200px;
+            font-size: 0.75rem;
+        }
+        
+        /* Button styling */
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(10, 47, 90, 0.3);
+        }
+        
+        /* Location badge */
+        .location-badge {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border-radius: 6px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- CSRF Token for AJAX requests -->
+    {% csrf_token %}
+    
+    <div class="view-all-page">
+        <!-- Page Header -->
+        <div class="row align-items-center mb-2">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi bi-tools page-title-icon"></i>
+                    <h1 class="page-title mb-0">All Rigs</h1>
+                </div>
+                <p class="page-subtitle">
+                    Comprehensive view of all drilling rigs in the system
+                </p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-3 justify-content-end">
+                    {% if can_view_all_locations %}
+                    <select class="form-select form-select-sm" id="location-selector" onchange="filterByLocation()">
+                        <option value="">All Locations</option>
+                    </select>
+                    {% else %}
+                    <span class="badge bg-primary location-badge">
+                        <i class="bi bi-geo-alt me-1"></i>{{ user_location }}
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'data_management' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Separator Line -->
+        <hr class="page-separator">
+        
+        <!-- Main Content Card -->
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>
+                    All Rigs (<span id="total-rigs-count">0</span>)
+                </h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="rig-search" class="form-control form-control-sm data-search-input" placeholder="Search rigs..." onkeyup="searchRigs()">
+                    <button class="btn btn-outline-primary btn-sm" style="white-space: nowrap; min-width: 165px;" onclick="mapRigsToNorms()" title="Map Rigs to Norms">
+                        <i class="bi bi-diagram-3 me-2"></i>Map Rigs to Norms
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive table-scroll-container">
+                    <table class="table table-sm table-hover mb-0" id="rigs-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="sortable" onclick="sortTable(0)">
+                                    Name <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(1)">
+                                    Location <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(2)">
+                                    Type <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(3)">
+                                    Start Date <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(4)">
+                                    End Date <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(5)">
+                                    Capacity (HP) <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(6)">
+                                    Daily Cost (INR) <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(7)">
+                                    Drilling Capacity (m) <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(8)">
+                                    Mobilization Time <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(9)">
+                                    Crew Availability <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(10)">
+                                    HPHT <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(11)">
+                                    ILM Cost Fixed <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(12)">
+                                    ILM Cost/km <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(13)">
+                                    ILM Cost Cluster <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(14)">
+                                    BOP Stack <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(15)">
+                                    TDS <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(16)">
+                                    Rig Building Norm <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                                <th class="sortable" onclick="sortTable(17)">
+                                    Norm Days <i class="bi bi-arrow-down-up ms-1"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="rigs-table-body">
+                            <tr>
+                                <td colspan="18" class="text-center text-muted py-4">Loading rigs data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allRigsData = [];
+        let filteredRigsData = [];
+        let currentLocationFilter = '';
+        let companyCodesMap = {};
+        let sortColumn = 0;
+        let sortAscending = true;
+        
+        // Format Indian currency
+        function formatIndianCurrency(amount) {
+            if (!amount || isNaN(amount)) return '₹0';
+            const num = Number(amount);
+            return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        }
+        
+        // Get location from data
+        function getLocationFromData(item) {
+            if (item.location_value) return item.location_value;
+            if (item.location_name) return item.location_name;
+            if (item.asset_id) {
+                const mapped = companyCodesMap[item.asset_id.toUpperCase()];
+                if (mapped) return mapped;
+                return item.asset_id;
+            }
+            return 'N/A';
+        }
+        
+        // Load company codes for mapping
+        async function loadCompanyCodes() {
+            try {
+                const response = await fetch('/api/company-codes/', { credentials: 'same-origin' });
+                if (!response.ok) return;
+                const data = await response.json();
+                const codes = Array.isArray(data) ? data : (data.results || []);
+                codes.forEach(code => {
+                    if (code.company_code && code.location) {
+                        companyCodesMap[code.company_code.toUpperCase()] = code.location;
+                        companyCodesMap[code.location.toUpperCase()] = code.location;
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load company codes:', error);
+            }
+        }
+        
+        // Load all rigs
+        async function loadRigs() {
+            try {
+                let allRigs = [];
+                let nextUrl = '/api/rigs/';
+                while (nextUrl) {
+                    const response = await fetch(nextUrl, { credentials: 'same-origin' });
+                    if (!response.ok) throw new Error('Failed to load rigs');
+                    const data = await response.json();
+                    const results = Array.isArray(data) ? data : (data.results || []);
+                    allRigs = allRigs.concat(results);
+                    nextUrl = data.next || null;
+                }
+                allRigsData = allRigs;
+                
+                // Populate location dropdown
+                populateLocationDropdown();
+                
+                // Display rigs
+                filterAndDisplayRigs();
+            } catch (error) {
+                console.error('Error loading rigs:', error);
+                document.getElementById('rigs-table-body').innerHTML = 
+                    '<tr><td colspan="16" class="text-center text-danger py-4">Error loading rigs data</td></tr>';
+            }
+        }
+        
+        // Populate location dropdown
+        function populateLocationDropdown() {
+            const selector = document.getElementById('location-selector');
+            if (!selector) return;
+            
+            const locations = new Set();
+            allRigsData.forEach(rig => {
+                const loc = getLocationFromData(rig);
+                if (loc && loc !== 'N/A') locations.add(loc);
+            });
+            
+            const sortedLocations = Array.from(locations).sort();
+            sortedLocations.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                option.textContent = loc;
+                selector.appendChild(option);
+            });
+        }
+        
+        // Filter by location
+        function filterByLocation() {
+            const selector = document.getElementById('location-selector');
+            currentLocationFilter = selector ? selector.value : '';
+            filterAndDisplayRigs();
+        }
+        
+        // Search rigs
+        function searchRigs() {
+            filterAndDisplayRigs();
+        }
+        
+        // Filter and display rigs
+        function filterAndDisplayRigs() {
+            const searchTerm = document.getElementById('rig-search')?.value.toLowerCase() || '';
+            
+            // Filter by location
+            filteredRigsData = currentLocationFilter 
+                ? allRigsData.filter(rig => {
+                    const loc = getLocationFromData(rig);
+                    return loc.toUpperCase() === currentLocationFilter.toUpperCase();
+                })
+                : [...allRigsData];
+            
+            // Filter by search term
+            if (searchTerm) {
+                filteredRigsData = filteredRigsData.filter(rig => {
+                    const name = (rig.name || '').toLowerCase();
+                    const assetId = getLocationFromData(rig).toLowerCase();
+                    const type = (rig.rig_type || rig.rigType || '').toLowerCase();
+                    return name.includes(searchTerm) || assetId.includes(searchTerm) || type.includes(searchTerm);
+                });
+            }
+            
+            // Sort data
+            sortTableData();
+            
+            // Display
+            displayRigs();
+        }
+        
+        // Display rigs in table
+        function displayRigs() {
+            const tableBody = document.getElementById('rigs-table-body');
+            document.getElementById('total-rigs-count').textContent = filteredRigsData.length;
+            
+            if (filteredRigsData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="16" class="text-center text-muted py-4">No rigs found</td></tr>';
+                return;
+            }
+            
+            const html = filteredRigsData.map(rig => `
+                <tr>
+                    <td><strong>${rig.name || 'N/A'}</strong></td>
+                    <td>${getLocationFromData(rig)}</td>
+                    <td>
+                        <span class="badge bg-${(rig.rig_type || rig.rigType) === 'Mobile' ? 'primary' : 'secondary'}">
+                            ${rig.rig_type || rig.rigType || 'N/A'}
+                        </span>
+                    </td>
+                    <td>${rig.start_date || rig.startDate || 'N/A'}</td>
+                    <td>${rig.end_date || rig.endDate || 'N/A'}</td>
+                    <td>${Number(rig.rig_capacity_hp || rig.rigCapacityHp || 0).toLocaleString()}</td>
+                    <td>${formatIndianCurrency(rig.daily_cost_inr || rig.dailyCost || 0)}</td>
+                    <td>${Number(rig.drilling_capacity_m || rig.drillingCapacityM || 0).toLocaleString()}</td>
+                    <td>${rig.mobilization_time_days || rig.mobilizationTimeDays || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-${rig.crew_availability === 'OK' ? 'success' : 'warning'}">
+                            ${rig.crew_availability || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-${rig.hpht_suitability === 'Y' ? 'success' : 'secondary'}">
+                            ${rig.hpht_suitability === 'Y' ? 'Yes' : 'No'}
+                        </span>
+                    </td>
+                    <td>${formatIndianCurrency(rig.ilm_cost_fixed || rig.ilmCostFixed || 0)}</td>
+                    <td>${formatIndianCurrency(rig.ilm_cost_per_km || rig.ilmCostPerKm || 0)}</td>
+                    <td>${formatIndianCurrency(rig.ilm_cost_cluster || rig.ilmCostCluster || 0)}</td>
+                    <td>${Number(rig.bop_stack || rig.bopStack || 0).toLocaleString()}</td>
+                    <td>
+                        <span class="badge bg-${rig.tds_availability === 'Y' ? 'success' : 'secondary'}">
+                            ${rig.tds_availability === 'Y' ? 'Yes' : 'No'}
+                        </span>
+                    </td>
+                    <td>${rig.rig_building_norm_name || '<span class="text-muted">Not Mapped</span>'}</td>
+                    <td>${rig.rig_building_norm_days ? rig.rig_building_norm_days + ' days' : '<span class="text-muted">-</span>'}</td>
+                </tr>
+            `).join('');
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // Sort table
+        function sortTable(columnIndex) {
+            if (sortColumn === columnIndex) {
+                sortAscending = !sortAscending;
+            } else {
+                sortColumn = columnIndex;
+                sortAscending = true;
+            }
+            
+            sortTableData();
+            displayRigs();
+        }
+        
+        // Sort table data
+        function sortTableData() {
+            filteredRigsData.sort((a, b) => {
+                let valA, valB;
+                
+                switch (sortColumn) {
+                    case 0: // Name
+                        valA = (a.name || '').toLowerCase();
+                        valB = (b.name || '').toLowerCase();
+                        break;
+                    case 1: // Location
+                        valA = getLocationFromData(a).toLowerCase();
+                        valB = getLocationFromData(b).toLowerCase();
+                        break;
+                    case 2: // Type
+                        valA = (a.rig_type || a.rigType || '').toLowerCase();
+                        valB = (b.rig_type || b.rigType || '').toLowerCase();
+                        break;
+                    case 3: // Start Date
+                        valA = new Date(a.start_date || a.startDate || 0);
+                        valB = new Date(b.start_date || b.startDate || 0);
+                        break;
+                    case 4: // End Date
+                        valA = new Date(a.end_date || a.endDate || 0);
+                        valB = new Date(b.end_date || b.endDate || 0);
+                        break;
+                    case 5: // Capacity HP
+                        valA = Number(a.rig_capacity_hp || a.rigCapacityHp || 0);
+                        valB = Number(b.rig_capacity_hp || b.rigCapacityHp || 0);
+                        break;
+                    case 6: // Daily Cost
+                        valA = Number(a.daily_cost_inr || a.dailyCost || 0);
+                        valB = Number(b.daily_cost_inr || b.dailyCost || 0);
+                        break;
+                    case 7: // Drilling Capacity
+                        valA = Number(a.drilling_capacity_m || a.drillingCapacityM || 0);
+                        valB = Number(b.drilling_capacity_m || b.drillingCapacityM || 0);
+                        break;
+                    case 8: // Mobilization Time
+                        valA = (a.mobilization_time_days || a.mobilizationTimeDays || '').toLowerCase();
+                        valB = (b.mobilization_time_days || b.mobilizationTimeDays || '').toLowerCase();
+                        break;
+                    case 9: // Crew Availability
+                        valA = (a.crew_availability || '').toLowerCase();
+                        valB = (b.crew_availability || '').toLowerCase();
+                        break;
+                    case 10: // HPHT
+                        valA = (a.hpht_suitability || '').toLowerCase();
+                        valB = (b.hpht_suitability || '').toLowerCase();
+                        break;
+                    case 11: // ILM Cost Fixed
+                        valA = Number(a.ilm_cost_fixed || a.ilmCostFixed || 0);
+                        valB = Number(b.ilm_cost_fixed || b.ilmCostFixed || 0);
+                        break;
+                    case 12: // ILM Cost Per KM
+                        valA = Number(a.ilm_cost_per_km || a.ilmCostPerKm || 0);
+                        valB = Number(b.ilm_cost_per_km || b.ilmCostPerKm || 0);
+                        break;
+                    case 13: // ILM Cost Cluster
+                        valA = Number(a.ilm_cost_cluster || a.ilmCostCluster || 0);
+                        valB = Number(b.ilm_cost_cluster || b.ilmCostCluster || 0);
+                        break;
+                    case 14: // BOP Stack
+                        valA = Number(a.bop_stack || a.bopStack || 0);
+                        valB = Number(b.bop_stack || b.bopStack || 0);
+                        break;
+                    case 15: // TDS
+                        valA = (a.tds_availability || '').toLowerCase();
+                        valB = (b.tds_availability || '').toLowerCase();
+                        break;
+                    case 16: // Rig Building Norm
+                        valA = (a.rig_building_norm_name || '').toLowerCase();
+                        valB = (b.rig_building_norm_name || '').toLowerCase();
+                        break;
+                    case 17: // Norm Days
+                        valA = Number(a.rig_building_norm_days || 0);
+                        valB = Number(b.rig_building_norm_days || 0);
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        // View rig details (placeholder)
+        function viewRigDetails(rigId) {
+            alert('View details for rig: ' + rigId + '\n(This feature can be implemented to show a modal with full rig details)');
+        }
+        
+        // Edit rig
+        function editRig(rigId) {
+            // Redirect to data management page and trigger edit modal
+            window.location.href = '/data/?edit_rig=' + rigId;
+        }
+        
+        // Map Rigs to Norms functionality
+        async function mapRigsToNorms() {
+            try {
+                // Show loading state
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mapping...';
+                
+                // Build request body with location filter if set
+                const requestBody = {};
+                if (currentLocationFilter) {
+                    requestBody.location = currentLocationFilter;
+                }
+                
+                // Build the rig norms URL with location filter
+                const normsUrl = currentLocationFilter 
+                    ? `/api/rig-norms/?location=${encodeURIComponent(currentLocationFilter)}`
+                    : '/api/rig-norms/';
+                
+                // Fetch both mapping data and all rig norms (both filtered by location)
+                const [mappingResponse, normsResponse] = await Promise.all([
+                    fetch('/api/rig-norms/map-rigs/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify(requestBody)
+                    }),
+                    fetch(normsUrl)
+                ]);
+                
+                const mappingData = await mappingResponse.json();
+                const normsData = await normsResponse.json();
+                
+                if (mappingData.success) {
+                    // Show the mapping modal with both mappings and all norms
+                    showMappingModal(mappingData.mappings, mappingData.total_rigs, mappingData.mapped_count, normsData.data || []);
+                } else {
+                    alert('Error: ' + (mappingData.error || 'Failed to map rigs'));
+                }
+                
+                // Restore button
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                
+            } catch (error) {
+                console.error('Error mapping rigs:', error);
+                alert('An error occurred while mapping rigs to norms');
+                
+                // Restore button
+                const btn = event.target.closest('button');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-diagram-3 me-2"></i>Map Rigs to Norms';
+            }
+        }
+        
+        function showMappingModal(mappings, totalRigs, mappedCount, allNorms) {
+            // Get location display text
+            const locationBadge = currentLocationFilter 
+                ? `<span class="badge bg-primary ms-2"><i class="bi bi-geo-alt me-1"></i>${currentLocationFilter}</span>`
+                : '<span class="badge bg-secondary ms-2">All Locations</span>';
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div class="modal fade" id="mappingModal" tabindex="-1">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-diagram-3 me-2"></i>
+                                    Proposed Rig to Norm Mappings
+                                    ${locationBadge}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Found <strong>${mappedCount}</strong> potential matches out of <strong>${totalRigs}</strong> total rigs${currentLocationFilter ? ` in <strong>${currentLocationFilter}</strong>` : ''}.
+                                    Review the proposed mappings below and confirm to save.
+                                </div>
+                                
+                                <!-- Proposed Mappings Table -->
+                                <h6 class="mb-3"><i class="bi bi-check2-circle me-2"></i>Proposed Mappings</h6>
+                                <div class="table-responsive" style="max-height: 350px; overflow-y: auto; margin-bottom: 2rem;">
+                                    <table class="table table-sm table-hover" id="mappings-table">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th style="width: 40px;">
+                                                    <input type="checkbox" id="select-all-mappings" onchange="toggleAllMappings(this)">
+                                                </th>
+                                                <th>Rig Name</th>
+                                                <th>Rig Location</th>
+                                                <th>Rig Type</th>
+                                                <th>TDS</th>
+                                                <th><i class="bi bi-arrow-right"></i></th>
+                                                <th>Norm Rig Name</th>
+                                                <th>Norm Location</th>
+                                                <th>Norm Days</th>
+                                                <th>Confidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mappings-tbody">
+                                            ${generateMappingRows(mappings, allNorms)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Rig Norms Table -->
+                                <h6 class="mb-3"><i class="bi bi-table me-2"></i>Rig Norm Records${currentLocationFilter ? ` for ${currentLocationFilter}` : ''} (${allNorms.length} total)</h6>
+                                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                                    <table class="table table-sm table-bordered" id="all-norms-table">
+                                        <thead class="table-secondary sticky-top">
+                                            <tr>
+                                                <th>Location</th>
+                                                <th>Rig Name</th>
+                                                <th>Days</th>
+                                                <th>Top Drive</th>
+                                                <th>Rig Type</th>
+                                                <th>Created</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${generateAllNormsRows(allNorms)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveMappings()">
+                                    <i class="bi bi-check-circle me-2"></i>Confirm & Save Mappings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('mappingModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('mappingModal'));
+            modal.show();
+            
+            // Select all by default
+            document.getElementById('select-all-mappings').checked = true;
+            toggleAllMappings(document.getElementById('select-all-mappings'));
+        }
+        
+        function generateMappingRows(mappings, allNorms) {
+            if (mappings.length === 0) {
+                return '<tr><td colspan="10" class="text-center text-muted">No mappings found</td></tr>';
+            }
+            
+            return mappings.map((mapping, index) => {
+                const confidenceClass = mapping.confidence >= 70 ? 'text-success' : 
+                                       mapping.confidence >= 50 ? 'text-warning' : 'text-danger';
+                
+                // Generate dropdown options for all norms
+                const normOptions = allNorms.map(norm => {
+                    const selected = norm.id === mapping.norm_id ? 'selected' : '';
+                    return `<option value="${norm.id}" 
+                                    data-location="${norm.location || 'N/A'}" 
+                                    data-days="${norm.days}" 
+                                    ${selected}>
+                                ${norm.rig_name}
+                            </option>`;
+                }).join('');
+                
+                const rowId = `mapping-row-${index}`;
+                
+                return `
+                    <tr id="${rowId}">
+                        <td>
+                            <input type="checkbox" class="mapping-checkbox" 
+                                   data-rig-id="${mapping.rig_id}" 
+                                   data-norm-id="${mapping.norm_id}"
+                                   checked>
+                        </td>
+                        <td><strong>${mapping.rig_name}</strong></td>
+                        <td><small class="text-muted">${mapping.rig_location}</small></td>
+                        <td><small>${mapping.rig_type || 'N/A'}</small></td>
+                        <td>
+                            <span class="badge bg-${mapping.rig_tds === 'Y' ? 'success' : 'secondary'} badge-sm">
+                                ${mapping.rig_tds === 'Y' ? 'Yes' : 'No'}
+                            </span>
+                        </td>
+                        <td class="text-center"><i class="bi bi-arrow-right text-primary"></i></td>
+                        <td>
+                            <select class="form-select form-select-sm norm-select" 
+                                    onchange="updateNormDetails('${rowId}', this)"
+                                    style="min-width: 150px;">
+                                ${normOptions}
+                            </select>
+                        </td>
+                        <td><small class="text-muted norm-location">${mapping.norm_location}</small></td>
+                        <td class="norm-days">${mapping.norm_days} days</td>
+                        <td>
+                            <span class="badge ${confidenceClass === 'text-success' ? 'bg-success' : 
+                                              confidenceClass === 'text-warning' ? 'bg-warning' : 'bg-danger'}">
+                                ${mapping.confidence}%
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function generateAllNormsRows(norms) {
+            if (!norms || norms.length === 0) {
+                return '<tr><td colspan="6" class="text-center text-muted">No rig norms found</td></tr>';
+            }
+            
+            return norms.map(norm => {
+                const createdDate = norm.created_at ? new Date(norm.created_at).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }) : 'N/A';
+                
+                return `
+                    <tr>
+                        <td><small class="text-muted">${norm.location || 'N/A'}</small></td>
+                        <td><strong>${norm.rig_name || 'N/A'}</strong></td>
+                        <td>${norm.days || 0} days</td>
+                        <td>
+                            <span class="badge bg-${norm.top_drive ? 'success' : 'secondary'} badge-sm">
+                                ${norm.top_drive ? 'Yes' : 'No'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-${norm.rig_type === 'Mobile' ? 'primary' : 'secondary'} badge-sm">
+                                ${norm.rig_type || 'N/A'}
+                            </span>
+                        </td>
+                        <td><small class="text-muted">${createdDate}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function toggleAllMappings(checkbox) {
+            const checkboxes = document.querySelectorAll('.mapping-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+        
+        function updateNormDetails(rowId, selectElement) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const normId = selectedOption.value;
+            const normLocation = selectedOption.dataset.location;
+            const normDays = selectedOption.dataset.days;
+            
+            // Update the checkbox data-norm-id
+            const checkbox = row.querySelector('.mapping-checkbox');
+            if (checkbox) {
+                checkbox.dataset.normId = normId;
+            }
+            
+            // Update the displayed norm location and days
+            const locationCell = row.querySelector('.norm-location');
+            const daysCell = row.querySelector('.norm-days');
+            
+            if (locationCell) {
+                locationCell.textContent = normLocation;
+            }
+            if (daysCell) {
+                daysCell.textContent = `${normDays} days`;
+            }
+        }
+        
+        async function saveMappings() {
+            try {
+                // Get all checked mappings
+                const checkboxes = document.querySelectorAll('.mapping-checkbox:checked');
+                const mappings = Array.from(checkboxes).map(cb => ({
+                    rig_id: cb.dataset.rigId,
+                    norm_id: cb.dataset.normId
+                }));
+                
+                if (mappings.length === 0) {
+                    alert('Please select at least one mapping to save');
+                    return;
+                }
+                
+                // Show loading state
+                const btn = event.target;
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+                
+                // Save mappings
+                const response = await fetch('/api/rig-norms/save-mappings/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ mappings })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('mappingModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    alert(data.message);
+                    
+                    // Reload rigs to reflect any changes
+                    await loadRigs();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to save mappings'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+                
+            } catch (error) {
+                console.error('Error saving mappings:', error);
+                alert('An error occurred while saving mappings');
+                
+                // Restore button
+                const btn = event.target;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirm & Save Mappings';
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadCompanyCodes();
+            await loadRigs();
+        });
+    </script>
+{% endblock %}

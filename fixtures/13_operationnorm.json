@@ -1,0 +1,254 @@
+[
+{
+  "model": "scheduler.operationnorm",
+  "pk": "20e664d0-ef06-4c2f-94bd-852d28747189",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Rig Building (Mobile)",
+    "norm_rule": "5 days standard; adjust per RigBuildingAdjustment rules",
+    "remarks": "Includes rig-up, safety checks, and BOP pressure test",
+    "created_at": "2026-03-05T12:19:56.348Z",
+    "updated_at": "2026-03-05T12:19:56.348Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "2404502e-ec64-4ed2-93c5-fce0a5618b69",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Directional Survey",
+    "norm_rule": "Included in drilling norm",
+    "remarks": "Survey shots taken while drilling; no separate norm time",
+    "created_at": "2026-03-05T12:19:56.360Z",
+    "updated_at": "2026-03-05T12:19:56.360Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "2bed965d-cfc8-4386-b27c-ffcd7f3112df",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "BOP Installation and Pressure Test",
+    "norm_rule": "0.5 days",
+    "remarks": "Installation and 200 kgf/cm² pressure test of BOP stack",
+    "created_at": "2026-03-05T12:19:56.353Z",
+    "updated_at": "2026-03-05T12:19:56.353Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "2de84a56-2caf-4aad-b847-d76c806db1f0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Rig Building (Fixed)",
+    "norm_rule": "7 days standard",
+    "remarks": "Includes full electrical, mechanical and safety commissioning",
+    "created_at": "2026-03-05T12:19:56.349Z",
+    "updated_at": "2026-03-05T12:19:56.349Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "3cb9ca63-6616-448d-9fdd-d60826a5547d",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Core Cutting and Handling",
+    "norm_rule": "Per CoringNorm table by depth interval",
+    "remarks": "Each 9 m barrel; surface core handling included",
+    "created_at": "2026-03-05T12:19:56.357Z",
+    "updated_at": "2026-03-05T12:19:56.357Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "408897b0-bfb1-49ff-a165-044199fa2b4d",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "operation": "DST (Drill Stem Test)",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-30T07:23:20.192Z",
+    "updated_at": "2026-01-30T07:23:20.192Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "4244daf0-b718-42a1-9a65-819d832cae15",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Pressure Test — Wellbore / Liner",
+    "norm_rule": "0.5 days",
+    "remarks": "Liner hanger or casing pressure integrity test",
+    "created_at": "2026-03-05T12:19:56.361Z",
+    "updated_at": "2026-03-05T12:19:56.361Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "59c6328e-138c-47f0-b23f-6bf5f913ec17",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Retrieval of casing below MSL (incl. cement plug, casing pull out)",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-10T08:40:31.621Z",
+    "updated_at": "2026-01-16T15:02:57.290Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "79526f09-3e12-4d8f-a93a-19c6cf98a509",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Casing Lowering + Cementation",
+    "norm_rule": "Per CasingNorm table by depth interval",
+    "remarks": "Time includes casing running, cementing, and WOC",
+    "created_at": "2026-03-05T12:19:56.356Z",
+    "updated_at": "2026-03-05T12:19:56.356Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "7ede8317-50ab-4e5e-a85a-4dc942901d61",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Electro logging (incl. round tripping)",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-10T08:40:31.621Z",
+    "updated_at": "2026-01-16T15:03:08.585Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "81526dbe-e91a-480b-a80f-b2e0ada46b45",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Wellhead Installation",
+    "norm_rule": "0.5 days",
+    "remarks": "Installation of Christmas tree / wellhead equipment after completion",
+    "created_at": "2026-03-05T12:19:56.358Z",
+    "updated_at": "2026-03-05T12:19:56.358Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "85c75ed0-a3af-4b2b-a1c1-e503a31ba075",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Rig-down after TD",
+    "norm_rule": "3 days (Mobile); 5 days (Fixed)",
+    "remarks": "Post-TD rig demobilisation before next move",
+    "created_at": "2026-03-05T12:19:56.362Z",
+    "updated_at": "2026-03-05T12:19:56.362Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "9a114a7d-2fb1-4b4e-bf48-315f4492b917",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Conductor Pipe Driving",
+    "norm_rule": "1 day",
+    "remarks": "Conductor driving to 30–50 m depth",
+    "created_at": "2026-03-05T12:19:56.351Z",
+    "updated_at": "2026-03-05T12:19:56.351Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "9da36cef-165f-4c4a-89c4-033c1a58e73a",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "operation": "Electro logging (incl. round tripping)",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-30T07:23:10.918Z",
+    "updated_at": "2026-01-30T07:23:10.918Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "a74a804f-e2eb-42f4-8dda-13a38e5c9174",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "DST (Drill Stem Test)",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-10T08:40:31.620Z",
+    "updated_at": "2026-01-16T15:02:51.776Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "c50c0a43-202b-41ee-874c-6cdda7533397",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Well Abandonment (P&A)",
+    "norm_rule": "5 days",
+    "remarks": "Permanent plug and abandon including regulatory requirements",
+    "created_at": "2026-03-05T12:19:56.358Z",
+    "updated_at": "2026-03-05T12:19:56.358Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "d191a858-61c9-468b-ae4f-3503186dac8c",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Spud / Surface Hole Drilling",
+    "norm_rule": "2 days",
+    "remarks": "Drilling surface hole section to ~200 m, cement conductor pipe",
+    "created_at": "2026-03-05T12:19:56.352Z",
+    "updated_at": "2026-03-05T12:19:56.352Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "dcba5b09-c4d6-4baa-98f9-726286c8d805",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Logging (Open Hole Suite)",
+    "norm_rule": "1 day",
+    "remarks": "Standard wireline logging suite in open hole",
+    "created_at": "2026-03-05T12:19:56.359Z",
+    "updated_at": "2026-03-05T12:19:56.359Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "e284875e-a043-4e5d-acac-d5251361642b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Velocity shooting survey",
+    "norm_rule": "Add actual time",
+    "remarks": "",
+    "created_at": "2026-01-10T08:40:31.621Z",
+    "updated_at": "2026-01-16T15:03:02.984Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "ec2e8f52-bc4f-4d28-aa52-ac8a7b0c6f50",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Bit Change (trip in/trip out)",
+    "norm_rule": "0.5 days per round trip at 1000 m depth; scale with depth",
+    "remarks": "Approximate: 1 day per round trip at 2000 m",
+    "created_at": "2026-03-05T12:19:56.355Z",
+    "updated_at": "2026-03-05T12:19:56.355Z"
+  }
+},
+{
+  "model": "scheduler.operationnorm",
+  "pk": "fcd37699-4c40-4fd5-b980-ae90e47883b0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "operation": "Mud Mixing and Conditioning",
+    "norm_rule": "0.25 days per significant change",
+    "remarks": "For major mud system changes; minor top-ups are included in drilling time",
+    "created_at": "2026-03-05T12:19:56.354Z",
+    "updated_at": "2026-03-05T12:19:56.354Z"
+  }
+}
+]

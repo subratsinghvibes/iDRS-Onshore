@@ -1,0 +1,2181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Execution Detail - iDRS{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/frappe-gantt.css' %}" rel="stylesheet">
+<style>
+    /* ── Icon fix ── */
+    .data-management-page i.bi,
+    .data-management-page .bi::before,
+    .gantt-popup-inner i.bi,
+    .gantt-popup-inner .bi::before,
+    .modal i.bi,
+    .modal .bi::before {
+        -webkit-text-fill-color: currentColor !important;
+        background: none !important;
+        background-clip: initial !important;
+        -webkit-background-clip: initial !important;
+        font-family: "bootstrap-icons" !important;
+    }
+
+    body { background: #f8f9fa; }
+    .main-content { background: transparent !important; }
+
+    /* ── Breadcrumb / back-nav ── */
+    .sem-breadcrumb { font-size: 0.83rem; color: #6b7280; }
+    .sem-breadcrumb a { color: #6b7280; text-decoration: none; }
+    .sem-breadcrumb a:hover { color: var(--adb-primary); }
+
+    /* ── Status badges ── */
+    .badge-status {
+        padding: 0.28rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .badge-status.ACTIVE   { background: #dcfce7; color: #166534; }
+    .badge-status.PAUSED   { background: #fef3c7; color: #92400e; }
+    .badge-status.COMPLETED{ background: #dbeafe; color: #1e40af; }
+    .badge-status.CANCELLED{ background: #fde2e2; color: #991b1b; }
+
+    /* ── Well-level badges ── */
+    .badge-well {
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .badge-well.PLANNED    { background: #f3f4f6; color: #374151; }
+    .badge-well.IN_PROGRESS{ background: #fef3c7; color: #92400e; }
+    .badge-well.COMPLETED  { background: #dcfce7; color: #166534; }
+    .badge-well.LOCKED     { background: #fde2e2; color: #991b1b; }
+    .badge-well.DEFERRED   { background: #f3e8ff; color: #6b21a8; }
+    .badge-well.REMOVED    { background: #e5e7eb; color: #6b7280; text-decoration: line-through; }
+
+    /* ── Stat pills (progress overview) ── */
+    .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.28rem 0.65rem;
+        border-radius: 20px;
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+    .stat-pill.green  { background: #dcfce7; color: #166534; }
+    .stat-pill.blue   { background: #dbeafe; color: #1e40af; }
+    .stat-pill.amber  { background: #fef3c7; color: #92400e; }
+    .stat-pill.red    { background: #fde2e2; color: #991b1b; }
+    .stat-pill.purple { background: #f3e8ff; color: #6b21a8; }
+    .stat-pill.gray   { background: #f3f4f6; color: #374151; }
+
+    /* ── Progress bar ── */
+    .progress-xl { height: 8px; border-radius: 4px; background: #f3f4f6; }
+    .progress-xl .progress-bar { border-radius: 4px; background: var(--adb-primary); }
+
+    /* ── Table overrides (match data_management) ── */
+    .table th {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--adb-primary) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding: 0.5rem 0.5rem;
+        white-space: nowrap;
+    }
+    .table th i { color: var(--adb-primary) !important; }
+    .table td { padding: 0.5rem 0.5rem; vertical-align: middle; font-size: 0.78rem; }
+    .locked-row  { background: #fef2f2 !important; }
+    .completed-row { background: #f0fdf4 !important; }
+    .table input[type="date"] {
+        font-size: 0.78rem;
+        padding: 0.2rem 0.4rem;
+        border: 1.5px solid #d1d5db;
+        border-radius: 4px;
+        width: 132px;
+    }
+    .table input[type="date"]:focus {
+        border-color: var(--adb-primary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(10,47,90,0.1);
+    }
+
+    /* ── Gantt container ── */
+    .gantt-container-wrapper {
+        overflow-x: auto;
+        min-height: 300px;
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 0.5rem;
+    }
+    /* Gantt bar colours - applied via JS for reliability, CSS as fallback */
+    .gantt .bar-wrapper.locked .bar,
+    .gantt .bar-wrapper.locked .bar-progress { fill: #ef4444 !important; }
+    .gantt .bar-wrapper.actual .bar,
+    .gantt .bar-wrapper.actual .bar-progress { fill: #22c55e !important; }
+    .gantt .bar-wrapper.planned .bar,
+    .gantt .bar-wrapper.planned .bar-progress { fill: #0a2f5a !important; }
+    /* Date tooltip shown during drag */
+    .gantt-drag-tooltip {
+        position: absolute;
+        background: var(--adb-primary);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    /* ── Action buttons in table ── */
+    .action-btn { padding: 0.22rem 0.45rem; font-size: 0.72rem; border-radius: 4px; }
+    .action-btn.btn-outline-warning { border-color: #d97706 !important; color: #d97706 !important; }
+    .action-btn.btn-outline-warning:hover { background: #fef3c7 !important; color: #92400e !important; }
+    .action-btn.btn-outline-info { border-color: #0891b2 !important; color: #0891b2 !important; }
+    .action-btn.btn-outline-info:hover { background: #ecfeff !important; color: #0e7490 !important; }
+
+    /* ── Analytics card ── */
+    .analytics-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+    .analytics-card h6 { font-weight: 600; font-size: 0.85rem; color: #374151; margin-bottom: 0.75rem; }
+    .analytics-metric { text-align: center; padding: 0.75rem 0.5rem; }
+    .analytics-metric .value { font-size: 1.4rem; font-weight: 700; }
+    .analytics-metric .label  { font-size: 0.72rem; color: #6b7280; }
+
+    /* ── Activity log ── */
+    .log-entry {
+        padding: 0.5rem 0.75rem;
+        border-left: 3px solid #e5e7eb;
+        margin-bottom: 0.45rem;
+        font-size: 0.8rem;
+        border-radius: 0 4px 4px 0;
+        background: #fff;
+    }
+    .log-entry.ACTIVATED      { border-left-color: var(--adb-primary); }
+    .log-entry.ACTUAL_SET     { border-left-color: #22c55e; }
+    .log-entry.LOCKED         { border-left-color: #ef4444; }
+    .log-entry.CUTOFF_APPLIED { border-left-color: #dc2626; }
+    .log-entry.WELL_ADDED     { border-left-color: #8b5cf6; }
+    .log-entry.WELL_REMOVED   { border-left-color: #f97316; }
+    .log-entry.RIG_ADDED      { border-left-color: #06b6d4; }
+    .log-entry.RIG_REMOVED    { border-left-color: #f43f5e; }
+    .log-entry.REOPTIMIZED    { border-left-color: #a855f7; }
+    .log-entry.STATUS_CHANGE  { border-left-color: #6b7280; }
+    .log-entry.RIG_REPLACED   { border-left-color: #0891b2; }
+    .log-entry.WELL_REPLACED  { border-left-color: #7c3aed; }
+    .log-entry.DATES_SHIFTED  { border-left-color: #2563eb; }
+    .log-entry.REMARKS_UPDATED{ border-left-color: #10b981; }
+    .log-entry.SCENARIO_CREATED { border-left-color: #0ea5e9; }
+    .log-entry.SCENARIO_APPLIED { border-left-color: #14b8a6; }
+
+    /* ── Gantt popup override ── */
+    .gantt-container .popup-wrapper {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+        color: #374151 !important;
+        padding: 0 !important;
+        min-width: 220px;
+    }
+    /* hide the default dark pointer arrow and replace with a light one */
+    .gantt-container .popup-wrapper .pointer {
+        border-top-color: #ffffff !important;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.12));
+    }
+    /* the actual custom popup inner div */
+    .gantt-popup-inner {
+        padding: 0.85rem 1rem;
+    }
+    .gantt-popup-inner .popup-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--adb-primary);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 0.4rem;
+    }
+    .gantt-popup-inner .popup-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: #374151;
+        margin-bottom: 0.3rem;
+        line-height: 1.4;
+    }
+    .gantt-popup-inner .popup-row i {
+        color: var(--adb-primary);
+        font-size: 0.75rem;
+        margin-top: 0.15rem;
+        flex-shrink: 0;
+    }
+    .gantt-popup-inner .popup-row .label {
+        color: #6b7280;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .gantt-popup-inner .popup-row .value {
+        font-weight: 600;
+        color: #111827;
+    }
+    .gantt-popup-inner .popup-badge {
+        display: inline-block;
+        padding: 0.18rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .gantt-popup-inner .popup-badge.PLANNED    { background: #f3f4f6; color: #374151; }
+    .gantt-popup-inner .popup-badge.IN_PROGRESS{ background: #fef3c7; color: #92400e; }
+    .gantt-popup-inner .popup-badge.COMPLETED  { background: #dcfce7; color: #166534; }
+    .gantt-popup-inner .popup-badge.LOCKED     { background: #fde2e2; color: #991b1b; }
+    .gantt-popup-inner .popup-badge.DEFERRED   { background: #f3e8ff; color: #6b21a8; }
+    .gantt-popup-inner .popup-badge.actual     { background: #dcfce7; color: #166534; }
+    .gantt-popup-inner .popup-badge.planned    { background: #dbeafe; color: #1e40af; }
+
+    /* ── Tab nav – raised tab style ── */
+    .sem-tab-wrapper {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .sem-nav-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin: 0;
+        padding: 0 0.75rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        list-style: none;
+    }
+    .sem-nav-tabs .nav-item {
+        margin-bottom: -1px;   /* pull the active tab border over the container border */
+    }
+    .sem-nav-tabs .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #6b7280;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 0.7rem 1.15rem;
+        background: transparent;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        text-decoration: none;
+        transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        position: relative;
+        white-space: nowrap;
+        user-select: none;
+    }
+    .sem-nav-tabs .nav-link i {
+        font-size: 0.88rem;
+        flex-shrink: 0;
+    }
+    /* Hover – slightly lift and tint */
+    .sem-nav-tabs .nav-link:hover {
+        color: var(--adb-primary);
+        background: #ffffff;
+        border-color: #e5e7eb #e5e7eb transparent;
+        text-decoration: none;
+    }
+    /* Active – white background, coloured top accent, merges with content below */
+    .sem-nav-tabs .nav-link.active {
+        color: var(--adb-primary);
+        background: #ffffff;
+        border-color: #e5e7eb #e5e7eb #ffffff;  /* top+sides visible, bottom white to merge */
+        font-weight: 700;
+    }
+    /* 3-px primary colour top bar on active tab */
+    .sem-nav-tabs .nav-link.active::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--adb-primary);
+        border-radius: 8px 8px 0 0;
+    }
+    /* Tab content area */
+    .sem-tab-body {
+        padding: 1.25rem;
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="data-management-page">
+
+    <!-- ── Page Header ── -->
+    <div class="row align-items-start mb-2">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <div class="sem-breadcrumb mb-1">
+                <a href="{% url 'sem_dashboard' %}"><i class="bi bi-arrow-left me-1"></i>Executions</a>
+                <span class="mx-2 text-muted">/</span>
+                <span id="headerName" style="color:#374151; font-weight:600;">Loading&hellip;</span>
+                <span class="ms-2" id="headerStatus"></span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="bi bi-play-circle page-title-icon" style="font-size:1.6rem;"></i>
+                        <h1 class="page-title mb-0" style="font-size:1.4rem;" id="headerTitle">Execution Detail</h1>
+                    </div>
+                    <p class="page-subtitle mb-0" id="headerMeta">Loading metadata&hellip;</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap" id="headerActions"></div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="page-separator">
+
+    <!-- ── Progress Overview (stats-row) ── -->
+    <div class="stats-row mb-3" id="progressCards">
+        <div class="stat-card" id="pcTotal">
+            <div class="stat-card-label">Total Wells</div>
+            <div class="stat-card-value" id="pcTotalVal">&mdash;</div>
+        </div>
+        <div class="stat-card" id="pcLocked">
+            <div class="stat-card-label">Locked</div>
+            <div class="stat-card-value" id="pcLockedVal">&mdash;</div>
+        </div>
+        <div class="stat-card" id="pcInProgress">
+            <div class="stat-card-label">In Progress</div>
+            <div class="stat-card-value" id="pcInProgressVal">&mdash;</div>
+        </div>
+        <div class="stat-card" id="pcCompleted">
+            <div class="stat-card-label">Completed</div>
+            <div class="stat-card-value" id="pcCompletedVal">&mdash;</div>
+        </div>
+        <div class="stat-card" id="pcPlanned">
+            <div class="stat-card-label">Planned</div>
+            <div class="stat-card-value" id="pcPlannedVal">&mdash;</div>
+        </div>
+    </div>
+
+    <!-- ── Overall Progress Bar ── -->
+    <div class="mb-3 px-1">
+        <div class="d-flex flex-wrap gap-2 mb-2" id="statusPills"></div>
+        <div class="progress progress-xl">
+            <div class="progress-bar" id="progressBar" role="progressbar" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- ── Tab Navigation ── -->
+    <div class="sem-tab-wrapper mb-4">
+        <ul class="sem-nav-tabs" id="semTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-tab="gantt" onclick="switchTab('gantt')">
+                    <i class="bi bi-bar-chart-steps"></i>Gantt Chart
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="table" onclick="switchTab('table')">
+                    <i class="bi bi-table"></i>Tabular View
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="analytics" onclick="switchTab('analytics')">
+                    <i class="bi bi-graph-up"></i>Analytics
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="scenarios" onclick="switchTab('scenarios')">
+                    <i class="bi bi-diagram-3"></i>Scenarios
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="logs" onclick="switchTab('logs')">
+                    <i class="bi bi-journal-text"></i>Activity Log
+                </a>
+            </li>
+        </ul>
+
+        <!-- ── Tab Content ── -->
+        <div class="sem-tab-body tab-content" id="tabContent">
+
+        <!-- Tab: Gantt Chart -->
+        <div class="tab-pane fade show active" id="tab-gantt">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Gantt Chart</h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <div style="font-size:0.78rem; color:#6b7280; display:flex; gap:0.85rem; align-items:center;">
+                            <span><span style="display:inline-block;width:12px;height:12px;background:#0a2f5a;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Planned</span>
+                            <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Locked</span>
+                            <span><span style="display:inline-block;width:12px;height:12px;background:#22c55e;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Actual</span>
+                        </div>
+                        <select class="form-select form-select-sm" id="ganttViewMode" style="width:auto;" onchange="renderGantt()">
+                            <option value="Week">Week</option>
+                            <option value="Month" selected>Month</option>
+                            <option value="Quarter">Quarter</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    <div class="gantt-container-wrapper" id="ganttContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Tabular View -->
+        <div class="tab-pane fade" id="tab-table">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>Wells &amp; Actuals</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <select class="form-select form-select-sm" id="tableRigFilter" style="width:auto;" onchange="renderTable()">
+                            <option value="">All Rigs</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="tableStatusFilter" style="width:auto;" onchange="renderTable()">
+                            <option value="">All Status</option>
+                            <option value="PLANNED">Planned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="LOCKED">Locked</option>
+                            <option value="DEFERRED">Deferred</option>
+                        </select>
+                        <button class="btn btn-sm btn-success" onclick="saveAllActuals()" id="saveActualsBtn">
+                            <i class="bi bi-check-lg me-1"></i>Save Actuals
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height:60vh; overflow-y:auto;">
+                        <table class="table table-sm table-hover mb-0" id="wellsTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Rig</th>
+                                    <th>Well</th>
+                                    <th>Status</th>
+                                    <th>Planned Start</th>
+                                    <th>Planned End</th>
+                                    <th>Actual Start</th>
+                                    <th>Actual End</th>
+                                    <th>Delay</th>
+                                    <th>Remarks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wellsTableBody">
+                                <tr><td colspan="11" class="text-center text-muted py-3">Loading&hellip;</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Analytics -->
+        <div class="tab-pane fade" id="tab-analytics">
+            <div id="analyticsContent">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Scenarios (What-If) -->
+        <div class="tab-pane fade" id="tab-scenarios">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>What-If Scenarios</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="createScenario()">
+                            <i class="bi bi-camera me-1"></i>Snapshot Current State
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="scenariosContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Activity Log -->
+        <div class="tab-pane fade" id="tab-logs">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Activity Log</h5>
+                </div>
+                <div class="card-body" id="logsContent">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /sem-tab-body -->
+    </div><!-- /sem-tab-wrapper -->
+
+</div><!-- /data-management-page -->
+
+<!-- Cutoff Lock Modal -->
+<div class="modal fade" id="cutoffModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-lock-fill me-2" style="color:#dc2626"></i>Apply Cutoff Lock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size:0.85rem;">All wells with planned start on or before this date will be locked.</p>
+                <input type="date" class="form-control" id="cutoffDate">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-danger" onclick="applyCutoff()"><i class="bi bi-lock-fill me-1"></i>Lock</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Well Modal -->
+<div class="modal fade" id="addWellModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2" style="color:#16a34a"></i>Add Well to Execution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Well</label>
+                    <select class="form-select" id="addWellSelect">
+                        <option value="">Loading wells&hellip;</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assign to Rig</label>
+                    <select class="form-select" id="addWellRigSelect">
+                        <option value="">Select rig&hellip;</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-success" onclick="addWell()"><i class="bi bi-plus-lg me-1"></i>Add Well</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Rig Modal -->
+<div class="modal fade" id="addRigModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Add Rig to Execution</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">Select Rig</label>
+                <select class="form-select" id="addRigSelect">
+                    <option value="">Loading rigs&hellip;</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" onclick="addRig()"><i class="bi bi-plus-lg me-1"></i>Add Rig</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Re-optimize Modal -->
+<div class="modal fade" id="reoptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-repeat me-2" style="color:#7c3aed"></i>Re-optimize Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 p-3" style="background:#f9fafb; border-radius:8px; font-size:0.85rem;">
+                    <div class="d-flex justify-content-between mb-1"><span>Locked wells (fixed):</span><strong id="reoptLocked">&mdash;</strong></div>
+                    <div class="d-flex justify-content-between mb-1"><span>Unlocked wells (adjustable):</span><strong id="reoptUnlocked">&mdash;</strong></div>
+                    <div class="d-flex justify-content-between"><span>Active rigs:</span><strong id="reoptRigs">&mdash;</strong></div>
+                </div>
+                <p class="text-muted" style="font-size:0.85rem;">The optimizer will keep locked wells fixed and re-schedule only unlocked wells.</p>
+                <div class="mb-2">
+                    <label class="form-label">Time Limit (seconds)</label>
+                    <input type="number" class="form-control" id="reoptTimeLimit" value="60" min="10" max="600">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" id="reoptBtn" onclick="reoptimize()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Run Optimizer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remarks Modal -->
+<div class="modal fade" id="remarksModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-chat-left-text me-2" style="color:#0ea5e9"></i>Well Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <strong id="remarksWellName" style="font-size:0.95rem;"></strong>
+                        <span class="ms-2 badge bg-secondary" id="remarksRigName" style="font-size:0.75rem;"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Remarks</label>
+                    <div class="btn-toolbar mb-2" role="toolbar">
+                        <div class="btn-group btn-group-sm me-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="formatRemarks('bold')" title="Bold"><i class="bi bi-type-bold"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="formatRemarks('italic')" title="Italic"><i class="bi bi-type-italic"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="formatRemarks('underline')" title="Underline"><i class="bi bi-type-underline"></i></button>
+                        </div>
+                        <div class="btn-group btn-group-sm me-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="formatRemarks('bullet')" title="Bullet List"><i class="bi bi-list-ul"></i></button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="formatRemarks('number')" title="Numbered List"><i class="bi bi-list-ol"></i></button>
+                        </div>
+                    </div>
+                    <textarea class="form-control" id="remarksTextarea" rows="6" placeholder="Enter remarks for this well..." style="font-size:0.9rem; line-height:1.6;"></textarea>
+                    <small class="text-muted">Use formatting buttons above for basic styling. Press Enter for new lines.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" onclick="saveRemarks()"><i class="bi bi-check-lg me-1"></i>Save Remarks</button>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="remarksWellId" value="">
+
+<!-- Re-Schedule Confirmation Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calendar-check me-2" style="color:#7c3aed"></i>Re-Schedule Option</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="rescheduleMessage" style="font-size:0.9rem;"></p>
+                <div class="p-3 mb-3" style="background:#fef3c7; border-radius:8px; font-size:0.85rem;">
+                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                    <strong>Choose how to handle this change:</strong>
+                    <ul class="mb-0 mt-2 ps-3">
+                        <li><strong>Re-Optimize:</strong> Run the optimizer to generate the best new schedule (locked wells stay fixed).</li>
+                        <li><strong>Shift Dates:</strong> Automatically close gaps by sliding remaining wells forward — no optimizer needed.</li>
+                        <li><strong>Just Update:</strong> Apply the change only, no date adjustments.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" onclick="executeWithoutReschedule()">Just Update</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="executeWithShiftDates()"><i class="bi bi-arrow-right-circle me-1"></i>Shift Dates</button>
+                <button class="btn btn-sm btn-primary" onclick="executeWithReschedule()"><i class="bi bi-arrow-repeat me-1"></i>Re-Optimize</button>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="rescheduleAction" value="">
+<input type="hidden" id="rescheduleData" value="">
+
+<!-- Replace Rig Modal -->
+<div class="modal fade" id="replaceRigModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-repeat me-2" style="color:#0891b2"></i>Replace Rig</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Current Rig</label>
+                    <input type="text" class="form-control" id="replaceRigOldName" disabled>
+                    <input type="hidden" id="replaceRigOldId">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Replace With</label>
+                    <select class="form-select" id="replaceRigNewSelect">
+                        <option value="">Loading rigs&hellip;</option>
+                    </select>
+                </div>
+                <div class="p-3" style="background:#f0f9ff; border-radius:8px; font-size:0.85rem;">
+                    <i class="bi bi-info-circle text-primary me-2"></i>
+                    All unlocked wells on the current rig will be reassigned to the new rig.
+                    Locked/completed wells will remain on the current rig.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" onclick="replaceRig()"><i class="bi bi-arrow-repeat me-1"></i>Replace Rig</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Replace Well Modal -->
+<div class="modal fade" id="replaceWellModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2" style="color:#7c3aed"></i>Replace Well</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Current Well</label>
+                    <input type="text" class="form-control" id="replaceWellOldName" disabled>
+                    <input type="hidden" id="replaceWellOldId">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Replace With</label>
+                    <select class="form-select" id="replaceWellNewSelect">
+                        <option value="">Loading wells&hellip;</option>
+                    </select>
+                </div>
+                <div class="p-3" style="background:#faf5ff; border-radius:8px; font-size:0.85rem;">
+                    <i class="bi bi-info-circle text-purple me-2"></i>
+                    The old well will be removed and the new well placed in the same rig position.
+                    Dates will be estimated from the new well's duration.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" onclick="replaceWell()"><i class="bi bi-arrow-left-right me-1"></i>Replace Well</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Scenario Modal -->
+<div class="modal fade" id="createScenarioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-camera me-2" style="color:#0891b2"></i>Save Scenario Snapshot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Scenario Name</label>
+                    <input type="text" class="form-control" id="scenarioName" placeholder="e.g. Baseline, Remove Rig-5, Add 3 Wells...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description (optional)</label>
+                    <textarea class="form-control" id="scenarioDesc" rows="3" placeholder="Describe what this scenario represents..."></textarea>
+                </div>
+                <div class="p-3" style="background:#f0fdf4; border-radius:8px; font-size:0.85rem;">
+                    <i class="bi bi-camera text-success me-2"></i>
+                    This saves a snapshot of the current state (all rigs, wells, dates, costs).
+                    You can make changes, create more snapshots, and compare them side-by-side.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-success" onclick="saveScenario()"><i class="bi bi-camera me-1"></i>Save Snapshot</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compare Scenarios Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-layout-split me-2" style="color:#7c3aed"></i>Compare Scenarios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="compareContent">
+                <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/frappe-gantt.min.js' %}"></script>
+<script>
+const EXECUTION_ID = '{{ execution_id }}';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+let execData = null;
+let ganttChart = null;
+
+// ===== API Helpers =====
+async function api(url, options = {}) {
+    const resp = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin', ...options,
+    });
+    if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        throw new Error(err.error || resp.statusText);
+    }
+    return resp.json();
+}
+
+function showAlert(msg, type = 'success') {
+    const c = document.getElementById('alerts-container');
+    const a = document.createElement('div');
+    a.className = `alert alert-${type} alert-dismissible fade show`;
+    a.style.cssText = 'font-size:0.85rem;border-radius:8px;';
+    a.innerHTML = `${msg}<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>`;
+    c.appendChild(a);
+    setTimeout(() => a.remove(), 6000);
+}
+
+function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// ===== Remarks Modal =====
+function openRemarksModal(wellId, wellName, rigName) {
+    document.getElementById('remarksWellId').value = wellId;
+    document.getElementById('remarksWellName').textContent = wellName;
+    document.getElementById('remarksRigName').textContent = rigName;
+    
+    // Find the current remarks for this well
+    const well = execData?.wells.find(w => w.id == wellId);
+    document.getElementById('remarksTextarea').value = well?.remarks || '';
+    
+    new bootstrap.Modal(document.getElementById('remarksModal')).show();
+}
+
+function formatRemarks(format) {
+    const textarea = document.getElementById('remarksTextarea');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    
+    let formatted = selected;
+    switch (format) {
+        case 'bold':
+            formatted = `**${selected}**`;
+            break;
+        case 'italic':
+            formatted = `_${selected}_`;
+            break;
+        case 'underline':
+            formatted = `__${selected}__`;
+            break;
+        case 'bullet':
+            formatted = selected.split('\n').map(line => `• ${line}`).join('\n');
+            break;
+        case 'number':
+            formatted = selected.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
+            break;
+    }
+    
+    textarea.value = text.substring(0, start) + formatted + text.substring(end);
+    textarea.focus();
+    textarea.selectionStart = start;
+    textarea.selectionEnd = start + formatted.length;
+}
+
+async function saveRemarks() {
+    const wellId = document.getElementById('remarksWellId').value;
+    const remarks = document.getElementById('remarksTextarea').value.trim();
+    
+    if (!wellId) return;
+    
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/update-remarks/`, {
+            method: 'POST',
+            body: JSON.stringify({ exec_well_id: wellId, remarks: remarks }),
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById('remarksModal')).hide();
+        showAlert('Remarks saved successfully.');
+        loadExecution();
+    } catch (err) {
+        showAlert(err.message, 'danger');
+    }
+}
+
+// ===== Re-Schedule Modal =====
+let pendingRescheduleAction = null;
+let pendingRescheduleData = null;
+
+function showRescheduleModal(action, data, message) {
+    pendingRescheduleAction = action;
+    pendingRescheduleData = data;
+    document.getElementById('rescheduleMessage').textContent = message;
+    new bootstrap.Modal(document.getElementById('rescheduleModal')).show();
+}
+
+async function executeWithoutReschedule() {
+    if (!pendingRescheduleAction) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
+    
+    try {
+        let url, payload;
+        switch (pendingRescheduleAction) {
+            case 'removeWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-well/`;
+                payload = { exec_well_id: pendingRescheduleData.wellId };
+                break;
+            case 'removeRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-well/`;
+                payload = { well_id: pendingRescheduleData.wellId, rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+        }
+        
+        await api(url, { method: 'POST', body: JSON.stringify(payload) });
+        showAlert('Change applied successfully.');
+        loadExecution();
+    } catch (err) {
+        showAlert(err.message, 'danger');
+    }
+    
+    pendingRescheduleAction = null;
+    pendingRescheduleData = null;
+}
+
+async function executeWithShiftDates() {
+    if (!pendingRescheduleAction) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
+    
+    try {
+        // First apply the change
+        let url, payload;
+        switch (pendingRescheduleAction) {
+            case 'removeWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-well/`;
+                payload = { exec_well_id: pendingRescheduleData.wellId };
+                break;
+            case 'removeRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-well/`;
+                payload = { well_id: pendingRescheduleData.wellId, rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+        }
+        
+        await api(url, { method: 'POST', body: JSON.stringify(payload) });
+        
+        // Then shift dates to close gaps
+        const shiftResult = await api(`/api/sem/executions/${EXECUTION_ID}/shift-dates/`, {
+            method: 'POST',
+            body: JSON.stringify({ gap_days: 1 }),
+        });
+        
+        showAlert(`Change applied. ${shiftResult.wells_shifted} wells shifted to close gaps.`);
+        loadExecution();
+    } catch (err) {
+        showAlert(err.message, 'danger');
+    }
+    
+    pendingRescheduleAction = null;
+    pendingRescheduleData = null;
+}
+
+async function executeWithReschedule() {
+    if (!pendingRescheduleAction) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('rescheduleModal'))?.hide();
+    
+    try {
+        // First apply the change
+        let url, payload;
+        switch (pendingRescheduleAction) {
+            case 'removeWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-well/`;
+                payload = { exec_well_id: pendingRescheduleData.wellId };
+                break;
+            case 'removeRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/remove-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addWell':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-well/`;
+                payload = { well_id: pendingRescheduleData.wellId, rig_id: pendingRescheduleData.rigId };
+                break;
+            case 'addRig':
+                url = `/api/sem/executions/${EXECUTION_ID}/add-rig/`;
+                payload = { rig_id: pendingRescheduleData.rigId };
+                break;
+        }
+        
+        await api(url, { method: 'POST', body: JSON.stringify(payload) });
+        
+        // Then run re-optimization
+        showAlert('Change applied. Running re-optimization...', 'info');
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/reoptimize/`, {
+            method: 'POST',
+            body: JSON.stringify({ time_limit_seconds: 60 }),
+        });
+        
+        showAlert(`Re-optimization complete: ${result.optimized_count} wells updated. Solver: ${result.solver_status}`);
+        loadExecution();
+    } catch (err) {
+        showAlert('Error: ' + err.message, 'danger');
+    }
+    
+    pendingRescheduleAction = null;
+    pendingRescheduleData = null;
+}
+
+// ===== Tab Switching =====
+function switchTab(tab) {
+    document.querySelectorAll('.sem-nav-tabs .nav-link').forEach(l => l.classList.remove('active'));
+    document.querySelector(`.sem-nav-tabs [data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.tab-pane').forEach(p => {
+        p.classList.remove('show', 'active');
+    });
+    const pane = document.getElementById(`tab-${tab}`);
+    pane.classList.add('show', 'active');
+
+    if (tab === 'gantt') loadGantt();
+    if (tab === 'analytics') loadAnalytics();
+    if (tab === 'scenarios') loadScenarios();
+    if (tab === 'logs') loadLogs();
+}
+
+// ===== Load Execution =====
+async function loadExecution() {
+    try {
+        execData = await api(`/api/sem/executions/${EXECUTION_ID}/`);
+        renderHeader();
+        renderProgress();
+        renderTable();
+        populateFilters();
+        loadGantt();
+    } catch (err) {
+        showAlert('Failed to load execution: ' + err.message, 'danger');
+    }
+}
+
+function renderHeader() {
+    const d = execData;
+    document.getElementById('headerName').textContent = d.name;
+    document.getElementById('headerTitle').textContent = d.name;
+    const badge = document.getElementById('headerStatus');
+    badge.textContent = d.status;
+    badge.className = `badge-status ${d.status}`;
+
+    document.getElementById('headerMeta').innerHTML = `
+        <span class="me-3"><i class="bi bi-calendar3 me-1"></i>FY ${d.financial_year}</span>
+        <span class="me-3"><i class="bi bi-link-45deg me-1"></i>Source: ${d.source_schedule_name}</span>
+        ${d.cutoff_date ? `<span class="me-3"><i class="bi bi-lock me-1"></i>Cutoff: ${fmtDate(d.cutoff_date)}</span>` : ''}
+        ${d.optimization_runs > 0 ? `<span><i class="bi bi-arrow-repeat me-1"></i>${d.optimization_runs} re-optimizations</span>` : ''}
+    `;
+
+    // Actions
+    const isActive = d.status === 'ACTIVE';
+    document.getElementById('headerActions').innerHTML = `
+        ${isActive ? `
+            <button class="btn btn-sm btn-outline-danger" onclick="showCutoffModal()"><i class="bi bi-lock-fill me-1"></i>Cutoff Lock</button>
+            <button class="btn btn-sm btn-outline-success" onclick="showAddWellModal()"><i class="bi bi-plus-circle me-1"></i>Add Well</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="showAddRigModal()"><i class="bi bi-truck me-1"></i>Add Rig</button>
+            <button class="btn btn-sm btn-primary" onclick="showReoptModal()"><i class="bi bi-arrow-repeat me-1"></i>Re-optimize</button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end" style="font-size:0.82rem;">
+                    <li><a class="dropdown-item" href="#" onclick="updateStatus('PAUSED')"><i class="bi bi-pause-fill me-2"></i>Pause</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="updateStatus('COMPLETED')"><i class="bi bi-check-circle me-2"></i>Mark Complete</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus('CANCELLED')"><i class="bi bi-x-circle me-2"></i>Cancel</a></li>
+                </ul>
+            </div>
+        ` : `
+            ${d.status === 'PAUSED' ? `<button class="btn btn-sm btn-success" onclick="updateStatus('ACTIVE')"><i class="bi bi-play-fill me-1"></i>Resume</button>` : ''}
+        `}
+    `;
+}
+
+function renderProgress() {
+    const s = execData.summary;
+    // Update stat-card values
+    document.getElementById('pcTotalVal').textContent       = s.total;
+    document.getElementById('pcLockedVal').textContent      = s.locked;
+    document.getElementById('pcInProgressVal').textContent  = s.in_progress;
+    document.getElementById('pcCompletedVal').textContent   = s.completed;
+    document.getElementById('pcPlannedVal').textContent     = s.planned;
+
+    document.getElementById('statusPills').innerHTML = `
+        ${s.deferred > 0 ? `<span class="stat-pill purple"><i class="bi bi-skip-forward-fill"></i> ${s.deferred} deferred</span>` : ''}
+        ${s.removed > 0  ? `<span class="stat-pill gray"><i class="bi bi-trash"></i> ${s.removed} removed</span>` : ''}
+        ${s.total_delay_days !== 0 ? `<span class="stat-pill ${s.total_delay_days > 0 ? 'red' : 'green'}"><i class="bi bi-clock"></i> ${s.total_delay_days > 0 ? '+' : ''}${s.total_delay_days}d variance</span>` : ''}
+    `;
+    document.getElementById('progressBar').style.width = s.progress_pct + '%';
+    document.getElementById('progressBar').setAttribute('aria-valuenow', s.progress_pct);
+}
+
+function populateFilters() {
+    const rigs = [...new Set(execData.wells.map(w => w.rig_name))].sort();
+    const rigFilter = document.getElementById('tableRigFilter');
+    rigFilter.innerHTML = '<option value="">All Rigs</option>' + rigs.map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+// ===== Table Tab =====
+function renderTable() {
+    if (!execData) return;
+    const rigFilter = document.getElementById('tableRigFilter').value;
+    const statusFilter = document.getElementById('tableStatusFilter').value;
+
+    let wells = execData.wells.filter(w => w.status !== 'REMOVED');
+    if (rigFilter) wells = wells.filter(w => w.rig_name === rigFilter);
+    if (statusFilter) wells = wells.filter(w => w.status === statusFilter);
+
+    const tbody = document.getElementById('wellsTableBody');
+    tbody.innerHTML = wells.map((w, idx) => {
+        const isLocked = w.is_locked;
+        const rowClass = w.status === 'COMPLETED' ? 'completed-row' : (isLocked ? 'locked-row' : '');
+        const delayBadge = w.delay_days > 0 ? `<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.72rem;">+${w.delay_days}d</span>`
+            : w.delay_days < 0 ? `<span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.72rem;">${w.delay_days}d</span>`
+            : `<span style="font-size:0.72rem;color:#9ca3af;">—</span>`;
+
+        return `<tr class="${rowClass}" data-id="${w.id}">
+            <td>${idx + 1}</td>
+            <td>
+                <div class="dropdown d-inline">
+                    <strong style="font-size:0.78rem; cursor:pointer;" class="dropdown-toggle" data-bs-toggle="dropdown">${w.rig_name}</strong>
+                    ${execData.status === 'ACTIVE' ? `
+                    <ul class="dropdown-menu" style="font-size:0.82rem;">
+                        <li><a class="dropdown-item" href="#" onclick="showReplaceRigModal('${w.rig_id}')"><i class="bi bi-arrow-repeat me-2"></i>Replace Rig</a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="removeRig('${w.rig_id}')"><i class="bi bi-trash me-2"></i>Remove Rig</a></li>
+                    </ul>
+                    ` : ''}
+                </div>
+            </td>
+            <td>
+                <div style="font-weight:600;font-size:0.82rem;">${w.well_name}</div>
+                <div style="font-size:0.7rem;color:#9ca3af;">${w.well_type} • ${w.well_depth}m • ${w.well_priority}</div>
+            </td>
+            <td><span class="badge-well ${w.status}">${w.status.replace('_', ' ')}</span>
+                ${isLocked ? '<i class="bi bi-lock-fill text-danger ms-1" style="font-size:0.7rem;" title="Locked"></i>' : ''}</td>
+            <td style="font-size:0.78rem;">${fmtDate(w.planned_start)}</td>
+            <td style="font-size:0.78rem;">${fmtDate(w.planned_end)}</td>
+            <td>${isLocked && w.actual_start
+                ? `<span style="font-size:0.78rem;">${fmtDate(w.actual_start)}</span>`
+                : `<input type="date" class="actual-input" data-field="actual_start" data-id="${w.id}" value="${w.actual_start || ''}" ${isLocked && w.actual_start ? 'disabled' : ''}>`}</td>
+            <td>${isLocked && w.actual_end
+                ? `<span style="font-size:0.78rem;">${fmtDate(w.actual_end)}</span>`
+                : `<input type="date" class="actual-input" data-field="actual_end" data-id="${w.id}" value="${w.actual_end || ''}" ${isLocked && w.actual_end ? 'disabled' : ''}>`}</td>
+            <td>${delayBadge}</td>
+            <td>
+                <button class="btn btn-sm ${w.remarks ? 'btn-outline-primary' : 'btn-outline-secondary'} remarks-btn" 
+                    onclick="openRemarksModal('${w.id}', '${escapeHtml(w.well_name)}', '${w.rig_name}')" 
+                    title="${w.remarks ? escapeHtml(w.remarks.substring(0, 100)) : 'Add remarks'}"
+                    ${isLocked ? 'disabled' : ''}>
+                    <i class="bi ${w.remarks ? 'bi-chat-left-text-fill' : 'bi-chat-left-text'}"></i>
+                    ${w.remarks ? `<span class="badge bg-primary ms-1" style="font-size:0.65rem;">!</span>` : ''}
+                </button>
+            </td>
+            <td>
+                <div class="d-flex gap-1">
+                    ${execData.status === 'ACTIVE' ? `
+                        <button class="btn btn-outline-success action-btn" onclick="saveRowActual('${w.id}')" title="Save Actuals"><i class="bi bi-check-lg"></i></button>
+                    ` : ''}
+                    ${isLocked && execData.status === 'ACTIVE' ? `
+                        <button class="btn btn-outline-info action-btn" onclick="unlockWell('${w.id}')" title="Unlock"><i class="bi bi-unlock"></i></button>
+                    ` : ''}
+                    ${!isLocked && execData.status === 'ACTIVE' ? `
+                        <button class="btn btn-outline-danger action-btn" onclick="lockWell('${w.id}')" title="Lock"><i class="bi bi-lock"></i></button>
+                        <button class="btn btn-outline-info action-btn" onclick="showReplaceWellModal('${w.id}')" title="Replace"><i class="bi bi-arrow-left-right"></i></button>
+                        <button class="btn btn-outline-warning action-btn" onclick="deferWell('${w.id}')" title="Defer"><i class="bi bi-skip-forward"></i></button>
+                        <button class="btn btn-outline-secondary action-btn" onclick="removeWell('${w.id}')" title="Remove"><i class="bi bi-trash"></i></button>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ===== Gantt Tab =====
+async function loadGantt() {
+    try {
+        const ganttData = await api(`/api/sem/executions/${EXECUTION_ID}/gantt/`);
+        renderGanttChart(ganttData);
+    } catch (err) {
+        document.getElementById('ganttContainer').innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+function renderGanttChart(data) {
+    const container = document.getElementById('ganttContainer');
+    if (!data.tasks.length) {
+        container.innerHTML = '<div class="text-muted text-center py-4">No tasks to display.</div>';
+        return;
+    }
+
+    // Build Frappe Gantt tasks
+    const tasks = data.tasks.map(t => ({
+        id: t.id,
+        name: `${t.rig} → ${t.name}${t.type === 'actual' ? ' (Actual)' : ''}`,
+        start: t.start,
+        end: t.end,
+        progress: t.status === 'COMPLETED' ? 100 : (t.status === 'IN_PROGRESS' ? 50 : 0),
+        custom_class: `${t.type} ${t.is_locked ? 'locked' : ''}`,
+        dependencies: '',
+    }));
+
+    container.innerHTML = '<svg id="ganttSvg"></svg>';
+    const viewMode = document.getElementById('ganttViewMode').value;
+
+    // Create drag tooltip
+    let dragTooltip = document.getElementById('ganttDragTooltip');
+    if (!dragTooltip) {
+        dragTooltip = document.createElement('div');
+        dragTooltip.id = 'ganttDragTooltip';
+        dragTooltip.className = 'gantt-drag-tooltip';
+        dragTooltip.style.display = 'none';
+        document.body.appendChild(dragTooltip);
+    }
+
+    try {
+        ganttChart = new Gantt('#ganttSvg', tasks, {
+            view_mode: viewMode,
+            date_format: 'YYYY-MM-DD',
+            popup_trigger: 'click',
+            custom_popup_html: function(task) {
+                const t = data.tasks.find(x => x.id === task.id);
+                if (!t) return '';
+                const typeBadge = t.type === 'actual' ? 'actual' : 'planned';
+                const typeLabel = t.type === 'actual' ? 'Actual' : 'Planned';
+                const lockIcon  = t.is_locked ? ' <i class="bi bi-lock-fill" style="color:#dc2626;font-size:0.72rem;"></i>' : '';
+                return `<div class="gantt-popup-inner">
+                    <div class="popup-title">${t.name}${lockIcon}</div>
+                    <div class="popup-row">
+                        <i class="bi bi-tools"></i>
+                        <span class="label">Rig:&nbsp;</span>
+                        <span class="value">${t.rig}</span>
+                    </div>
+                    <div class="popup-row">
+                        <i class="bi bi-tag"></i>
+                        <span class="label">Type:&nbsp;</span>
+                        <span class="popup-badge ${typeBadge}">${typeLabel}</span>
+                    </div>
+                    <div class="popup-row">
+                        <i class="bi bi-calendar-event"></i>
+                        <span class="label">Start:&nbsp;</span>
+                        <span class="value">${fmtDate(t.start)}</span>
+                    </div>
+                    <div class="popup-row">
+                        <i class="bi bi-calendar-check"></i>
+                        <span class="label">End:&nbsp;</span>
+                        <span class="value">${fmtDate(t.end)}</span>
+                    </div>
+                    <div class="popup-row">
+                        <i class="bi bi-circle-fill" style="font-size:0.55rem;margin-top:0.3rem;"></i>
+                        <span class="label">Status:&nbsp;</span>
+                        <span class="popup-badge ${t.status}">${t.status.replace('_',' ')}</span>
+                    </div>
+                </div>`;
+            },
+            on_click: function() {},
+            on_date_change: function(task, start, end) {
+                // Hide drag tooltip and show final notification
+                dragTooltip.style.display = 'none';
+                const startStr = start.toISOString().split('T')[0];
+                const endStr = end.toISOString().split('T')[0];
+                showAlert(`Moved to ${fmtDate(startStr)} - ${fmtDate(endStr)}. Use Tabular View to save changes.`, 'info');
+            },
+            on_progress_change: function() {},
+            readonly: false,  // Allow dragging
+        });
+
+        // Apply colors after render via JS (more reliable than CSS)
+        applyGanttColors();
+
+        // Dynamic date tooltip during drag - use closure to track state
+        const svg = container.querySelector('svg');
+        if (svg) {
+            // Remove old listeners if any
+            if (window._ganttDragMouseMove) document.removeEventListener('mousemove', window._ganttDragMouseMove);
+            if (window._ganttDragMouseUp) document.removeEventListener('mouseup', window._ganttDragMouseUp);
+
+            let isDragging = false;
+            let dragStartX = 0;
+            let originalTaskStart = null;
+            let originalTaskEnd = null;
+            let currentTask = null;
+
+            svg.addEventListener('mousedown', function(e) {
+                const barWrapper = e.target.closest('.bar-wrapper');
+                if (barWrapper && !barWrapper.classList.contains('locked')) {
+                    isDragging = true;
+                    dragStartX = e.clientX;
+                    const taskId = barWrapper.getAttribute('data-id');
+                    currentTask = data.tasks.find(t => t.id === taskId);
+                    if (currentTask) {
+                        originalTaskStart = new Date(currentTask.start);
+                        originalTaskEnd = new Date(currentTask.end);
+                        dragTooltip.innerHTML = `<i class="bi bi-calendar3 me-1"></i><strong>${currentTask.name}</strong><br>${fmtDate(currentTask.start)} → ${fmtDate(currentTask.end)}`;
+                        dragTooltip.style.display = 'block';
+                        dragTooltip.style.left = (e.pageX + 15) + 'px';
+                        dragTooltip.style.top = (e.pageY - 40) + 'px';
+                    }
+                }
+            });
+
+            window._ganttDragMouseMove = function(e) {
+                if (isDragging && currentTask && originalTaskStart) {
+                    // Calculate days moved based on pixel movement
+                    const viewMode = document.getElementById('ganttViewMode').value;
+                    const pxPerDay = viewMode === 'Week' ? 50 : viewMode === 'Month' ? 25 : 8;
+                    const deltaX = e.clientX - dragStartX;
+                    const daysMoved = Math.round(deltaX / pxPerDay);
+
+                    const newStart = new Date(originalTaskStart);
+                    newStart.setDate(newStart.getDate() + daysMoved);
+                    const newEnd = new Date(originalTaskEnd);
+                    newEnd.setDate(newEnd.getDate() + daysMoved);
+
+                    const startStr = newStart.toISOString().split('T')[0];
+                    const endStr = newEnd.toISOString().split('T')[0];
+                    const daysText = daysMoved !== 0 ? ` (${daysMoved > 0 ? '+' : ''}${daysMoved}d)` : '';
+                    dragTooltip.innerHTML = `<i class="bi bi-calendar3 me-1"></i><strong>${currentTask.name}</strong>${daysText}<br>${fmtDate(startStr)} → ${fmtDate(endStr)}`;
+                    dragTooltip.style.left = (e.pageX + 15) + 'px';
+                    dragTooltip.style.top = (e.pageY - 40) + 'px';
+                }
+            };
+
+            window._ganttDragMouseUp = function() {
+                if (isDragging) {
+                    isDragging = false;
+                    dragTooltip.style.display = 'none';
+                    currentTask = null;
+                    originalTaskStart = null;
+                    originalTaskEnd = null;
+                }
+            };
+
+            document.addEventListener('mousemove', window._ganttDragMouseMove);
+            document.addEventListener('mouseup', window._ganttDragMouseUp);
+        }
+    } catch (e) {
+        container.innerHTML = `<div class="text-danger text-center py-4">Gantt render error: ${e.message}</div>`;
+    }
+}
+
+// Apply colors to Gantt bars via JS (more reliable than CSS)
+function applyGanttColors() {
+    setTimeout(() => {
+        const svg = document.querySelector('#ganttContainer svg');
+        if (!svg) return;
+
+        // Color definitions
+        const colors = {
+            locked: '#ef4444',   // Red for locked wells
+            actual: '#22c55e',   // Green for actual bars
+            planned: '#0a2f5a',  // Navy for planned bars
+        };
+
+        // Find all bar-wrapper groups and apply colors
+        svg.querySelectorAll('.bar-wrapper').forEach(wrapper => {
+            const classList = wrapper.classList;
+            let fillColor = colors.planned; // Default
+
+            if (classList.contains('locked')) {
+                fillColor = colors.locked;
+            } else if (classList.contains('actual')) {
+                fillColor = colors.actual;
+            }
+
+            // Apply to all rect elements inside the wrapper (bar, bar-progress, etc.)
+            wrapper.querySelectorAll('rect').forEach(rect => {
+                rect.style.fill = fillColor;
+            });
+        });
+    }, 150); // Small delay to ensure DOM is ready
+}
+
+function renderGantt() {
+    loadGantt();
+}
+
+// ===== Save Actuals =====
+async function saveAllActuals() {
+    const rows = document.querySelectorAll('#wellsTableBody tr');
+    const updates = [];
+    const missingRemarks = [];
+
+    rows.forEach(row => {
+        const id = row.dataset.id;
+        if (!id) return;
+        
+        const startInp = row.querySelector('input[data-field="actual_start"]');
+        const endInp = row.querySelector('input[data-field="actual_end"]');
+        const remarksInp = row.querySelector('.remarks-input');
+        
+        const update = { exec_well_id: id };
+        if (startInp && startInp.value) update.actual_start = startInp.value;
+        if (endInp && endInp.value) update.actual_end = endInp.value;
+        if (remarksInp && remarksInp.value) update.remarks = remarksInp.value;
+        
+        if (update.actual_start || update.actual_end) {
+            // Check if dates differ from planned
+            const wellData = execData.wells.find(w => w.id === id);
+            if (wellData) {
+                const datesChanged = (update.actual_start && update.actual_start !== wellData.planned_start) || 
+                                    (update.actual_end && update.actual_end !== wellData.planned_end);
+                
+                if (datesChanged && !update.remarks) {
+                    missingRemarks.push(wellData.well_name);
+                    if (remarksInp) remarksInp.classList.add('is-invalid');
+                } else {
+                    if (remarksInp) remarksInp.classList.remove('is-invalid');
+                }
+            }
+            updates.push(update);
+        }
+    });
+
+    if (missingRemarks.length > 0) {
+        showAlert(`Remarks are required for wells with date changes: ${missingRemarks.slice(0, 3).join(', ')}${missingRemarks.length > 3 ? ` and ${missingRemarks.length - 3} more` : ''}`, 'warning');
+        return;
+    }
+
+    if (!updates.length) {
+        showAlert('No actual dates to save.', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('saveActualsBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/update-actuals/`, {
+            method: 'POST',
+            body: JSON.stringify({ updates }),
+        });
+        showAlert(`${result.total_updated} well(s) updated.`);
+        if (result.errors?.length) showAlert(`${result.errors.length} error(s) occurred.`, 'warning');
+        loadExecution();
+    } catch (err) {
+        showAlert(err.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Save Actuals';
+    }
+}
+
+// ===== Lock / Unlock / Defer / Remove =====
+async function lockWell(id) {
+    if (!confirm('Lock this well? It will become immovable.')) return;
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/lock-well/`, {
+            method: 'POST', body: JSON.stringify({ exec_well_id: id }),
+        });
+        showAlert('Well locked.');
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function unlockWell(id) {
+    if (!confirm('Unlock this well? It can be moved by re-optimization.')) return;
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/unlock-well/`, {
+            method: 'POST', body: JSON.stringify({ exec_well_id: id }),
+        });
+        showAlert('Well unlocked.');
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function saveRowActual(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) return;
+    const startInp = row.querySelector('input[data-field="actual_start"]');
+    const endInp = row.querySelector('input[data-field="actual_end"]');
+    
+    const update = { exec_well_id: id };
+    if (startInp && startInp.value) update.actual_start = startInp.value;
+    if (endInp && endInp.value) update.actual_end = endInp.value;
+    
+    if (!update.actual_start && !update.actual_end) {
+        showAlert('Enter at least one actual date.', 'warning');
+        return;
+    }
+    
+    // Find well data to check if dates differ from planned
+    const wellData = execData.wells.find(w => w.id === id);
+    if (wellData) {
+        const plannedStart = wellData.planned_start;
+        const plannedEnd = wellData.planned_end;
+        const actualStart = update.actual_start || wellData.actual_start;
+        const actualEnd = update.actual_end || wellData.actual_end;
+        
+        const datesChanged = (actualStart && actualStart !== plannedStart) || 
+                            (actualEnd && actualEnd !== plannedEnd);
+        
+        if (datesChanged && !wellData.remarks) {
+            showAlert('Remarks are required when actual dates differ from planned dates. Please add remarks first.', 'warning');
+            openRemarksModal(id, wellData.well_name, wellData.rig_name);
+            return;
+        }
+    }
+    
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/update-actuals/`, {
+            method: 'POST', body: JSON.stringify({ updates: [update] }),
+        });
+        showAlert('Actual dates saved.');
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function deferWell(id) {
+    if (!confirm('Defer this well?')) return;
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/defer-well/`, {
+            method: 'POST', body: JSON.stringify({ exec_well_id: id }),
+        });
+        showAlert('Well deferred.');
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function removeWell(id) {
+    const well = execData?.wells.find(w => w.id == id);
+    const wellName = well ? well.well_name : 'this well';
+    showRescheduleModal('removeWell', { wellId: id }, 
+        `You are about to remove "${wellName}" from execution. Would you like to generate a new optimized schedule based on this change?`);
+}
+
+// ===== Cutoff Lock =====
+function showCutoffModal() {
+    document.getElementById('cutoffDate').value = new Date().toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('cutoffModal')).show();
+}
+
+async function applyCutoff() {
+    const d = document.getElementById('cutoffDate').value;
+    if (!d) return;
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/apply-cutoff/`, {
+            method: 'POST', body: JSON.stringify({ cutoff_date: d }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById('cutoffModal')).hide();
+        showAlert(result.message);
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+// ===== Add Well =====
+async function showAddWellModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addWellModal'));
+    modal.show();
+    try {
+        const [wells, detail] = await Promise.all([
+            api(`/api/sem/executions/${EXECUTION_ID}/available-wells/`),
+            Promise.resolve(execData),
+        ]);
+        const wellSel = document.getElementById('addWellSelect');
+        wellSel.innerHTML = '<option value="">Select well...</option>' +
+            wells.map(w => `<option value="${w.id}">${w.name} (${w.well_type}, ${w.depth}m, ${w.priority})</option>`).join('');
+
+        const rigSel = document.getElementById('addWellRigSelect');
+        rigSel.innerHTML = '<option value="">Select rig...</option>' +
+            detail.rigs.filter(r => r.is_active).map(r => `<option value="${r.rig_id}">${r.rig_name} (${r.rig_type})</option>`).join('');
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function addWell() {
+    const wellId = document.getElementById('addWellSelect').value;
+    const rigId = document.getElementById('addWellRigSelect').value;
+    const wellSelect = document.getElementById('addWellSelect');
+    const wellName = wellSelect.options[wellSelect.selectedIndex]?.text || 'the selected well';
+    
+    if (!wellId || !rigId) { showAlert('Select both a well and a rig.', 'warning'); return; }
+    
+    bootstrap.Modal.getInstance(document.getElementById('addWellModal')).hide();
+    showRescheduleModal('addWell', { wellId: wellId, rigId: rigId }, 
+        `You are about to add "${wellName.split('(')[0].trim()}" to execution. Would you like to generate a new optimized schedule based on this change?`);
+}
+
+// ===== Add Rig =====
+async function showAddRigModal() {
+    new bootstrap.Modal(document.getElementById('addRigModal')).show();
+    try {
+        const rigs = await api(`/api/sem/executions/${EXECUTION_ID}/available-rigs/`);
+        const sel = document.getElementById('addRigSelect');
+        sel.innerHTML = '<option value="">Select rig...</option>' +
+            rigs.map(r => `<option value="${r.id}">${r.name} (${r.rig_type}, ${r.rig_capacity_hp}HP)</option>`).join('');
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function addRig() {
+    const rigId = document.getElementById('addRigSelect').value;
+    const rigSelect = document.getElementById('addRigSelect');
+    const rigName = rigSelect.options[rigSelect.selectedIndex]?.text || 'the selected rig';
+    
+    if (!rigId) return;
+    
+    bootstrap.Modal.getInstance(document.getElementById('addRigModal')).hide();
+    showRescheduleModal('addRig', { rigId: rigId }, 
+        `You are about to add "${rigName.split('(')[0].trim()}" to execution. Would you like to generate a new optimized schedule based on this change?`);
+}
+
+// ===== Re-optimize =====
+function showReoptModal() {
+    if (!execData) return;
+    const locked = execData.wells.filter(w => w.is_locked && w.status !== 'REMOVED').length;
+    const unlocked = execData.wells.filter(w => !w.is_locked && !['REMOVED','DEFERRED'].includes(w.status)).length;
+    const rigs = execData.rigs.filter(r => r.is_active).length;
+    document.getElementById('reoptLocked').textContent = locked;
+    document.getElementById('reoptUnlocked').textContent = unlocked;
+    document.getElementById('reoptRigs').textContent = rigs;
+    new bootstrap.Modal(document.getElementById('reoptModal')).show();
+}
+
+async function reoptimize() {
+    const btn = document.getElementById('reoptBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Running...';
+    try {
+        const limit = document.getElementById('reoptTimeLimit').value;
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/reoptimize/`, {
+            method: 'POST', body: JSON.stringify({ time_limit_seconds: parseInt(limit) }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById('reoptModal')).hide();
+        showAlert(`Re-optimization complete: ${result.optimized_count} wells updated. Solver: ${result.solver_status}`);
+        loadExecution();
+    } catch (err) {
+        showAlert('Re-optimization failed: ' + err.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Run Optimizer';
+    }
+}
+
+// ===== Analytics =====
+async function loadAnalytics() {
+    const container = document.getElementById('analyticsContent');
+    try {
+        const data = await api(`/api/sem/executions/${EXECUTION_ID}/analytics/`);
+        const s = data.summary;
+
+        container.innerHTML = `
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-6"><div class="analytics-card"><div class="analytics-metric">
+                    <div class="value ${s.total_delay_days > 0 ? 'text-danger' : 'text-success'}">${s.total_delay_days > 0 ? '+' : ''}${s.total_delay_days}</div>
+                    <div class="label">Total Delay (days)</div>
+                </div></div></div>
+                <div class="col-md-3 col-6"><div class="analytics-card"><div class="analytics-metric">
+                    <div class="value ${s.cost_variance > 0 ? 'text-danger' : 'text-success'}">₹${(s.cost_variance / 10000000).toFixed(2)} Cr</div>
+                    <div class="label">Cost Variance</div>
+                </div></div></div>
+                <div class="col-md-3 col-6"><div class="analytics-card"><div class="analytics-metric">
+                    <div class="value text-warning">${s.total_rig_idle_days}</div>
+                    <div class="label">Total Rig Idle Days</div>
+                </div></div></div>
+                <div class="col-md-3 col-6"><div class="analytics-card"><div class="analytics-metric">
+                    <div class="value text-danger">₹${(s.total_idle_cost / 10000000).toFixed(2)} Cr</div>
+                    <div class="label">Idle Cost</div>
+                </div></div></div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="analytics-card">
+                        <h6><i class="bi bi-clock-history me-2"></i>Well Delay Analysis</h6>
+                        <div class="table-responsive" style="max-height:350px; overflow-y:auto;">
+                            <table class="table table-sm sem-table mb-0">
+                                <thead><tr><th>Well</th><th>Rig</th><th>Status</th><th>Planned</th><th>Actual</th><th>Delay</th></tr></thead>
+                                <tbody>
+                                    ${data.well_delays.filter(w => w.actual_end).map(w => `
+                                        <tr>
+                                            <td>${w.well_name}</td>
+                                            <td>${w.rig_name}</td>
+                                            <td><span class="badge-well ${w.status}">${w.status}</span></td>
+                                            <td style="font-size:0.76rem;">${w.planned_days}d</td>
+                                            <td style="font-size:0.76rem;">${w.actual_days || '-'}d</td>
+                                            <td><span class="${w.delay_days > 0 ? 'text-danger' : (w.delay_days < 0 ? 'text-success' : '')}" style="font-weight:600;">
+                                                ${w.delay_days > 0 ? '+' : ''}${w.delay_days}d</span></td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="6" class="text-muted text-center">No completed wells yet</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="analytics-card">
+                        <h6><i class="bi bi-truck me-2"></i>Rig Idle Time</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm sem-table mb-0">
+                                <thead><tr><th>Rig</th><th>Wells</th><th>Idle Days</th><th>Idle Cost</th></tr></thead>
+                                <tbody>
+                                    ${data.rig_idle_time.map(r => `
+                                        <tr>
+                                            <td><strong>${r.rig_name}</strong></td>
+                                            <td>${r.well_count}</td>
+                                            <td><span style="font-weight:600;${r.idle_days > 10 ? 'color:#dc2626;' : ''}">${r.idle_days}d</span></td>
+                                            <td style="font-size:0.78rem;">₹${(r.idle_cost / 100000).toFixed(1)}L</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h6><i class="bi bi-bar-chart me-2"></i>Cost Summary</h6>
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="analytics-metric">
+                        <div class="value text-primary">₹${(s.total_planned_cost / 10000000).toFixed(2)} Cr</div>
+                        <div class="label">Total Planned Cost</div>
+                    </div></div>
+                    <div class="col-md-4"><div class="analytics-metric">
+                        <div class="value text-dark">₹${(s.total_actual_cost / 10000000).toFixed(2)} Cr</div>
+                        <div class="label">Total Actual Cost</div>
+                    </div></div>
+                    <div class="col-md-4"><div class="analytics-metric">
+                        <div class="value ${s.cost_variance_pct > 0 ? 'text-danger' : 'text-success'}">${s.cost_variance_pct > 0 ? '+' : ''}${s.cost_variance_pct}%</div>
+                        <div class="label">Cost Variance %</div>
+                    </div></div>
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+// ===== Activity Log =====
+async function loadLogs() {
+    const container = document.getElementById('logsContent');
+    try {
+        const logs = await api(`/api/sem/executions/${EXECUTION_ID}/logs/`);
+        if (!logs.length) {
+            container.innerHTML = '<div class="text-muted text-center py-4">No activity yet.</div>';
+            return;
+        }
+        container.innerHTML = logs.map(log => `
+            <div class="log-entry ${log.action}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong style="font-size:0.82rem;">${log.action.replace('_', ' ')}</strong>
+                        <span class="ms-2" style="font-size:0.8rem; color:#374151;">${log.description}</span>
+                    </div>
+                    <div style="font-size:0.72rem; color:#9ca3af; white-space:nowrap;">
+                        ${log.performed_by ? `<i class="bi bi-person me-1"></i>${log.performed_by} • ` : ''}
+                        ${fmtDate(log.created_at)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+// ===== Status Update =====
+async function updateStatus(s) {
+    if (!confirm(`Change status to ${s}?`)) return;
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/update-status/`, {
+            method: 'POST', body: JSON.stringify({ status: s }),
+        });
+        showAlert(`Status updated to ${s}.`);
+        loadExecution();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+// ===== Remove Rig (from execution) — via reschedule prompt =====
+function removeRig(rigId) {
+    const rig = execData?.rigs.find(r => r.rig_id == rigId);
+    const rigName = rig ? rig.rig_name : 'this rig';
+    showRescheduleModal('removeRig', { rigId: rigId },
+        `You are about to remove "${rigName}" from execution. All unlocked wells on this rig will also be removed. How would you like to handle the schedule?`);
+}
+
+// ===== Replace Rig =====
+async function showReplaceRigModal(rigId) {
+    const rig = execData?.rigs.find(r => r.rig_id == rigId);
+    if (!rig) return;
+    document.getElementById('replaceRigOldName').value = rig.rig_name;
+    document.getElementById('replaceRigOldId').value = rigId;
+    
+    const modal = new bootstrap.Modal(document.getElementById('replaceRigModal'));
+    modal.show();
+    
+    try {
+        const rigs = await api(`/api/sem/executions/${EXECUTION_ID}/available-rigs/`);
+        const sel = document.getElementById('replaceRigNewSelect');
+        sel.innerHTML = '<option value="">Select replacement rig...</option>' +
+            rigs.map(r => `<option value="${r.id}">${r.name} (${r.rig_type}, ${r.rig_capacity_hp}HP, ₹${(r.daily_cost_inr/100000).toFixed(1)}L/day)</option>`).join('');
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function replaceRig() {
+    const oldRigId = document.getElementById('replaceRigOldId').value;
+    const newRigId = document.getElementById('replaceRigNewSelect').value;
+    if (!oldRigId || !newRigId) { showAlert('Select a replacement rig.', 'warning'); return; }
+    
+    bootstrap.Modal.getInstance(document.getElementById('replaceRigModal')).hide();
+    
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/replace-rig/`, {
+            method: 'POST',
+            body: JSON.stringify({ old_rig_id: oldRigId, new_rig_id: newRigId }),
+        });
+        showAlert(result.message);
+        
+        // Offer to re-optimize or shift dates
+        if (result.wells_moved > 0) {
+            showRescheduleModal('_noop', {},
+                `Rig replaced successfully. ${result.wells_moved} wells were reassigned. Would you like to optimize the schedule?`);
+        } else {
+            loadExecution();
+        }
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+// ===== Replace Well =====
+async function showReplaceWellModal(execWellId) {
+    const well = execData?.wells.find(w => w.id == execWellId);
+    if (!well) return;
+    document.getElementById('replaceWellOldName').value = `${well.well_name} (${well.rig_name})`;
+    document.getElementById('replaceWellOldId').value = execWellId;
+    
+    const modal = new bootstrap.Modal(document.getElementById('replaceWellModal'));
+    modal.show();
+    
+    try {
+        const wells = await api(`/api/sem/executions/${EXECUTION_ID}/available-wells/`);
+        const sel = document.getElementById('replaceWellNewSelect');
+        sel.innerHTML = '<option value="">Select replacement well...</option>' +
+            wells.map(w => `<option value="${w.id}">${w.name} (${w.well_type}, ${w.depth}m, ${w.duration}d, ${w.priority})</option>`).join('');
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function replaceWell() {
+    const oldId = document.getElementById('replaceWellOldId').value;
+    const newWellId = document.getElementById('replaceWellNewSelect').value;
+    if (!oldId || !newWellId) { showAlert('Select a replacement well.', 'warning'); return; }
+    
+    bootstrap.Modal.getInstance(document.getElementById('replaceWellModal')).hide();
+    
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/replace-well/`, {
+            method: 'POST',
+            body: JSON.stringify({ old_exec_well_id: oldId, new_well_id: newWellId }),
+        });
+        showAlert(result.message);
+        
+        // Offer to shift dates since the replacement may have a different duration
+        showRescheduleModal('_noop', {},
+            `Well replaced successfully. The replacement well may have a different duration. Would you like to adjust the schedule?`);
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+// ===== Scenario Management =====
+async function loadScenarios() {
+    const container = document.getElementById('scenariosContent');
+    try {
+        const scenarios = await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/`);
+        
+        if (!scenarios.length) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-diagram-3" style="font-size:3rem; color:#d1d5db;"></i>
+                    <p class="text-muted mt-3" style="font-size:0.9rem;">No scenarios yet.</p>
+                    <p class="text-muted" style="font-size:0.82rem;">
+                        Create a snapshot of the current state, make changes (remove/add rigs/wells),
+                        then create another snapshot to compare side-by-side.
+                    </p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="createScenario()">
+                        <i class="bi bi-camera me-1"></i>Create First Snapshot
+                    </button>
+                </div>`;
+            return;
+        }
+        
+        // Current state summary
+        const currentMetrics = {
+            wells: execData.wells.filter(w => !['REMOVED','DEFERRED'].includes(w.status)).length,
+            rigs: execData.rigs.filter(r => r.is_active).length,
+            cost: execData.total_planned_cost || 0,
+        };
+        
+        container.innerHTML = `
+            <div class="row g-3 mb-4">
+                <!-- Current State Card -->
+                <div class="col-md-4 col-sm-6">
+                    <div class="analytics-card h-100" style="border: 2px solid var(--adb-primary);">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0"><i class="bi bi-bullseye me-1"></i>Current State</h6>
+                            <span class="badge bg-primary" style="font-size:0.65rem;">LIVE</span>
+                        </div>
+                        <div style="font-size:0.82rem; color:#6b7280;">
+                            <div class="mb-1"><strong>${currentMetrics.rigs}</strong> rigs, <strong>${currentMetrics.wells}</strong> wells</div>
+                            <div class="mb-1">Cost: ₹${(currentMetrics.cost / 10000000).toFixed(2)} Cr</div>
+                        </div>
+                    </div>
+                </div>
+                ${scenarios.map(s => `
+                    <div class="col-md-4 col-sm-6">
+                        <div class="analytics-card h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0" style="font-size:0.85rem;">${escapeHtml(s.name)}</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="font-size:0.82rem;">
+                                        <li><a class="dropdown-item" href="#" onclick="compareScenario('${s.id}')"><i class="bi bi-layout-split me-2"></i>Compare with Current</a></li>
+                                        <li><a class="dropdown-item text-success" href="#" onclick="applyScenario('${s.id}', '${escapeHtml(s.name)}')"><i class="bi bi-check-circle me-2"></i>Apply This Scenario</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteScenario('${s.id}', '${escapeHtml(s.name)}')"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            ${s.description ? `<p style="font-size:0.78rem; color:#6b7280; margin-bottom:0.5rem;">${escapeHtml(s.description)}</p>` : ''}
+                            <div style="font-size:0.82rem; color:#6b7280;">
+                                <div class="mb-1"><strong>${s.rig_count}</strong> rigs, <strong>${s.well_count}</strong> wells</div>
+                                <div class="mb-1">Cost: ₹${(s.total_cost / 10000000).toFixed(2)} Cr</div>
+                                ${s.end_date ? `<div class="mb-1">End: ${fmtDate(s.end_date)}</div>` : ''}
+                                ${s.is_optimized ? `<span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.65rem;">Optimized</span>` : ''}
+                            </div>
+                            <div class="mt-2" style="font-size:0.72rem; color:#9ca3af;">
+                                ${s.created_by ? `By ${s.created_by} • ` : ''}${fmtDate(s.created_at)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            ${scenarios.length >= 2 ? `
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <label class="form-label mb-0 me-2" style="line-height:2;">Compare:</label>
+                    <select class="form-select form-select-sm" id="compareA" style="width:auto;">
+                        ${scenarios.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                    </select>
+                    <span style="line-height:2;">vs</span>
+                    <select class="form-select form-select-sm" id="compareB" style="width:auto;">
+                        <option value="current">Current State</option>
+                        ${scenarios.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary" onclick="compareTwoScenarios()">
+                        <i class="bi bi-layout-split me-1"></i>Compare
+                    </button>
+                </div>
+            ` : ''}
+        `;
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+function createScenario() {
+    new bootstrap.Modal(document.getElementById('createScenarioModal')).show();
+}
+
+async function saveScenario() {
+    const name = document.getElementById('scenarioName').value.trim();
+    const desc = document.getElementById('scenarioDesc').value.trim();
+    
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/create/`, {
+            method: 'POST',
+            body: JSON.stringify({ name: name, description: desc }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById('createScenarioModal')).hide();
+        showAlert(result.message);
+        document.getElementById('scenarioName').value = '';
+        document.getElementById('scenarioDesc').value = '';
+        loadScenarios();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function compareScenario(scenarioId) {
+    const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+    modal.show();
+    const container = document.getElementById('compareContent');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Loading comparison...</p></div>';
+    
+    try {
+        const data = await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/compare/?scenario_a=${scenarioId}&scenario_b=current`);
+        renderComparison(data);
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+async function compareTwoScenarios() {
+    const a = document.getElementById('compareA').value;
+    const b = document.getElementById('compareB').value;
+    if (!a) { showAlert('Select at least Scenario A.', 'warning'); return; }
+    
+    const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+    modal.show();
+    const container = document.getElementById('compareContent');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+    
+    try {
+        const data = await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/compare/?scenario_a=${a}&scenario_b=${b}`);
+        renderComparison(data);
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger text-center py-4">${err.message}</div>`;
+    }
+}
+
+function renderComparison(data) {
+    const container = document.getElementById('compareContent');
+    const a = data.scenario_a;
+    const b = data.scenario_b;
+    const ma = a.metrics || {};
+    const mb = b.metrics || {};
+    
+    const costDiff = (mb.total_cost || 0) - (ma.total_cost || 0);
+    const wellDiff = (mb.active_well_count || 0) - (ma.active_well_count || 0);
+    
+    let html = `
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <div class="p-3" style="background:#f0f9ff; border-radius:8px;">
+                    <h6 style="color:var(--adb-primary);"><i class="bi bi-a-circle me-1"></i>${escapeHtml(a.name)}</h6>
+                    <div style="font-size:0.82rem;">${ma.active_rig_count || 0} rigs, ${ma.active_well_count || 0} wells • ₹${((ma.total_cost || 0)/10000000).toFixed(2)} Cr</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3" style="background:#faf5ff; border-radius:8px;">
+                    <h6 style="color:#7c3aed;"><i class="bi bi-b-circle me-1"></i>${escapeHtml(b.name)}</h6>
+                    <div style="font-size:0.82rem;">${mb.active_rig_count || 0} rigs, ${mb.active_well_count || 0} wells • ₹${((mb.total_cost || 0)/10000000).toFixed(2)} Cr</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-3 d-flex gap-3" style="font-size:0.82rem;">
+            <span class="stat-pill ${costDiff > 0 ? 'red' : costDiff < 0 ? 'green' : 'gray'}">
+                Cost: ${costDiff > 0 ? '+' : ''}₹${(costDiff/10000000).toFixed(2)} Cr
+            </span>
+            <span class="stat-pill ${wellDiff !== 0 ? 'blue' : 'gray'}">
+                Wells: ${wellDiff > 0 ? '+' : ''}${wellDiff}
+            </span>
+        </div>
+        
+        <div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Well</th>
+                        <th>Rig (A)</th>
+                        <th>Rig (B)</th>
+                        <th>Start (A)</th>
+                        <th>Start (B)</th>
+                        <th>End (A)</th>
+                        <th>End (B)</th>
+                        <th>Diff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.well_comparison.map(w => {
+                        const changed = w.rig_changed || w.dates_changed;
+                        const onlyA = w.in_a && !w.in_b;
+                        const onlyB = !w.in_a && w.in_b;
+                        const rowClass = onlyA ? 'table-warning' : (onlyB ? 'table-info' : (changed ? 'table-light' : ''));
+                        return `<tr class="${rowClass}">
+                            <td style="font-weight:600; font-size:0.82rem;">${w.well_name}</td>
+                            <td style="font-size:0.78rem;">${w.rig_a || '<span class="text-muted">—</span>'}</td>
+                            <td style="font-size:0.78rem;">${w.rig_b || '<span class="text-muted">—</span>'} ${w.rig_changed ? '<i class="bi bi-arrow-right text-warning"></i>' : ''}</td>
+                            <td style="font-size:0.78rem;">${w.start_a ? fmtDate(w.start_a) : '—'}</td>
+                            <td style="font-size:0.78rem;">${w.start_b ? fmtDate(w.start_b) : '—'}</td>
+                            <td style="font-size:0.78rem;">${w.end_a ? fmtDate(w.end_a) : '—'}</td>
+                            <td style="font-size:0.78rem;">${w.end_b ? fmtDate(w.end_b) : '—'}</td>
+                            <td style="font-size:0.72rem;">
+                                ${onlyA ? '<span class="badge bg-warning text-dark">Only in A</span>' : ''}
+                                ${onlyB ? '<span class="badge bg-info text-dark">Only in B</span>' : ''}
+                                ${changed ? '<span class="badge bg-primary bg-opacity-10 text-primary">Changed</span>' : ''}
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+async function applyScenario(scenarioId, scenarioName) {
+    if (!confirm(`Apply scenario "${scenarioName}"? This will update all unlocked wells to match the scenario's state.`)) return;
+    try {
+        const result = await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/${scenarioId}/apply/`, {
+            method: 'POST',
+        });
+        showAlert(result.message);
+        loadExecution();
+        loadScenarios();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+async function deleteScenario(scenarioId, scenarioName) {
+    if (!confirm(`Delete scenario "${scenarioName}"?`)) return;
+    try {
+        await api(`/api/sem/executions/${EXECUTION_ID}/scenarios/${scenarioId}/delete/`, {
+            method: 'DELETE',
+        });
+        showAlert('Scenario deleted.');
+        loadScenarios();
+    } catch (err) { showAlert(err.message, 'danger'); }
+}
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', loadExecution);
+</script>
+{% endblock %}

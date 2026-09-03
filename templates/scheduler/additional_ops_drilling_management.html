@@ -1,0 +1,887 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Additional Ops Drilling - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'vendor/datatables/css/dataTables.bootstrap5.min.css' %}">
+    <!-- Section, table, and collapse styles are centralized in style.css -->
+    <style>
+        /* Compact table styling for all tables */
+        #coringTable,
+        #casingTable,
+        #hermeticalTable,
+        #operationTable {
+            font-size: 0.85rem;
+        }
+        
+        #coringTable thead th,
+        #casingTable thead th,
+        #hermeticalTable thead th,
+        #operationTable thead th {
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        #coringTable tbody td,
+        #casingTable tbody td,
+        #hermeticalTable tbody td,
+        #operationTable tbody td {
+            padding: 0.4rem 0.75rem;
+            vertical-align: middle;
+        }
+        
+        /* Action buttons - extra small and square for all tables */
+        .btn-xs {
+            padding: 0.25rem 0.35rem;
+            font-size: 0.7rem;
+            line-height: 1;
+            min-width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-xs i {
+            font-size: 0.7rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-wrench-adjustable" style="font-size: 2rem; margin-right: 0.75rem; color: #10b981;"></i>
+                <h1 class="page-title mb-0">Additional Ops Drilling</h1>
+            </div>
+            <p class="page-subtitle mb-0">
+                Manage additional operational drilling norms and time adjustments
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 align-items-center justify-content-end">
+                <select class="form-select form-select-sm" id="location-selector" style="width: auto; min-width: 180px;">
+                    <option value="">All Locations</option>
+                </select>
+                <button onclick="history.back()" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: Coring Norms -->
+    <div class="section-card">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#coringSection">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="bi bi-gear-wide-connected me-2"></i>
+                    Coring Operations - Additional Norm Time
+                </h5>
+                <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+        </div>
+        <div id="coringSection" class="collapse show">
+            <div class="section-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-0 small">Additional norm time (days) for one core (complete job)</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="addCoringBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Add Coring Norm
+                    </button>
+                </div>
+                <table id="coringTable" class="table table-hover table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Depth Interval Start (m)</th>
+                            <th>Depth Interval End (m)</th>
+                            <th>Additional Norm Time (days)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Casing Norms -->
+    <div class="section-card">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#casingSection">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="bi bi-pip me-2"></i>
+                    Casing Operations - Lowering & Cementation
+                </h5>
+                <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+        </div>
+        <div id="casingSection" class="collapse show">
+            <div class="section-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-0 small">Additional norm time (days) for casing lowering + cementation (in final casing, hermetical include in this norm)</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="addCasingBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Add Casing Norm
+                    </button>
+                </div>
+                <table id="casingTable" class="table table-hover table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Casing Depth Start (m)</th>
+                            <th>Casing Depth End (m)</th>
+                            <th>Additional Norm Time (days)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Hermetical Testing Norms -->
+    <div class="section-card">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#hermeticalSection">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="bi bi-shield-check me-2"></i>
+                    Hermetical Testing
+                </h5>
+                <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+        </div>
+        <div id="hermeticalSection" class="collapse show">
+            <div class="section-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-0 small">Norm time (days) for hermetical testing</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="addHermeticalBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Add Testing Norm
+                    </button>
+                </div>
+                <table id="hermeticalTable" class="table table-hover table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Casing Depth Start (m)</th>
+                            <th>Casing Depth End (m)</th>
+                            <th>Norm Time (days)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Operation Norms -->
+    <div class="section-card">
+        <div class="section-header" data-bs-toggle="collapse" data-bs-target="#operationSection">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="bi bi-list-check me-2"></i>
+                    Other Operations
+                </h5>
+                <i class="bi bi-chevron-down collapse-icon"></i>
+            </div>
+        </div>
+        <div id="operationSection" class="collapse show">
+            <div class="section-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="text-muted mb-0 small">Norms and rules for various drilling operations</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="addOperationBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Add Operation
+                    </button>
+                </div>
+                <table id="operationTable" class="table table-hover table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Operation</th>
+                            <th>Norm / Rule</th>
+                            <th>Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coring Modal -->
+<div class="modal fade" id="coringModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="coringModalTitle">Add Coring Norm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="coringForm">
+                    <input type="hidden" id="coringId">
+                    <div class="mb-3">
+                        <label for="coringLocation" class="form-label">Location</label>
+                        <select class="form-select" id="coringLocation">
+                            <option value="">-- Select Location --</option>
+                        </select>
+                        <small class="text-muted">Optional - Select from Company Codes</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="coringDepthStart" class="form-label">Depth Start (m)</label>
+                            <input type="number" class="form-control" id="coringDepthStart" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="coringDepthEnd" class="form-label">Depth End (m)</label>
+                            <input type="number" class="form-control" id="coringDepthEnd" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="coringDays" class="form-label">Additional Days</label>
+                        <input type="number" class="form-control" id="coringDays" min="0" step="0.1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCoringBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Casing Modal -->
+<div class="modal fade" id="casingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="casingModalTitle">Add Casing Norm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="casingForm">
+                    <input type="hidden" id="casingId">
+                    <div class="mb-3">
+                        <label for="casingLocation" class="form-label">Location</label>
+                        <select class="form-select" id="casingLocation">
+                            <option value="">-- Select Location --</option>
+                        </select>
+                        <small class="text-muted">Optional - Select from Company Codes</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="casingDepthStart" class="form-label">Depth Start (m)</label>
+                            <input type="number" class="form-control" id="casingDepthStart" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="casingDepthEnd" class="form-label">Depth End (m)</label>
+                            <input type="number" class="form-control" id="casingDepthEnd" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="casingDays" class="form-label">Additional Days</label>
+                        <input type="number" class="form-control" id="casingDays" min="0" step="0.1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCasingBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hermetical Modal -->
+<div class="modal fade" id="hermeticalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hermeticalModalTitle">Add Hermetical Testing Norm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="hermeticalForm">
+                    <input type="hidden" id="hermeticalId">
+                    <div class="mb-3">
+                        <label for="hermeticalLocation" class="form-label">Location</label>
+                        <select class="form-select" id="hermeticalLocation">
+                            <option value="">-- Select Location --</option>
+                        </select>
+                        <small class="text-muted">Optional - Select from Company Codes</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="hermeticalDepthStart" class="form-label">Depth Start (m)</label>
+                            <input type="number" class="form-control" id="hermeticalDepthStart" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="hermeticalDepthEnd" class="form-label">Depth End (m)</label>
+                            <input type="number" class="form-control" id="hermeticalDepthEnd" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="hermeticalDays" class="form-label">Norm Days</label>
+                        <input type="number" class="form-control" id="hermeticalDays" min="0" step="0.1" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveHermeticalBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Operation Modal -->
+<div class="modal fade" id="operationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="operationModalTitle">Add Operation Norm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="operationForm">
+                    <input type="hidden" id="operationId">
+                    <div class="mb-3">
+                        <label for="operationLocation" class="form-label">Location</label>
+                        <select class="form-select" id="operationLocation">
+                            <option value="">-- Select Location --</option>
+                        </select>
+                        <small class="text-muted">Optional - Select from Company Codes</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="operationName" class="form-label">Operation</label>
+                        <input type="text" class="form-control" id="operationName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="normRule" class="form-label">Norm / Rule</label>
+                        <input type="text" class="form-control" id="normRule" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="remarks" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveOperationBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- jQuery (Required for DataTables) -->
+    <script src="{% static 'vendor/jquery-3.7.1.min.js' %}"></script>
+    <!-- DataTables JS -->
+    <script src="{% static 'vendor/datatables/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/js/dataTables.bootstrap5.min.js' %}"></script>
+    
+    <script>
+        let coringTable, casingTable, hermeticalTable, operationTable;
+        let coringData = [], casingData = [], hermeticalData = [], operationData = [];
+        let locations = [];  // Store unique locations from CompanyCode
+        let currentLocationFilter = '';
+        
+        // Get location from URL parameter
+        function getLocationFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('location') || '';
+        }
+        
+        $(document).ready(function() {
+            // Initialize DataTables
+            coringTable = $('#coringTable').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                columnDefs: [{ targets: 4, orderable: false }]
+            });
+            
+            casingTable = $('#casingTable').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                columnDefs: [{ targets: 4, orderable: false }]
+            });
+            
+            hermeticalTable = $('#hermeticalTable').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                columnDefs: [{ targets: 4, orderable: false }]
+            });
+            
+            operationTable = $('#operationTable').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                columnDefs: [{ targets: 4, orderable: false }]
+            });
+            
+            // Collapse icon rotation
+            $('.section-header').on('click', function() {
+                $(this).find('.collapse-icon').toggleClass('rotated');
+            });
+            
+            // Load all data
+            loadAllData();
+            
+            // Event handlers
+            $('#addCoringBtn').click(() => openCoringModal());
+            $('#addCasingBtn').click(() => openCasingModal());
+            $('#addHermeticalBtn').click(() => openHermeticalModal());
+            $('#addOperationBtn').click(() => openOperationModal());
+            
+            $('#saveCoringBtn').click(saveCoring);
+            $('#saveCasingBtn').click(saveCasing);
+            $('#saveHermeticalBtn').click(saveHermetical);
+            $('#saveOperationBtn').click(saveOperation);
+            
+            // Delete handlers
+            $(document).on('click', '.delete-coring-btn', function() {
+                if (confirm('Are you sure?')) deleteItem('coring-norms', $(this).data('id'));
+            });
+            $(document).on('click', '.delete-casing-btn', function() {
+                if (confirm('Are you sure?')) deleteItem('casing-norms', $(this).data('id'));
+            });
+            $(document).on('click', '.delete-hermetical-btn', function() {
+                if (confirm('Are you sure?')) deleteItem('hermetical-testing-norms', $(this).data('id'));
+            });
+            $(document).on('click', '.delete-operation-btn', function() {
+                if (confirm('Are you sure?')) deleteItem('operation-norms', $(this).data('id'));
+            });
+            
+            // Edit handlers
+            $(document).on('click', '.edit-coring-btn', function() {
+                const item = coringData.find(i => i.id === $(this).data('id'));
+                if (item) openCoringModal(item);
+            });
+            $(document).on('click', '.edit-casing-btn', function() {
+                const item = casingData.find(i => i.id === $(this).data('id'));
+                if (item) openCasingModal(item);
+            });
+            $(document).on('click', '.edit-hermetical-btn', function() {
+                const item = hermeticalData.find(i => i.id === $(this).data('id'));
+                if (item) openHermeticalModal(item);
+            });
+            $(document).on('click', '.edit-operation-btn', function() {
+                const item = operationData.find(i => i.id === $(this).data('id'));
+                if (item) openOperationModal(item);
+            });
+            
+            // Initialize location filter from URL
+            currentLocationFilter = getLocationFromURL();
+            
+            // Location filter change event
+            $('#location-selector').change(function() {
+                currentLocationFilter = $(this).val();
+                renderCoring();
+                renderCasing();
+                renderHermetical();
+                renderOperation();
+            });
+        });
+        
+        async function loadAllData() {
+            await loadLocations();  // Load locations first
+            await Promise.all([
+                loadCoring(),
+                loadCasing(),
+                loadHermetical(),
+                loadOperation()
+            ]);
+            updateLocationFilter();
+        }
+        
+        async function loadLocations() {
+            try {
+                const response = await fetch('/api/company-codes/');
+                const data = await response.json();
+                // Get unique locations from company codes, filtering out null/empty values
+                const uniqueLocations = [...new Set(
+                    data.map(cc => cc.location)
+                        .filter(loc => loc && loc.trim())
+                )].sort();
+                
+                locations = data.filter(cc => cc.location && cc.location.trim())
+                    .reduce((acc, cc) => {
+                        if (!acc.find(item => item.location === cc.location)) {
+                            acc.push({ id: cc.id, location: cc.location });
+                        }
+                        return acc;
+                    }, []);
+                    
+                populateLocationDropdowns();
+            } catch (error) {
+                console.error('Error loading locations:', error);
+            }
+        }
+        
+        function populateLocationDropdowns() {
+            const options = '<option value="">-- Select Location --</option>' + 
+                locations.map(loc => `<option value="${loc.id}">${loc.location}</option>`).join('');
+            
+            $('#coringLocation').html(options);
+            $('#casingLocation').html(options);
+            $('#hermeticalLocation').html(options);
+            $('#operationLocation').html(options);
+        }
+        
+        function updateLocationFilter() {
+            // Extract unique locations from all data sources
+            const allLocations = [
+                ...coringData.map(d => d.location),
+                ...casingData.map(d => d.location),
+                ...hermeticalData.map(d => d.location),
+                ...operationData.map(d => d.location)
+            ].filter(loc => loc);
+            
+            const uniqueLocations = [...new Set(allLocations)].sort();
+            
+            const filterOptions = '<option value="">All Locations</option>' +
+                uniqueLocations.map(loc => `<option value="${loc}">${loc}</option>`).join('');
+            $('#location-selector').html(filterOptions);
+            
+            // Set filter from URL if present
+            if (currentLocationFilter && uniqueLocations.includes(currentLocationFilter)) {
+                $('#location-selector').val(currentLocationFilter);
+            } else if (currentLocationFilter && !uniqueLocations.includes(currentLocationFilter)) {
+                currentLocationFilter = '';
+            }
+        }
+        
+        async function loadCoring() {
+            try {
+                const response = await fetch('/api/coring-norms/');
+                coringData = await response.json();
+                renderCoring();
+            } catch (error) {
+                console.error('Error loading coring norms:', error);
+            }
+        }
+        
+        async function loadCasing() {
+            try {
+                const response = await fetch('/api/casing-norms/');
+                casingData = await response.json();
+                renderCasing();
+            } catch (error) {
+                console.error('Error loading casing norms:', error);
+            }
+        }
+        
+        async function loadHermetical() {
+            try {
+                const response = await fetch('/api/hermetical-testing-norms/');
+                hermeticalData = await response.json();
+                renderHermetical();
+            } catch (error) {
+                console.error('Error loading hermetical norms:', error);
+            }
+        }
+        
+        async function loadOperation() {
+            try {
+                const response = await fetch('/api/operation-norms/');
+                operationData = await response.json();
+                renderOperation();
+            } catch (error) {
+                console.error('Error loading operation norms:', error);
+            }
+        }
+        
+        function renderCoring() {
+            coringTable.clear();
+            const filteredData = currentLocationFilter 
+                ? coringData.filter(item => item.location === currentLocationFilter)
+                : coringData;
+            filteredData.forEach(item => {
+                coringTable.row.add([
+                    item.location || '<span class="text-muted">-</span>',
+                    item.depth_start,
+                    item.depth_end,
+                    item.additional_days,
+                    `<button class="btn btn-xs btn-warning edit-coring-btn btn-action" data-id="${item.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger delete-coring-btn btn-action ms-1" data-id="${item.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            coringTable.draw();
+        }
+        
+        function renderCasing() {
+            casingTable.clear();
+            const filteredData = currentLocationFilter 
+                ? casingData.filter(item => item.location === currentLocationFilter)
+                : casingData;
+            filteredData.forEach(item => {
+                casingTable.row.add([
+                    item.location || '<span class="text-muted">-</span>',
+                    item.depth_start,
+                    item.depth_end,
+                    item.additional_days,
+                    `<button class="btn btn-xs btn-warning edit-casing-btn btn-action" data-id="${item.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger delete-casing-btn btn-action ms-1" data-id="${item.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            casingTable.draw();
+        }
+        
+        function renderHermetical() {
+            hermeticalTable.clear();
+            const filteredData = currentLocationFilter 
+                ? hermeticalData.filter(item => item.location === currentLocationFilter)
+                : hermeticalData;
+            filteredData.forEach(item => {
+                hermeticalTable.row.add([
+                    item.location || '<span class="text-muted">-</span>',
+                    item.depth_start,
+                    item.depth_end,
+                    item.norm_days,
+                    `<button class="btn btn-xs btn-warning edit-hermetical-btn btn-action" data-id="${item.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger delete-hermetical-btn btn-action ms-1" data-id="${item.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            hermeticalTable.draw();
+        }
+        
+        function renderOperation() {
+            operationTable.clear();
+            const filteredData = currentLocationFilter 
+                ? operationData.filter(item => item.location === currentLocationFilter)
+                : operationData;
+            filteredData.forEach(item => {
+                operationTable.row.add([
+                    item.location || '<span class="text-muted">-</span>',
+                    item.operation,
+                    item.norm_rule,
+                    item.remarks || '',
+                    `<button class="btn btn-xs btn-warning edit-operation-btn btn-action" data-id="${item.id}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger delete-operation-btn btn-action ms-1" data-id="${item.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>`
+                ]);
+            });
+            operationTable.draw();
+        }
+        
+        function openCoringModal(item = null) {
+            const modal = new bootstrap.Modal(document.getElementById('coringModal'));
+            if (item) {
+                $('#coringModalTitle').text('Edit Coring Norm');
+                $('#coringId').val(item.id);
+                $('#coringLocation').val(item.location_id || '');
+                $('#coringDepthStart').val(item.depth_start);
+                $('#coringDepthEnd').val(item.depth_end);
+                $('#coringDays').val(item.additional_days);
+            } else {
+                $('#coringModalTitle').text('Add Coring Norm');
+                $('#coringForm')[0].reset();
+                $('#coringId').val('');
+            }
+            modal.show();
+        }
+        
+        function openCasingModal(item = null) {
+            const modal = new bootstrap.Modal(document.getElementById('casingModal'));
+            if (item) {
+                $('#casingModalTitle').text('Edit Casing Norm');
+                $('#casingId').val(item.id);
+                $('#casingLocation').val(item.location_id || '');
+                $('#casingDepthStart').val(item.depth_start);
+                $('#casingDepthEnd').val(item.depth_end);
+                $('#casingDays').val(item.additional_days);
+            } else {
+                $('#casingModalTitle').text('Add Casing Norm');
+                $('#casingForm')[0].reset();
+                $('#casingId').val('');
+            }
+            modal.show();
+        }
+        
+        function openHermeticalModal(item = null) {
+            const modal = new bootstrap.Modal(document.getElementById('hermeticalModal'));
+            if (item) {
+                $('#hermeticalModalTitle').text('Edit Hermetical Testing Norm');
+                $('#hermeticalId').val(item.id);
+                $('#hermeticalLocation').val(item.location_id || '');
+                $('#hermeticalDepthStart').val(item.depth_start);
+                $('#hermeticalDepthEnd').val(item.depth_end);
+                $('#hermeticalDays').val(item.norm_days);
+            } else {
+                $('#hermeticalModalTitle').text('Add Hermetical Testing Norm');
+                $('#hermeticalForm')[0].reset();
+                $('#hermeticalId').val('');
+            }
+            modal.show();
+        }
+        
+        function openOperationModal(item = null) {
+            const modal = new bootstrap.Modal(document.getElementById('operationModal'));
+            if (item) {
+                $('#operationModalTitle').text('Edit Operation Norm');
+                $('#operationId').val(item.id);
+                $('#operationLocation').val(item.location_id || '');
+                $('#operationName').val(item.operation);
+                $('#normRule').val(item.norm_rule);
+                $('#remarks').val(item.remarks);
+            } else {
+                $('#operationModalTitle').text('Add Operation Norm');
+                $('#operationForm')[0].reset();
+                $('#operationId').val('');
+            }
+            modal.show();
+        }
+        
+        async function saveCoring() {
+            const id = $('#coringId').val();
+            const locationId = $('#coringLocation').val();
+            const data = {
+                location_id: locationId || null,
+                depth_start: $('#coringDepthStart').val(),
+                depth_end: $('#coringDepthEnd').val(),
+                additional_days: $('#coringDays').val()
+            };
+            await saveItem('coring-norms', id, data, 'coringModal', loadCoring);
+        }
+        
+        async function saveCasing() {
+            const id = $('#casingId').val();
+            const locationId = $('#casingLocation').val();
+            const data = {
+                location_id: locationId || null,
+                depth_start: $('#casingDepthStart').val(),
+                depth_end: $('#casingDepthEnd').val(),
+                additional_days: $('#casingDays').val()
+            };
+            await saveItem('casing-norms', id, data, 'casingModal', loadCasing);
+        }
+        
+        async function saveHermetical() {
+            const id = $('#hermeticalId').val();
+            const locationId = $('#hermeticalLocation').val();
+            const data = {
+                location_id: locationId || null,
+                depth_start: $('#hermeticalDepthStart').val(),
+                depth_end: $('#hermeticalDepthEnd').val(),
+                norm_days: $('#hermeticalDays').val()
+            };
+            await saveItem('hermetical-testing-norms', id, data, 'hermeticalModal', loadHermetical);
+        }
+        
+        async function saveOperation() {
+            const id = $('#operationId').val();
+            const locationId = $('#operationLocation').val();
+            const data = {
+                location_id: locationId || null,
+                operation: $('#operationName').val(),
+                norm_rule: $('#normRule').val(),
+                remarks: $('#remarks').val()
+            };
+            await saveItem('operation-norms', id, data, 'operationModal', loadOperation);
+        }
+        
+        async function saveItem(endpoint, id, data, modalId, reloadFn) {
+            try {
+                const url = id ? `/api/${endpoint}/${id}/update/` : `/api/${endpoint}/create/`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById(modalId)).hide();
+                    reloadFn();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to save'));
+                }
+            } catch (error) {
+                console.error('Error saving:', error);
+                alert('Failed to save');
+            }
+        }
+        
+        async function deleteItem(endpoint, id) {
+            try {
+                const response = await fetch(`/api/${endpoint}/${id}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('idrs_csrftoken')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadAllData();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to delete'));
+                }
+            } catch (error) {
+                console.error('Error deleting:', error);
+                alert('Failed to delete');
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock %}

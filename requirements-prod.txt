@@ -1,0 +1,6 @@
+# Production-only Python dependencies
+# These are NOT included in requirements.txt because they are not needed
+# on Windows development machines (gunicorn is Unix-only).
+
+# WSGI production server
+gunicorn==23.0.0

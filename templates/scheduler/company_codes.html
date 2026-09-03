@@ -1,0 +1,784 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Company Codes - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Use CSS variables from style.css */
+    :root {
+        --adb-primary: #0a2f5a;
+        --adb-primary-light: #1a4f8a;
+        --adb-primary-dark: #061d3a;
+        --adb-secondary: #c4a962;
+        --adb-white: #ffffff;
+        --adb-gray-100: #f8f9fa;
+        --adb-gray-200: #e9ecef;
+    }
+    
+    /* Page container - matches view-all-rigs */
+    .company-codes-page {
+        padding: 1.5rem 0.5rem;
+        min-height: calc(100vh - 60px);
+    }
+    
+    /* Page title styling - matches view-all-rigs */
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--adb-primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-title-icon {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .page-subtitle {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+    
+    .page-separator {
+        border: none;
+        border-top: 2px solid var(--adb-gray-200);
+        margin: 1rem 0 1.5rem 0;
+    }
+    
+    /* Card styling - matches view-all-rigs */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(10, 47, 90, 0.1);
+    }
+    
+    .card-header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        background: transparent;
+    }
+    
+    .card-header h5 {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #374151;
+    }
+    
+    .card-header h5 i {
+        color: var(--adb-primary) !important;
+        font-size: 0.9rem;
+    }
+    
+    /* Table styling - matches view-all-rigs */
+    .table-scroll-container {
+        max-height: 500px;
+        overflow-y: auto;
+        border-radius: 8px;
+    }
+    
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f3f4f6;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        color: #374151;
+        border-bottom: 2px solid #e5e7eb;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        vertical-align: middle;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(10, 47, 90, 0.05);
+    }
+    
+    /* Search input styling */
+    .data-search-input {
+        width: 250px;
+        font-size: 0.8rem;
+    }
+    
+    /* Button styling */
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .btn-primary-gradient:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(10, 47, 90, 0.3);
+        color: white;
+    }
+    
+    /* Upload section styling */
+    .upload-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .upload-section h6 {
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    /* Modern modal styling */
+    .modern-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .modern-modal .modal-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, var(--adb-primary) 0%, var(--adb-primary-light) 100%);
+        border-radius: 16px 16px 0 0;
+        color: white;
+    }
+    
+    .modern-modal .modal-title {
+        color: white;
+    }
+    
+    .modern-modal .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    
+    .modern-modal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modern-modal .modal-footer {
+        border-top: 1px solid rgba(0,0,0,0.1);
+        padding: 1rem 1.5rem;
+    }
+    
+    /* Loading state */
+    .loading-state {
+        padding: 3rem 0;
+        text-align: center;
+    }
+    
+    /* Pagination controls */
+    .pagination-controls {
+        border-top: 1px solid var(--adb-gray-200);
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
+<div class="company-codes-page">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-building page-title-icon"></i>
+                <h1 class="page-title mb-0">Company Codes</h1>
+            </div>
+            <p class="page-subtitle">
+                Manage company codes, fund centres, and cost centres
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-3 justify-content-end">
+                <a href="{% url 'data_management' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Data Management
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+    
+    <!-- Main Content Card -->
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-building me-2"></i>
+                Company Codes (<span id="total-codes-count">0</span>)
+            </h5>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="companyCodesSearch" class="form-control form-control-sm data-search-input" placeholder="Search company codes...">
+                <button class="btn btn-success btn-sm" id="addCompanyCodeBtn">
+                    <i class="bi bi-plus-circle me-2"></i>Add New
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading company codes...</p>
+            </div>
+            
+            <!-- Company Codes Table -->
+            <div id="tableContainer" style="display: none;">
+                <div class="table-responsive table-scroll-container">
+                    <table id="companyCodesTable" class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fund Centre</th>
+                                <th>Company Code</th>
+                                <th>Cost Centre</th>
+                                <th>Category</th>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>City</th>
+                                <th>State</th>
+                                <th class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="companyCodesBody">
+                            <!-- Populated via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                <div class="pagination-controls d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted small">Show</label>
+                        <select id="companyCodesPageLength" class="form-select form-select-sm" style="width: 70px;">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <label class="mb-0 text-muted small">entries</label>
+                    </div>
+                    <div id="companyCodesInfo" class="text-muted small"></div>
+                    <div id="companyCodesPagination"></div>
+                </div>
+            </div>
+            
+            <!-- Upload Section -->
+            <div class="upload-section mt-4">
+                <h6 class="mb-3">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Company Codes CSV
+                </h6>
+                <form id="company-codes-upload-form" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" id="company-codes-file" name="file" accept=".csv" required>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-upload me-2"></i>Upload CSV
+                        </button>
+                    </div>
+                    <small class="text-muted">Expected columns: Fund Centre, Company Code, Cost Centre, Category, Name, Location, City, State</small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Company Code Modal -->
+<div class="modal fade" id="companyCodeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="companyCodeModalTitle">
+                    <i class="bi bi-building me-2"></i>Add Company Code
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="companyCodeForm">
+                    <input type="hidden" id="companyCodeId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fundCentre" class="form-label">Fund Centre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fundCentre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="companyCode" class="form-label">Company Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="companyCode" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="costCentre" class="form-label">Cost Centre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="costCentre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" id="category" required>
+                                <option value="">Select Category</option>
+                                <option value="Asset">Asset</option>
+                                <option value="Basin">Basin</option>
+                                <option value="Plant">Plant</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <select class="form-select" id="location">
+                                <option value="">Select Location</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="city" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="state" class="form-label">State <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="state" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCompanyCodeBtn">
+                    <i class="bi bi-save me-2"></i>Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // =============================================================================
+    // COMPANY CODES MANAGEMENT
+    // =============================================================================
+    let companyCodesData = [];
+    let filteredData = [];
+    let mpiLocations = [];
+    let currentPage = 1;
+    let pageSize = 25;
+
+    // CSRF Token helper
+    function getCSRFToken() {
+        const name = 'idrs_csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Load unique MPI locations
+    async function loadMPILocations() {
+        try {
+            const response = await fetch('/api/company-codes/locations/', {
+                credentials: 'same-origin'
+            });
+            if (response.ok) {
+                mpiLocations = await response.json();
+                console.log('Loaded MPI locations:', mpiLocations.length);
+            } else {
+                console.error('Failed to load MPI locations:', response.status);
+            }
+        } catch (error) {
+            console.error('Error loading MPI locations:', error);
+        }
+    }
+
+    // Populate location dropdown
+    function populateLocationDropdown(selectedLocation = '') {
+        const locationSelect = document.getElementById('location');
+        locationSelect.innerHTML = '<option value="">Select Location</option>';
+        
+        mpiLocations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location;
+            option.textContent = location;
+            if (location === selectedLocation) {
+                option.selected = true;
+            }
+            locationSelect.appendChild(option);
+        });
+    }
+
+    // Load company codes
+    async function loadCompanyCodes() {
+        const loadingEl = document.getElementById('loadingState');
+        const tableEl = document.getElementById('tableContainer');
+        
+        loadingEl.style.display = 'block';
+        tableEl.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/company-codes/', {
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            companyCodesData = await response.json();
+            filteredData = [...companyCodesData];
+            
+            document.getElementById('total-codes-count').textContent = companyCodesData.length;
+            
+            renderCompanyCodes();
+            
+            loadingEl.style.display = 'none';
+            tableEl.style.display = 'block';
+        } catch (error) {
+            console.error('Error loading company codes:', error);
+            loadingEl.innerHTML = `
+                <div class="text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Failed to load company codes. Please refresh the page.
+                </div>
+            `;
+        }
+    }
+
+    // Render company codes table
+    function renderCompanyCodes() {
+        const tbody = document.getElementById('companyCodesBody');
+        
+        if (filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No company codes available</td></tr>';
+            updatePaginationInfo();
+            return;
+        }
+        
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, filteredData.length);
+        const pageData = filteredData.slice(startIndex, endIndex);
+        
+        let html = '';
+        pageData.forEach(code => {
+            html += `
+                <tr>
+                    <td><strong>${code.fund_centre || '-'}</strong></td>
+                    <td>${code.company_code || '-'}</td>
+                    <td>${code.cost_centre || '-'}</td>
+                    <td><span class="badge bg-secondary">${code.category || '-'}</span></td>
+                    <td>${code.name || '-'}</td>
+                    <td>${code.location || '-'}</td>
+                    <td>${code.city || '-'}</td>
+                    <td>${code.state || '-'}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary btn-sm edit-company-code-btn" data-id="${code.id}" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm delete-company-code-btn" data-id="${code.id}" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        updatePaginationInfo();
+    }
+
+    // Update pagination info and controls
+    function updatePaginationInfo() {
+        const totalRecords = filteredData.length;
+        const startIndex = totalRecords > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+        const endIndex = Math.min(currentPage * pageSize, totalRecords);
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        
+        document.getElementById('companyCodesInfo').textContent = 
+            `Showing ${startIndex} to ${endIndex} of ${totalRecords} entries`;
+        
+        // Generate pagination
+        let paginationHtml = '';
+        if (totalPages > 1) {
+            paginationHtml = '<ul class="pagination pagination-sm mb-0">';
+            
+            // Previous button
+            paginationHtml += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+                </li>
+            `;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    paginationHtml += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+            
+            // Next button
+            paginationHtml += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+                </li>
+            `;
+            
+            paginationHtml += '</ul>';
+        }
+        
+        document.getElementById('companyCodesPagination').innerHTML = paginationHtml;
+    }
+
+    // Search functionality
+    function searchCompanyCodes(query) {
+        query = query.toLowerCase().trim();
+        
+        if (!query) {
+            filteredData = [...companyCodesData];
+        } else {
+            filteredData = companyCodesData.filter(code => {
+                return (
+                    (code.fund_centre && code.fund_centre.toLowerCase().includes(query)) ||
+                    (code.company_code && code.company_code.toLowerCase().includes(query)) ||
+                    (code.cost_centre && code.cost_centre.toLowerCase().includes(query)) ||
+                    (code.category && code.category.toLowerCase().includes(query)) ||
+                    (code.name && code.name.toLowerCase().includes(query)) ||
+                    (code.location && code.location.toLowerCase().includes(query)) ||
+                    (code.city && code.city.toLowerCase().includes(query)) ||
+                    (code.state && code.state.toLowerCase().includes(query))
+                );
+            });
+        }
+        
+        currentPage = 1;
+        renderCompanyCodes();
+    }
+
+    // Open company code modal
+    function openCompanyCodeModal(code = null) {
+        const modal = new bootstrap.Modal(document.getElementById('companyCodeModal'));
+        const form = document.getElementById('companyCodeForm');
+        form.reset();
+        
+        populateLocationDropdown(code ? code.location : '');
+        
+        if (code) {
+            document.getElementById('companyCodeModalTitle').innerHTML = '<i class="bi bi-building me-2"></i>Edit Company Code';
+            document.getElementById('companyCodeId').value = code.id;
+            document.getElementById('fundCentre').value = code.fund_centre || '';
+            document.getElementById('companyCode').value = code.company_code || '';
+            document.getElementById('costCentre').value = code.cost_centre || '';
+            document.getElementById('category').value = code.category || '';
+            document.getElementById('name').value = code.name || '';
+            document.getElementById('city').value = code.city || '';
+            document.getElementById('state').value = code.state || '';
+        } else {
+            document.getElementById('companyCodeModalTitle').innerHTML = '<i class="bi bi-building me-2"></i>Add Company Code';
+            document.getElementById('companyCodeId').value = '';
+        }
+        
+        modal.show();
+    }
+
+    // Save company code
+    async function saveCompanyCode() {
+        const id = document.getElementById('companyCodeId').value;
+        const data = {
+            fund_centre: document.getElementById('fundCentre').value.trim(),
+            company_code: document.getElementById('companyCode').value.trim(),
+            cost_centre: document.getElementById('costCentre').value.trim(),
+            category: document.getElementById('category').value,
+            name: document.getElementById('name').value.trim(),
+            location: document.getElementById('location').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            state: document.getElementById('state').value.trim(),
+        };
+        
+        const url = id ? `/api/company-codes/${id}/update/` : '/api/company-codes/create/';
+        const method = id ? 'PUT' : 'POST';
+        
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert(result.message || 'Company code saved successfully');
+                bootstrap.Modal.getInstance(document.getElementById('companyCodeModal')).hide();
+                loadCompanyCodes();
+            } else {
+                alert(result.error || 'Failed to save company code');
+            }
+        } catch (error) {
+            console.error('Error saving company code:', error);
+            alert('Error saving company code');
+        }
+    }
+
+    // Delete company code
+    async function deleteCompanyCode(id) {
+        if (!confirm('Are you sure you want to delete this company code?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/company-codes/${id}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin'
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert(result.message || 'Company code deleted successfully');
+                loadCompanyCodes();
+            } else {
+                alert(result.error || 'Failed to delete company code');
+            }
+        } catch (error) {
+            console.error('Error deleting company code:', error);
+            alert('Error deleting company code');
+        }
+    }
+
+    // Upload company codes CSV
+    document.getElementById('company-codes-upload-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('company-codes-file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const response = await fetch('/api/company-codes/upload/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                credentials: 'same-origin',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                let message = `Successfully uploaded: ${result.created} created, ${result.updated} updated`;
+                if (result.errors && result.errors.length > 0) {
+                    message += `\n\nErrors:\n${result.errors.join('\n')}`;
+                }
+                alert(message);
+                fileInput.value = '';
+                loadCompanyCodes();
+            } else {
+                alert(result.error || 'Failed to upload company codes');
+            }
+        } catch (error) {
+            console.error('Error uploading company codes:', error);
+            alert('Error uploading company codes');
+        }
+    });
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load data
+        loadCompanyCodes();
+        loadMPILocations();
+        
+        // Add button
+        document.getElementById('addCompanyCodeBtn')?.addEventListener('click', () => openCompanyCodeModal());
+        
+        // Save button
+        document.getElementById('saveCompanyCodeBtn')?.addEventListener('click', saveCompanyCode);
+        
+        // Search
+        document.getElementById('companyCodesSearch')?.addEventListener('keyup', function() {
+            searchCompanyCodes(this.value);
+        });
+        
+        // Page length
+        document.getElementById('companyCodesPageLength')?.addEventListener('change', function() {
+            pageSize = parseInt(this.value);
+            currentPage = 1;
+            renderCompanyCodes();
+        });
+        
+        // Pagination clicks
+        document.getElementById('companyCodesPagination')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = e.target.closest('.page-link');
+            if (target && !target.parentElement.classList.contains('disabled') && !target.parentElement.classList.contains('active')) {
+                currentPage = parseInt(target.dataset.page);
+                renderCompanyCodes();
+            }
+        });
+        
+        // Edit button (event delegation)
+        document.getElementById('companyCodesBody')?.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-company-code-btn');
+            const deleteBtn = e.target.closest('.delete-company-code-btn');
+            
+            if (editBtn) {
+                const codeId = editBtn.dataset.id;
+                const code = companyCodesData.find(c => c.id === codeId);
+                if (code) {
+                    openCompanyCodeModal(code);
+                }
+            }
+            
+            if (deleteBtn) {
+                const codeId = deleteBtn.dataset.id;
+                deleteCompanyCode(codeId);
+            }
+        });
+    });
+</script>
+{% endblock %}

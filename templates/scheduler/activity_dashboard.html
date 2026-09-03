@@ -1,0 +1,1085 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+:root {
+    --adb-primary: #0a2f5a;
+    --adb-secondary: #c4a962;
+    --adb-success: #16a34a;
+    --adb-danger: #dc2626;
+    --adb-warning: #f59e0b;
+    --adb-info: #0ea5e9;
+}
+
+.activity-page { padding: 1.5rem 0.5rem; }
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--adb-primary);
+}
+.page-title-icon {
+    background: linear-gradient(135deg, var(--adb-primary), var(--adb-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.75rem;
+}
+.page-subtitle { color: #6b7280; font-size: 0.9rem; }
+.page-separator {
+    border: 0; border-top: 2px solid var(--adb-primary);
+    opacity: 0.15; margin: 0.75rem 0 1.25rem;
+}
+
+/* Stat cards */
+.stat-card {
+    border: none; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(10,47,90,0.08);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(10,47,90,0.14); }
+.stat-card .stat-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+}
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--adb-primary); }
+.stat-card .stat-label { font-size: 0.78rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Cards */
+.module-card {
+    border: none; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(10,47,90,0.1);
+}
+.module-card .card-header {
+    background: transparent; border-bottom: 1px solid #f0f0f0;
+    padding: 0.85rem 1.1rem;
+}
+.module-card .card-header h5,
+.module-card .card-header h6 {
+    font-weight: 700; font-size: 0.92rem; color: var(--adb-primary); margin: 0;
+}
+.module-card .card-header i { color: var(--adb-primary); }
+
+/* Table */
+.activity-table { font-size: 0.82rem; }
+.activity-table thead th {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;
+    background: #f3f4f6; color: #6b7280; font-weight: 600;
+    border-bottom: 2px solid #e5e7eb; white-space: nowrap;
+    position: sticky; top: 0; z-index: 1;
+}
+.activity-table tbody td { vertical-align: middle; padding: 0.45rem 0.65rem; }
+.activity-table tbody tr:hover { background: #f8fafc; }
+
+/* Badges */
+.badge-cat {
+    font-size: 0.68rem; padding: 0.25em 0.55em; border-radius: 6px;
+    font-weight: 600; letter-spacing: 0.3px;
+}
+.badge-AUTH { background: #dbeafe; color: #1d4ed8; }
+.badge-PAGE_VIEW { background: #f3e8ff; color: #7c3aed; }
+.badge-DATA_CREATE { background: #d1fae5; color: #059669; }
+.badge-DATA_UPDATE { background: #fef3c7; color: #b45309; }
+.badge-DATA_DELETE { background: #fee2e2; color: #dc2626; }
+.badge-DATA_IMPORT { background: #e0f2fe; color: #0284c7; }
+.badge-DATA_EXPORT { background: #f0fdf4; color: #16a34a; }
+.badge-SCHEDULE { background: #ede9fe; color: #6d28d9; }
+.badge-EXECUTION { background: #fce7f3; color: #be185d; }
+.badge-ADMIN { background: #fff7ed; color: #c2410c; }
+.badge-API { background: #ecfdf5; color: #047857; }
+.badge-SYSTEM { background: #f1f5f9; color: #475569; }
+
+.badge-sev-INFO { background: #dbeafe; color: #1d4ed8; }
+.badge-sev-WARNING { background: #fef3c7; color: #b45309; }
+.badge-sev-ERROR { background: #fee2e2; color: #dc2626; }
+.badge-sev-CRITICAL { background: #fecaca; color: #991b1b; font-weight:700; }
+
+/* IP Pill */
+.ip-pill {
+    font-size: 0.72rem; background: #f1f5f9; color: #475569;
+    padding: 0.15em 0.55em; border-radius: 8px; font-family: monospace;
+    cursor: pointer;
+}
+.ip-pill:hover { background: #e2e8f0; }
+
+/* User link */
+.user-link { color: var(--adb-primary); text-decoration: none; font-weight: 600; cursor: pointer; }
+.user-link:hover { text-decoration: underline; }
+
+/* Filter bar */
+.filter-bar {
+    background: #f8fafc; border-radius: 10px; padding: 0.85rem;
+    border: 1px solid #e5e7eb;
+}
+.filter-bar .form-control, .filter-bar .form-select {
+    font-size: 0.8rem; border-radius: 8px;
+}
+.filter-bar label { font-size: 0.72rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Tabs */
+.activity-tabs .nav-link {
+    font-size: 0.82rem; font-weight: 600; color: #6b7280;
+    border: none; padding: 0.6rem 1rem;
+}
+.activity-tabs .nav-link.active {
+    color: var(--adb-primary); border-bottom: 2px solid var(--adb-primary);
+    background: transparent;
+}
+
+/* Chart placeholders */
+.chart-container { min-height: 300px; }
+
+/* Pagination */
+.pagination-info { font-size: 0.78rem; color: #6b7280; }
+.pagination .page-link { font-size: 0.8rem; }
+
+/* Detail panel */
+.detail-panel {
+    position: fixed; top: 0; right: -500px; width: 500px; height: 100vh;
+    background: white; z-index: 1060; transition: right 0.3s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    overflow-y: auto;
+}
+.detail-panel.open { right: 0; }
+.detail-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.3); z-index: 1055; display: none;
+}
+.detail-overlay.show { display: block; }
+
+.detail-panel .detail-header {
+    background: var(--adb-primary); color: white;
+    padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 2;
+}
+.detail-panel .detail-body { padding: 1.25rem; }
+.detail-panel .detail-item { margin-bottom: 0.75rem; }
+.detail-panel .detail-item label {
+    font-size: 0.7rem; font-weight: 600; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.15rem;
+    display: block;
+}
+.detail-panel .detail-item .detail-value { font-size: 0.88rem; color: #1f2937; }
+
+/* Top list items */
+.top-list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;
+    font-size: 0.82rem;
+}
+.top-list-item:last-child { border-bottom: none; }
+.top-list-item .count-badge {
+    background: var(--adb-primary); color: white;
+    font-size: 0.7rem; padding: 0.2em 0.6em; border-radius: 10px;
+    font-weight: 600;
+}
+
+/* Scrollable table container */
+.table-scroll { max-height: 60vh; overflow-y: auto; }
+
+/* Loading spinner */
+.loading-overlay {
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem; color: #6b7280;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activity-page">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-1">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-activity page-title-icon me-2"></i>Activity Tracker
+            </h1>
+            <p class="page-subtitle mb-0">Monitor user actions, logins, IP addresses, and system events</p>
+        </div>
+        <div class="d-flex gap-2">
+            <select class="form-select form-select-sm" id="periodSelect" style="width:auto; font-size:0.82rem;" onchange="changePeriod()">
+                <option value="7">Last 7 days</option>
+                <option value="14">Last 14 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="60">Last 60 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+            <button class="btn btn-sm btn-outline-danger" onclick="showCleanupModal()" title="Cleanup old logs">
+                <i class="bi bi-trash3 me-1"></i>Cleanup
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadDashboard()" title="Refresh">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+    <hr class="page-separator">
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4" id="statCards">
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="bi bi-lightning-charge"></i></div>
+                    <div>
+                        <div class="stat-value" id="statTotal">—</div>
+                        <div class="stat-label">Total Events</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#d1fae5;color:#059669;"><i class="bi bi-box-arrow-in-right"></i></div>
+                    <div>
+                        <div class="stat-value" id="statLogins">—</div>
+                        <div class="stat-label">Logins</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-shield-exclamation"></i></div>
+                    <div>
+                        <div class="stat-value" id="statFailed">—</div>
+                        <div class="stat-label">Failed Logins</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;"><i class="bi bi-people"></i></div>
+                    <div>
+                        <div class="stat-value" id="statUsers">—</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#fef3c7;color:#b45309;"><i class="bi bi-globe"></i></div>
+                    <div>
+                        <div class="stat-value" id="statIPs">—</div>
+                        <div class="stat-label">Unique IPs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:#e0f2fe;color:#0284c7;"><i class="bi bi-calendar3"></i></div>
+                    <div>
+                        <div class="stat-value" id="statPeriod">—</div>
+                        <div class="stat-label">Period (days)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav activity-tabs mb-3" id="activityTabs">
+        <li class="nav-item"><a class="nav-link active" href="#" onclick="switchTab('overview')">Overview</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('logs')">Activity Logs</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('users')">Users</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('ips')">IP Addresses</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('security')">Security</a></li>
+    </ul>
+
+    <!-- Tab: Overview -->
+    <div id="tab-overview">
+        <div class="row g-3">
+            <!-- Daily Activity Chart -->
+            <div class="col-lg-8">
+                <div class="card module-card">
+                    <div class="card-header d-flex align-items-center">
+                        <h6><i class="bi bi-graph-up me-2"></i>Activity Timeline</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" id="dailyChart">
+                            <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading chart...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Category Breakdown -->
+            <div class="col-lg-4">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-pie-chart me-2"></i>Activity Categories</h6></div>
+                    <div class="card-body">
+                        <div id="categoryList">
+                            <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Top Users -->
+            <div class="col-lg-4">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-person-lines-fill me-2"></i>Most Active Users</h6></div>
+                    <div class="card-body p-2" id="topUsersList">
+                        <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Top Pages -->
+            <div class="col-lg-4">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-window me-2"></i>Most Visited Pages</h6></div>
+                    <div class="card-body p-2" id="topPagesList">
+                        <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <!-- User-IP Map -->
+            <div class="col-lg-4">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-diagram-2 me-2"></i>User ↔ IP Map</h6></div>
+                    <div class="card-body p-2" id="userIpMap">
+                        <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Activity Logs -->
+    <div id="tab-logs" style="display:none;">
+        <!-- Filter Bar -->
+        <div class="filter-bar mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label>Search</label>
+                    <input type="text" class="form-control form-control-sm" id="filterSearch" placeholder="Search..." onkeyup="debounceFilter()">
+                </div>
+                <div class="col-md-2">
+                    <label>Category</label>
+                    <select class="form-select form-select-sm" id="filterCategory" onchange="loadLogs()">
+                        <option value="">All</option>
+                        <option value="AUTH">Authentication</option>
+                        <option value="PAGE_VIEW">Page View</option>
+                        <option value="DATA_CREATE">Data Create</option>
+                        <option value="DATA_UPDATE">Data Update</option>
+                        <option value="DATA_DELETE">Data Delete</option>
+                        <option value="DATA_IMPORT">Data Import</option>
+                        <option value="DATA_EXPORT">Data Export</option>
+                        <option value="SCHEDULE">Scheduling</option>
+                        <option value="EXECUTION">Execution</option>
+                        <option value="ADMIN">Administration</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Severity</label>
+                    <select class="form-select form-select-sm" id="filterSeverity" onchange="loadLogs()">
+                        <option value="">All</option>
+                        <option value="INFO">Info</option>
+                        <option value="WARNING">Warning</option>
+                        <option value="ERROR">Error</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>User</label>
+                    <input type="text" class="form-control form-control-sm" id="filterUser" placeholder="Username..." onkeyup="debounceFilter()">
+                </div>
+                <div class="col-md-2">
+                    <label>Date From</label>
+                    <input type="date" class="form-control form-control-sm" id="filterDateFrom" onchange="loadLogs()">
+                </div>
+                <div class="col-md-2">
+                    <label>Date To</label>
+                    <input type="date" class="form-control form-control-sm" id="filterDateTo" onchange="loadLogs()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card module-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-list-columns me-2"></i>Activity Logs</h6>
+                <div class="pagination-info" id="paginationInfo">Loading...</div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-scroll">
+                    <table class="table table-sm table-hover activity-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Category</th>
+                                <th>Action</th>
+                                <th>IP Address</th>
+                                <th>Severity</th>
+                                <th>Target</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center" style="font-size:0.82rem;">
+                <div>
+                    <select class="form-select form-select-sm d-inline-block" id="pageSizeSelect" style="width:auto;" onchange="loadLogs(1)">
+                        <option value="25">25/page</option>
+                        <option value="50" selected>50/page</option>
+                        <option value="100">100/page</option>
+                        <option value="200">200/page</option>
+                    </select>
+                </div>
+                <div id="paginationControls"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Users  -->
+    <div id="tab-users" style="display:none;">
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-people me-2"></i>Users by Activity</h6></div>
+                    <div class="card-body p-0">
+                        <div class="table-scroll" style="max-height:65vh;">
+                            <table class="table table-sm table-hover activity-table mb-0">
+                                <thead><tr><th>#</th><th>User</th><th>Actions</th><th></th></tr></thead>
+                                <tbody id="usersTableBody">
+                                    <tr><td colspan="4" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7" id="userDetailPanel">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-person-badge me-2"></i>User Detail</h6></div>
+                    <div class="card-body text-center text-muted py-5" id="userDetailContent">
+                        <i class="bi bi-person-circle" style="font-size:2.5rem;color:#d1d5db;"></i>
+                        <p class="mt-2">Select a user to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: IPs  -->
+    <div id="tab-ips" style="display:none;">
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-globe me-2"></i>IP Addresses</h6></div>
+                    <div class="card-body p-0">
+                        <div class="table-scroll" style="max-height:65vh;">
+                            <table class="table table-sm table-hover activity-table mb-0">
+                                <thead><tr><th>#</th><th>IP Address</th><th>Actions</th><th>Users</th><th></th></tr></thead>
+                                <tbody id="ipsTableBody">
+                                    <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7" id="ipDetailPanel">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-hdd-network me-2"></i>IP Detail</h6></div>
+                    <div class="card-body text-center text-muted py-5" id="ipDetailContent">
+                        <i class="bi bi-hdd-network" style="font-size:2.5rem;color:#d1d5db;"></i>
+                        <p class="mt-2">Select an IP address to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Security  -->
+    <div id="tab-security" style="display:none;">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-shield-exclamation me-2"></i>Failed Login Attempts</h6></div>
+                    <div class="card-body p-0">
+                        <div class="table-scroll">
+                            <table class="table table-sm table-hover activity-table mb-0">
+                                <thead><tr><th>Time</th><th>Attempted Username</th><th>IP Address</th></tr></thead>
+                                <tbody id="failedLoginsBody">
+                                    <tr><td colspan="3" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card module-card">
+                    <div class="card-header"><h6><i class="bi bi-exclamation-triangle me-2"></i>Warning & Error Events</h6></div>
+                    <div class="card-body p-0">
+                        <div class="table-scroll" id="securityEventsContainer">
+                            <div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /activity-page -->
+
+<!-- Cleanup Modal -->
+<div class="modal fade" id="cleanupModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content" style="border:none;border-radius:12px;">
+            <div class="modal-header" style="background:var(--adb-primary);color:white;border-radius:12px 12px 0 0;">
+                <h5 class="modal-title"><i class="bi bi-trash3 me-2"></i>Cleanup Logs</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.85rem;color:#6b7280;">Delete activity records older than:</p>
+                <select class="form-select" id="cleanupDays">
+                    <option value="30">30 days</option>
+                    <option value="60">60 days</option>
+                    <option value="90" selected>90 days</option>
+                    <option value="180">180 days</option>
+                    <option value="365">1 year</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-danger" onclick="runCleanup()"><i class="bi bi-trash3 me-1"></i>Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Slide-out Panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailPanel()"></div>
+<div class="detail-panel" id="detailPanel">
+    <div class="detail-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0" id="detailTitle">Activity Detail</h6>
+        <button class="btn btn-sm btn-outline-light" onclick="closeDetailPanel()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+let statsData = null;
+let currentPage = 1;
+let filterTimer = null;
+
+async function api(url) {
+    const resp = await fetch(url, { headers: { 'X-CSRFToken': csrfToken }, credentials: 'same-origin' });
+    if (!resp.ok) throw new Error(resp.statusText);
+    return resp.json();
+}
+async function apiPost(url, body) {
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin',
+        body: JSON.stringify(body),
+    });
+    if (!resp.ok) throw new Error(resp.statusText);
+    return resp.json();
+}
+
+function getPeriod() { return document.getElementById('periodSelect').value; }
+
+function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12: false });
+}
+function fmtFull(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+}
+
+// ===== Dashboard Load =====
+async function loadDashboard() {
+    const days = getPeriod();
+    try {
+        statsData = await api(`/api/activity/stats/?days=${days}`);
+        renderStats();
+        renderOverview();
+    } catch (e) {
+        console.error('Failed to load stats:', e);
+    }
+}
+
+function renderStats() {
+    if (!statsData) return;
+    document.getElementById('statTotal').textContent = statsData.total_activities.toLocaleString();
+    document.getElementById('statLogins').textContent = statsData.total_logins.toLocaleString();
+    document.getElementById('statFailed').textContent = statsData.failed_logins.toLocaleString();
+    document.getElementById('statUsers').textContent = statsData.unique_users.toLocaleString();
+    document.getElementById('statIPs').textContent = statsData.unique_ips.toLocaleString();
+    document.getElementById('statPeriod').textContent = statsData.period_days;
+}
+
+function renderOverview() {
+    if (!statsData) return;
+
+    // Daily chart (simple bar chart using inline SVG)
+    renderDailyChart();
+
+    // Category list
+    const cats = statsData.category_counts;
+    document.getElementById('categoryList').innerHTML = cats.length
+        ? cats.map(c => `<div class="top-list-item">
+            <span><span class="badge badge-cat badge-${c.category}">${c.category}</span></span>
+            <span class="count-badge">${c.count}</span>
+        </div>`).join('')
+        : '<p class="text-muted text-center py-3">No data</p>';
+
+    // Top users
+    document.getElementById('topUsersList').innerHTML = statsData.top_users.length
+        ? '<div class="px-2 py-1">' + statsData.top_users.map((u, i) => `<div class="top-list-item">
+            <span><strong class="user-link" onclick="showUserDetail('${u.username}')">${i + 1}. ${u.username}</strong></span>
+            <span class="count-badge">${u.count}</span>
+        </div>`).join('') + '</div>'
+        : '<p class="text-muted text-center py-3">No data</p>';
+
+    // Top pages
+    document.getElementById('topPagesList').innerHTML = statsData.top_pages.length
+        ? '<div class="px-2 py-1">' + statsData.top_pages.map((p, i) => `<div class="top-list-item">
+            <span>${i + 1}. ${p.action}</span>
+            <span class="count-badge">${p.count}</span>
+        </div>`).join('') + '</div>'
+        : '<p class="text-muted text-center py-3">No data</p>';
+
+    // User-IP map
+    document.getElementById('userIpMap').innerHTML = statsData.user_ip_map.length
+        ? '<div class="px-2 py-1">' + statsData.user_ip_map.map(m => `<div class="top-list-item">
+            <span><strong class="user-link" onclick="showUserDetail('${m.username}')">${m.username}</strong>
+            <i class="bi bi-arrow-right mx-1" style="font-size:0.7rem;color:#9ca3af;"></i>
+            <span class="ip-pill" onclick="showIpDetail('${m.ip_address}')">${m.ip_address}</span></span>
+            <span class="count-badge">${m.count}</span>
+        </div>`).join('') + '</div>'
+        : '<p class="text-muted text-center py-3">No data</p>';
+}
+
+function renderDailyChart() {
+    const data = statsData.daily_activity;
+    if (!data || data.length === 0) {
+        document.getElementById('dailyChart').innerHTML = '<p class="text-muted text-center py-5">No activity data</p>';
+        return;
+    }
+
+    const maxCount = Math.max(...data.map(d => d.count));
+    const barWidth = Math.max(12, Math.floor(700 / data.length) - 4);
+    const chartH = 260;
+
+    let bars = data.map((d, i) => {
+        const h = maxCount > 0 ? (d.count / maxCount) * (chartH - 40) : 0;
+        const x = i * (barWidth + 4) + 30;
+        const y = chartH - 30 - h;
+        const label = new Date(d.date).toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+        return `<g>
+            <rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="3" fill="var(--adb-primary)" opacity="0.75">
+                <title>${label}: ${d.count} events</title>
+            </rect>
+            ${data.length <= 15 ? `<text x="${x + barWidth/2}" y="${chartH - 12}" text-anchor="middle" style="font-size:0.6rem;fill:#9ca3af;">${label}</text>` : ''}
+            <text x="${x + barWidth/2}" y="${y - 4}" text-anchor="middle" style="font-size:0.6rem;fill:#6b7280;">${d.count}</text>
+        </g>`;
+    }).join('');
+
+    const svgW = data.length * (barWidth + 4) + 60;
+    document.getElementById('dailyChart').innerHTML = `<div style="overflow-x:auto;"><svg width="${svgW}" height="${chartH}" style="min-width:100%">${bars}</svg></div>`;
+}
+
+// ===== Activity Logs Tab =====
+async function loadLogs(page) {
+    if (page) currentPage = page;
+    const params = new URLSearchParams();
+    params.set('page', currentPage);
+    params.set('page_size', document.getElementById('pageSizeSelect').value);
+
+    const search = document.getElementById('filterSearch').value;
+    if (search) params.set('search', search);
+    const cat = document.getElementById('filterCategory').value;
+    if (cat) params.set('category', cat);
+    const sev = document.getElementById('filterSeverity').value;
+    if (sev) params.set('severity', sev);
+    const user = document.getElementById('filterUser').value;
+    if (user) params.set('user', user);
+    const from = document.getElementById('filterDateFrom').value;
+    if (from) params.set('date_from', from);
+    const to = document.getElementById('filterDateTo').value;
+    if (to) params.set('date_to', to);
+
+    try {
+        const data = await api(`/api/activity/list/?${params.toString()}`);
+        renderLogs(data);
+    } catch (e) {
+        document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="8" class="text-center text-danger py-3">Failed to load: ${e.message}</td></tr>`;
+    }
+}
+
+function renderLogs(data) {
+    const tbody = document.getElementById('logsTableBody');
+    if (!data.results.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No activity records found</td></tr>';
+        document.getElementById('paginationInfo').textContent = '0 records';
+        document.getElementById('paginationControls').innerHTML = '';
+        return;
+    }
+
+    tbody.innerHTML = data.results.map(a => `<tr style="cursor:pointer;" onclick="showLogDetail('${a.id}', this)">
+        <td style="white-space:nowrap;">${fmtTime(a.created_at)}</td>
+        <td><strong class="user-link">${a.user || '—'}</strong></td>
+        <td><span class="badge badge-cat badge-${a.category}">${a.category_display}</span></td>
+        <td>${a.action}</td>
+        <td>${a.ip_address ? `<span class="ip-pill">${a.ip_address}</span>` : '—'}</td>
+        <td><span class="badge badge-sev-${a.severity}">${a.severity}</span></td>
+        <td>${a.target_model ? `<span style="font-size:0.75rem;color:#6b7280;">${a.target_model}${a.target_name ? ': ' + a.target_name : ''}</span>` : '—'}</td>
+        <td><i class="bi bi-chevron-right" style="font-size:0.7rem;color:#9ca3af;"></i></td>
+    </tr>`).join('');
+
+    const start = (data.page - 1) * data.page_size + 1;
+    const end = Math.min(data.page * data.page_size, data.total);
+    document.getElementById('paginationInfo').textContent = `${start}–${end} of ${data.total.toLocaleString()} records`;
+
+    // Pagination controls
+    let pag = '';
+    if (data.total_pages > 1) {
+        pag += `<nav><ul class="pagination pagination-sm mb-0">`;
+        pag += `<li class="page-item ${data.page <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadLogs(${data.page - 1});return false;">‹</a></li>`;
+        
+        const start_p = Math.max(1, data.page - 2);
+        const end_p = Math.min(data.total_pages, data.page + 2);
+        if (start_p > 1) pag += `<li class="page-item"><a class="page-link" href="#" onclick="loadLogs(1);return false;">1</a></li>`;
+        if (start_p > 2) pag += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+        
+        for (let i = start_p; i <= end_p; i++) {
+            pag += `<li class="page-item ${i === data.page ? 'active' : ''}"><a class="page-link" href="#" onclick="loadLogs(${i});return false;">${i}</a></li>`;
+        }
+        
+        if (end_p < data.total_pages - 1) pag += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+        if (end_p < data.total_pages) pag += `<li class="page-item"><a class="page-link" href="#" onclick="loadLogs(${data.total_pages});return false;">${data.total_pages}</a></li>`;
+        pag += `<li class="page-item ${data.page >= data.total_pages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadLogs(${data.page + 1});return false;">›</a></li>`;
+        pag += `</ul></nav>`;
+    }
+    document.getElementById('paginationControls').innerHTML = pag;
+}
+
+function debounceFilter() {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(() => loadLogs(1), 400);
+}
+
+// ===== Log Detail Panel =====
+function showLogDetail(id, row) {
+    // Find the activity from the last loaded data by searching the table row
+    const cells = row.querySelectorAll('td');
+    
+    // Use the API to get full detail... but since we have the data in-page, 
+    // use a simpler approach: fetch the single record via list endpoint
+    api(`/api/activity/list/?search=${id}&page_size=1`).then(data => {
+        if (data.results.length) {
+            const a = data.results[0];
+            renderDetailPanel(a);
+        }
+    });
+}
+
+function renderDetailPanel(a) {
+    document.getElementById('detailTitle').textContent = a.action;
+    
+    let metaHtml = '';
+    if (a.metadata && Object.keys(a.metadata).length) {
+        metaHtml = '<div class="detail-item"><label>Metadata</label><pre style="font-size:0.75rem;background:#f8fafc;padding:0.75rem;border-radius:8px;max-height:200px;overflow:auto;">' 
+            + JSON.stringify(a.metadata, null, 2) + '</pre></div>';
+    }
+
+    document.getElementById('detailBody').innerHTML = `
+        <div class="detail-item">
+            <label>Timestamp</label>
+            <div class="detail-value">${fmtFull(a.created_at)}</div>
+        </div>
+        <div class="detail-item">
+            <label>User</label>
+            <div class="detail-value"><strong>${a.user || 'Anonymous'}</strong></div>
+        </div>
+        <div class="detail-item">
+            <label>Category</label>
+            <div class="detail-value"><span class="badge badge-cat badge-${a.category}">${a.category_display}</span></div>
+        </div>
+        <div class="detail-item">
+            <label>Action</label>
+            <div class="detail-value">${a.action}</div>
+        </div>
+        <div class="detail-item">
+            <label>Description</label>
+            <div class="detail-value">${a.description || '—'}</div>
+        </div>
+        <div class="detail-item">
+            <label>Severity</label>
+            <div class="detail-value"><span class="badge badge-sev-${a.severity}">${a.severity}</span></div>
+        </div>
+        <hr>
+        <div class="detail-item">
+            <label>IP Address</label>
+            <div class="detail-value">${a.ip_address ? `<span class="ip-pill">${a.ip_address}</span>` : '—'}</div>
+        </div>
+        <div class="detail-item">
+            <label>User Agent</label>
+            <div class="detail-value" style="font-size:0.78rem;word-break:break-all;">${a.user_agent || '—'}</div>
+        </div>
+        <div class="detail-item">
+            <label>Request</label>
+            <div class="detail-value"><code style="font-size:0.78rem;">${a.request_method} ${a.request_path}</code></div>
+        </div>
+        <hr>
+        <div class="detail-item">
+            <label>Target</label>
+            <div class="detail-value">${a.target_model || '—'}${a.target_name ? ' → ' + a.target_name : ''}${a.target_id ? ` (${a.target_id.substring(0, 8)}...)` : ''}</div>
+        </div>
+        <div class="detail-item">
+            <label>Session</label>
+            <div class="detail-value" style="font-family:monospace;font-size:0.78rem;">${a.session_key || '—'}</div>
+        </div>
+        ${metaHtml}
+    `;
+
+    document.getElementById('detailOverlay').classList.add('show');
+    document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetailPanel() {
+    document.getElementById('detailOverlay').classList.remove('show');
+    document.getElementById('detailPanel').classList.remove('open');
+}
+
+// ===== Users Tab =====
+function loadUsersTab() {
+    if (!statsData) return;
+    const tbody = document.getElementById('usersTableBody');
+    if (!statsData.top_users.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No user data</td></tr>';
+        return;
+    }
+    tbody.innerHTML = statsData.top_users.map((u, i) => `<tr style="cursor:pointer;" onclick="showUserDetail('${u.username}')">
+        <td>${i + 1}</td>
+        <td><strong>${u.username}</strong></td>
+        <td><span class="count-badge">${u.count}</span></td>
+        <td><i class="bi bi-chevron-right" style="font-size:0.7rem;color:#9ca3af;"></i></td>
+    </tr>`).join('');
+}
+
+async function showUserDetail(username) {
+    const days = getPeriod();
+    const container = document.getElementById('userDetailContent');
+    container.innerHTML = '<div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>';
+    
+    try {
+        const data = await api(`/api/activity/user/${username}/?days=${days}`);
+        let ipsHtml = data.ips_used.map(ip => `<div class="top-list-item">
+            <span class="ip-pill" onclick="showIpDetail('${ip.ip_address}')">${ip.ip_address}</span>
+            <span><small class="text-muted">${fmtTime(ip.last_seen)}</small> <span class="count-badge">${ip.count}</span></span>
+        </div>`).join('');
+
+        let catsHtml = data.category_breakdown.map(c => `<div class="top-list-item">
+            <span class="badge badge-cat badge-${c.category}">${c.category}</span>
+            <span class="count-badge">${c.count}</span>
+        </div>`).join('');
+
+        let recentHtml = data.recent_activity.map(a => `<div style="font-size:0.78rem;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;">
+            <span style="color:#9ca3af;">${fmtTime(a.created_at)}</span>
+            <span class="badge badge-cat badge-${a.category} ms-1">${a.category}</span>
+            <strong>${a.action}</strong>
+            ${a.ip_address ? `<span class="ip-pill ms-1">${a.ip_address}</span>` : ''}
+        </div>`).join('');
+
+        container.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 style="font-weight:700;color:var(--adb-primary);margin:0;">${username}</h5>
+                    <small class="text-muted">${data.total_activities} actions in last ${days} days</small>
+                </div>
+                <div class="text-end">
+                    <div style="font-size:0.78rem;color:#6b7280;">Last Login</div>
+                    <div style="font-size:0.85rem;">${fmtFull(data.last_login)}</div>
+                    <div style="font-size:0.75rem;color:#9ca3af;">${data.last_login_ip || '—'}</div>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">IP Addresses Used</h6>
+                    ${ipsHtml || '<p class="text-muted">None</p>'}
+                </div>
+                <div class="col-md-6">
+                    <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">Activity Breakdown</h6>
+                    ${catsHtml || '<p class="text-muted">None</p>'}
+                </div>
+            </div>
+            <hr>
+            <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">Recent Activity</h6>
+            <div style="max-height:300px;overflow-y:auto;">${recentHtml || '<p class="text-muted">None</p>'}</div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p class="text-danger">Failed to load user detail: ${e.message}</p>`;
+    }
+}
+
+// ===== IPs Tab =====
+function loadIpsTab() {
+    if (!statsData) return;
+    const tbody = document.getElementById('ipsTableBody');
+    if (!statsData.top_ips.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No IP data</td></tr>';
+        return;
+    }
+    tbody.innerHTML = statsData.top_ips.map((ip, i) => `<tr style="cursor:pointer;" onclick="showIpDetail('${ip.ip_address}')">
+        <td>${i + 1}</td>
+        <td><span class="ip-pill">${ip.ip_address}</span></td>
+        <td><span class="count-badge">${ip.count}</span></td>
+        <td><span style="font-size:0.75rem;color:#6b7280;">${(ip.users || []).join(', ') || '—'}</span></td>
+        <td><i class="bi bi-chevron-right" style="font-size:0.7rem;color:#9ca3af;"></i></td>
+    </tr>`).join('');
+}
+
+async function showIpDetail(ipAddress) {
+    const days = getPeriod();
+    const container = document.getElementById('ipDetailContent');
+    container.innerHTML = '<div class="loading-overlay"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>';
+    
+    // Switch to IPs tab if not there
+    const ipsTab = document.querySelector('#tab-ips');
+    if (ipsTab.style.display === 'none') switchTab('ips');
+
+    try {
+        const data = await api(`/api/activity/ip/${ipAddress}/?days=${days}`);
+        let usersHtml = data.users.map(u => `<div class="top-list-item">
+            <strong class="user-link" onclick="showUserDetail('${u.username}')">${u.username}</strong>
+            <span><small class="text-muted">${fmtTime(u.last_seen)}</small> <span class="count-badge">${u.count}</span></span>
+        </div>`).join('');
+
+        let catsHtml = data.category_breakdown.map(c => `<div class="top-list-item">
+            <span class="badge badge-cat badge-${c.category}">${c.category}</span>
+            <span class="count-badge">${c.count}</span>
+        </div>`).join('');
+
+        let recentHtml = data.recent_activity.map(a => `<div style="font-size:0.78rem;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;">
+            <span style="color:#9ca3af;">${fmtTime(a.created_at)}</span>
+            <strong>${a.username || '—'}</strong>
+            <span class="badge badge-cat badge-${a.category} ms-1">${a.category}</span>
+            ${a.action}
+        </div>`).join('');
+
+        container.innerHTML = `
+            <div class="mb-3">
+                <h5 style="font-weight:700;color:var(--adb-primary);margin:0;font-family:monospace;">${ipAddress}</h5>
+                <small class="text-muted">${data.total_activities} actions in last ${days} days</small>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">Users from this IP</h6>
+                    ${usersHtml || '<p class="text-muted">None</p>'}
+                </div>
+                <div class="col-md-6">
+                    <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">Activity Breakdown</h6>
+                    ${catsHtml || '<p class="text-muted">None</p>'}
+                </div>
+            </div>
+            <hr>
+            <h6 style="font-size:0.8rem;font-weight:700;color:var(--adb-primary);">Recent Activity</h6>
+            <div style="max-height:300px;overflow-y:auto;">${recentHtml || '<p class="text-muted">None</p>'}</div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p class="text-danger">Failed to load IP detail: ${e.message}</p>`;
+    }
+}
+
+// ===== Security Tab =====
+function loadSecurityTab() {
+    if (!statsData) return;
+    
+    // Failed logins
+    const failedBody = document.getElementById('failedLoginsBody');
+    if (!statsData.recent_failures.length) {
+        failedBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-shield-check me-2" style="color:#16a34a;"></i>No failed login attempts</td></tr>';
+    } else {
+        failedBody.innerHTML = statsData.recent_failures.map(f => `<tr>
+            <td style="white-space:nowrap;">${fmtTime(f.created_at)}</td>
+            <td><strong style="color:#dc2626;">${f.metadata?.attempted_username || '—'}</strong></td>
+            <td><span class="ip-pill">${f.ip_address || '—'}</span></td>
+        </tr>`).join('');
+    }
+
+    // Load warning/error events
+    const container = document.getElementById('securityEventsContainer');
+    api(`/api/activity/list/?severity=WARNING&page_size=25`).then(data => {
+        if (!data.results.length) {
+            container.innerHTML = '<p class="text-muted text-center py-4"><i class="bi bi-check-circle me-2" style="color:#16a34a;"></i>No warning events</p>';
+        } else {
+            container.innerHTML = `<table class="table table-sm table-hover activity-table mb-0">
+                <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Severity</th></tr></thead>
+                <tbody>${data.results.map(a => `<tr>
+                    <td style="white-space:nowrap;">${fmtTime(a.created_at)}</td>
+                    <td><strong>${a.user || '—'}</strong></td>
+                    <td>${a.action}</td>
+                    <td><span class="badge badge-sev-${a.severity}">${a.severity}</span></td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        }
+    }).catch(e => {
+        container.innerHTML = `<p class="text-danger text-center py-3">Failed to load: ${e.message}</p>`;
+    });
+}
+
+// ===== Tab Switching =====
+function switchTab(tab) {
+    document.querySelectorAll('.activity-tabs .nav-link').forEach(l => l.classList.remove('active'));
+    event.target.classList.add('active');
+    ['overview', 'logs', 'users', 'ips', 'security'].forEach(t => {
+        document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+    });
+
+    if (tab === 'logs') loadLogs(1);
+    if (tab === 'users') loadUsersTab();
+    if (tab === 'ips') loadIpsTab();
+    if (tab === 'security') loadSecurityTab();
+}
+
+function changePeriod() { loadDashboard(); }
+
+// ===== Cleanup =====
+function showCleanupModal() {
+    new bootstrap.Modal(document.getElementById('cleanupModal')).show();
+}
+
+async function runCleanup() {
+    const days = document.getElementById('cleanupDays').value;
+    if (!confirm(`Delete all activity records older than ${days} days? This cannot be undone.`)) return;
+
+    try {
+        const data = await apiPost('/api/activity/cleanup/', { older_than_days: parseInt(days) });
+        bootstrap.Modal.getInstance(document.getElementById('cleanupModal')).hide();
+        alert(data.message);
+        loadDashboard();
+    } catch (e) {
+        alert('Cleanup failed: ' + e.message);
+    }
+}
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

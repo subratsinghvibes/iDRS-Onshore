@@ -1,0 +1,365 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged Out - Interactive Drilling Rig Scheduler</title>
+    
+    <!-- Bootstrap Icons -->
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    
+    <style>
+        :root {
+            --nav-gradient-start: #A11D23;
+            --nav-gradient-end: #1B5E20;
+            --nav-gradient-angle: 35deg;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --color-white: #ffffff;
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-400: #9ca3af;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-gray-900: #111827;
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(var(--nav-gradient-angle), var(--nav-gradient-start), var(--nav-gradient-end));
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Animated background shapes */
+        .bg-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-shapes .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-shapes .shape:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-shapes .shape:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        .bg-shapes .shape:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            animation-delay: -10s;
+        }
+
+        .bg-shapes .shape:nth-child(4) {
+            width: 150px;
+            height: 150px;
+            top: 20%;
+            right: 20%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+        }
+
+        /* Logout Card */
+        .logout-card {
+            background: var(--color-white);
+            border-radius: 24px;
+            padding: 60px;
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logout-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(161, 29, 35, 0.1), rgba(27, 94, 32, 0.1));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 32px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logout-icon i {
+            font-size: 48px;
+            color: var(--nav-gradient-end);
+        }
+
+        .logout-icon .checkmark {
+            width: 48px;
+            height: 48px;
+            stroke: var(--nav-gradient-end);
+            stroke-width: 3;
+            fill: none;
+            animation: checkmark 0.8s ease-out forwards;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+        }
+
+        @keyframes checkmark {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .logout-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-gray-900);
+            margin-bottom: 12px;
+        }
+
+        .logout-message {
+            font-size: 16px;
+            color: var(--color-gray-500);
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .logout-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn i {
+            font-size: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--nav-gradient-start), var(--nav-gradient-end));
+            color: var(--color-white);
+            box-shadow: 0 4px 14px rgba(161, 29, 35, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(161, 29, 35, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--color-gray-100);
+            color: var(--color-gray-700);
+            border: 2px solid var(--color-gray-200);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-gray-200);
+            transform: translateY(-2px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 8px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--color-gray-200);
+        }
+
+        .divider span {
+            font-size: 13px;
+            color: var(--color-gray-400);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logout-footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-gray-200);
+        }
+
+        .logout-footer p {
+            font-size: 14px;
+            color: var(--color-gray-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .logout-footer p i {
+            font-size: 16px;
+            color: var(--nav-gradient-end);
+        }
+
+        /* Session info */
+        .session-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--color-gray-50);
+            border-radius: var(--border-radius);
+            margin-bottom: 32px;
+            font-size: 14px;
+            color: var(--color-gray-600);
+        }
+
+        .session-info i {
+            font-size: 18px;
+            color: var(--nav-gradient-end);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .logout-card {
+                padding: 40px 24px;
+                border-radius: 16px;
+            }
+
+            .logout-title {
+                font-size: 24px;
+            }
+
+            .logout-icon {
+                width: 80px;
+                height: 80px;
+            }
+
+            .logout-icon i {
+                font-size: 40px;
+            }
+
+            .btn {
+                padding: 14px 24px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <!-- Logout Card -->
+    <div class="logout-card">
+        <div class="logout-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+
+        <h1 class="logout-title">You've been logged out</h1>
+        
+        <p class="logout-message">
+            Thank you for using iDRS. Your session has been securely ended. See you next time!
+        </p>
+
+        <div class="session-info">
+            <i class="bi bi-shield-check"></i>
+            <span>Your session was securely terminated</span>
+        </div>
+
+        <div class="logout-actions">
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Sign In Again
+            </a>
+        </div>
+
+        <div class="logout-footer">
+            <p>
+                <i class="bi bi-shield-lock-fill"></i>
+                Product of Project DOT | Offshore Logistics
+            </p>
+        </div>
+    </div>
+</body>
+</html>

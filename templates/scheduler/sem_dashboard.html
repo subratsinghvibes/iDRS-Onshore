@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Schedule Execution - iDRS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Icon fix (same as data_management) ── */
+    .data-management-page i.bi,
+    .data-management-page .bi::before,
+    .modal i.bi,
+    .modal .bi::before {
+        -webkit-text-fill-color: currentColor !important;
+        background: none !important;
+        background-clip: initial !important;
+        -webkit-background-clip: initial !important;
+        font-family: "bootstrap-icons" !important;
+    }
+
+    body { background: #f8f9fa; }
+    .main-content { background: transparent !important; }
+
+    /* ── Execution item card ── */
+    .exec-item {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .exec-item:hover {
+        border-color: var(--adb-primary);
+        box-shadow: 0 4px 12px rgba(10, 47, 90, 0.1);
+        transform: translateY(-1px);
+        color: inherit;
+        text-decoration: none;
+    }
+    .exec-item .progress {
+        height: 6px;
+        border-radius: 3px;
+        background: #f3f4f6;
+    }
+    .exec-item .progress-bar { border-radius: 3px; background: var(--adb-primary); }
+
+    /* ── Execution status badges ── */
+    .badge-exec {
+        padding: 0.28rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        flex-shrink: 0;
+    }
+    .badge-exec.ACTIVE   { background: #dcfce7; color: #166534; }
+    .badge-exec.PAUSED   { background: #fef3c7; color: #92400e; }
+    .badge-exec.COMPLETED{ background: #dbeafe; color: #1e40af; }
+    .badge-exec.CANCELLED{ background: #fde2e2; color: #991b1b; }
+
+    /* ── Metric mini (inside exec item) ── */
+    .metric-mini {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.76rem;
+        color: #6b7280;
+    }
+    .metric-mini .val { font-weight: 600; color: #374151; }
+
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #9ca3af;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 0.75rem; color: #d1d5db; display: block; }
+    .empty-state h5 { color: #6b7280; font-size: 0.95rem; }
+
+    /* ── Schedule picker inside modal ── */
+    .schedule-picker .schedule-item {
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-size: 0.875rem;
+    }
+    .schedule-picker .schedule-item:hover,
+    .schedule-picker .schedule-item.selected {
+        border-color: var(--adb-primary);
+        background: #f0f5ff;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="data-management-page">
+
+    <!-- ── Page Header ── -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-play-circle page-title-icon"></i>
+                <h1 class="page-title mb-0">Schedule Execution</h1>
+            </div>
+            <p class="page-subtitle">
+                Execute approved schedules, capture actuals, and track real-time progress
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-2 justify-content-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="loadExecutions()" title="Refresh">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="showActivateModal()">
+                    <i class="bi bi-plus-lg me-1"></i>Activate Schedule
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <hr class="page-separator">
+
+    <!-- ── Development Notice Banner ── -->
+    <div class="alert d-flex align-items-start gap-3 mb-4" id="devNoticeBanner" role="alert"
+         style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1.5px solid #f59e0b;border-radius:12px;box-shadow:0 2px 8px rgba(245,158,11,0.12);">
+        <div style="flex-shrink:0;background:#fef3c7;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-tools" style="font-size:1.1rem;color:#b45309;"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.92rem;color:#92400e;margin-bottom:0.15rem;">
+                Module Under Active Development
+            </div>
+            <div style="font-size:0.83rem;color:#78350f;line-height:1.5;">
+                The <strong>Execution Module</strong> is currently not fully mature and is being developed further to incorporate maximum possible functionality. Some features may be incomplete or subject to change. Kindly bear with us — we're continuously improving this module for you.
+            </div>
+        </div>
+        <button type="button" onclick="dismissDevNotice()" aria-label="Dismiss"
+                style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:0.2rem 0.4rem;color:#b45309;font-size:1.1rem;line-height:1;opacity:0.7;"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <script>
+        function dismissDevNotice() {
+            const banner = document.getElementById('devNoticeBanner');
+            if (banner) { banner.style.transition = 'opacity 0.3s'; banner.style.opacity = '0'; setTimeout(() => banner.remove(), 300); }
+            try { sessionStorage.setItem('sem_dev_notice_dismissed', '1'); } catch(e) {}
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            try { if (sessionStorage.getItem('sem_dev_notice_dismissed') === '1') { const b = document.getElementById('devNoticeBanner'); if (b) b.remove(); } } catch(e) {}
+        });
+    </script>
+
+    <!-- ── Summary Stats ── -->
+    <div class="stats-row mb-4">
+        <div class="stat-card">
+            <div class="stat-card-label">Total Executions</div>
+            <div class="stat-card-value" id="statTotal">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-label">Active</div>
+            <div class="stat-card-value" id="statActive">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-label">Completed</div>
+            <div class="stat-card-value" id="statCompletedEx">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-label">Wells In Progress</div>
+            <div class="stat-card-value" id="statWellsInProgress">&mdash;</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-label">Wells Completed</div>
+            <div class="stat-card-value" id="statCompleted">&mdash;</div>
+        </div>
+    </div>
+
+    <!-- ── Execution List Card ── -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-task me-2"></i>Execution Schedules
+                    </h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <select class="form-select form-select-sm" id="filterStatus" style="width:auto;" onchange="loadExecutions()">
+                            <option value="">All Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="PAUSED">Paused</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="loadExecutions()" title="Refresh list">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-3" id="executionListBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading&hellip;
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /data-management-page -->
+
+<!-- ── Activate Schedule Modal ── -->
+<div class="modal fade" id="activateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Activate Schedule for Execution
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size:0.85rem;">
+                    Select a completed schedule to activate for execution tracking.
+                </p>
+                <div id="availableSchedulesList" class="schedule-picker">
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>Loading schedules&hellip;
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-sm btn-primary" id="confirmActivateBtn" disabled onclick="activateSchedule()">
+                    <i class="bi bi-play-fill me-1"></i>Activate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+let executionsData = [];
+let selectedScheduleId = null;
+
+async function apiRequest(url, options = {}) {
+    const resp = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin',
+        ...options,
+    });
+    if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: resp.statusText }));
+        throw new Error(err.error || resp.statusText);
+    }
+    return resp.json();
+}
+
+function showAlert(msg, type = 'success') {
+    const container = document.getElementById('alerts-container');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.style.cssText = 'font-size:0.85rem; border-radius:8px;';
+    alert.innerHTML = `${msg}<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>`;
+    container.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+async function loadExecutions() {
+    try {
+        const data = await apiRequest('/api/sem/executions/');
+        executionsData = data;
+        const statusFilter = document.getElementById('filterStatus').value;
+        const filtered = statusFilter ? data.filter(e => e.status === statusFilter) : data;
+        renderExecutions(filtered);
+        updateSummaryStats(data);
+    } catch (err) {
+        document.getElementById('executionListBody').innerHTML = `<div class="text-danger text-center py-4">Error: ${err.message}</div>`;
+    }
+}
+
+function updateSummaryStats(data) {
+    document.getElementById('statTotal').textContent = data.length;
+    document.getElementById('statActive').textContent = data.filter(e => e.status === 'ACTIVE').length;
+    document.getElementById('statCompletedEx').textContent = data.filter(e => e.status === 'COMPLETED').length;
+    document.getElementById('statWellsInProgress').textContent = data.reduce((s, e) => s + (e.in_progress_wells || 0), 0);
+    document.getElementById('statCompleted').textContent = data.reduce((s, e) => s + (e.completed_wells || 0), 0);
+}
+
+function renderExecutions(execs) {
+    const container = document.getElementById('executionListBody');
+    if (!execs.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-play-circle"></i>
+                <h5>No Execution Schedules</h5>
+                <p class="mb-3" style="font-size:0.85rem;">Activate an approved schedule to begin tracking execution.</p>
+                <button class="btn btn-sm btn-primary" onclick="showActivateModal()">
+                    <i class="bi bi-plus-lg me-1"></i>Activate Schedule
+                </button>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = execs.map(ex => `
+        <a class="exec-item" href="/execution/${ex.id}/">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <div class="fw-semibold mb-1" style="font-size:0.92rem; color:#1e293b;">${ex.name}</div>
+                    <div style="font-size:0.78rem; color:#6b7280;">
+                        <span class="me-3"><i class="bi bi-calendar3 me-1"></i>FY ${ex.financial_year}</span>
+                        <span class="me-3"><i class="bi bi-link-45deg me-1"></i>${ex.source_schedule_name}</span>
+                        ${ex.created_by ? `<span><i class="bi bi-person me-1"></i>${ex.created_by}</span>` : ''}
+                    </div>
+                </div>
+                <span class="badge-exec ${ex.status}">${ex.status}</span>
+            </div>
+            <div class="progress mb-2">
+                <div class="progress-bar" style="width:${ex.progress_pct}%"></div>
+            </div>
+            <div class="d-flex flex-wrap gap-3">
+                <div class="metric-mini"><i class="bi bi-bullseye"></i> <span class="val">${ex.total_wells}</span> total</div>
+                <div class="metric-mini"><i class="bi bi-lock-fill" style="color:#dc2626"></i> <span class="val">${ex.locked_wells}</span> locked</div>
+                <div class="metric-mini"><i class="bi bi-play-fill" style="color:#d97706"></i> <span class="val">${ex.in_progress_wells}</span> in progress</div>
+                <div class="metric-mini"><i class="bi bi-check-circle-fill" style="color:#16a34a"></i> <span class="val">${ex.completed_wells}</span> done</div>
+                <div class="metric-mini"><i class="bi bi-graph-up"></i> <span class="val">${ex.progress_pct}%</span></div>
+                ${ex.optimization_runs > 0 ? `<div class="metric-mini"><i class="bi bi-arrow-repeat" style="color:#7c3aed"></i> <span class="val">${ex.optimization_runs}</span> re-opts</div>` : ''}
+            </div>
+        </a>
+    `).join('');
+}
+
+async function showActivateModal() {
+    selectedScheduleId = null;
+    document.getElementById('confirmActivateBtn').disabled = true;
+    const modal = new bootstrap.Modal(document.getElementById('activateModal'));
+    modal.show();
+
+    try {
+        const schedules = await apiRequest('/api/sem/available-schedules/');
+        const container = document.getElementById('availableSchedulesList');
+        if (!schedules.length) {
+            container.innerHTML = '<div class="text-muted text-center py-3">No completed schedules available.</div>';
+            return;
+        }
+        container.innerHTML = schedules.map(s => `
+            <div class="schedule-item" data-id="${s.id}" onclick="selectSchedule('${s.id}', this)">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong style="font-size:0.88rem;">${s.name}</strong>
+                        <div class="text-muted" style="font-size:0.76rem;">
+                            FY ${s.financial_year} &bull; ${s.assignment_count} wells
+                            ${s.location_name ? ` &bull; ${s.location_name}` : ''}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${s.project_end_date ? `<div style="font-size:0.78rem; color:#374151;">${formatDate(s.project_end_date)}</div>` : ''}
+                        <div style="font-size:0.72rem; color:#9ca3af;">${formatDate(s.created_at)}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        document.getElementById('availableSchedulesList').innerHTML = `<div class="text-danger">${err.message}</div>`;
+    }
+}
+
+function selectSchedule(id, el) {
+    document.querySelectorAll('.schedule-item').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedScheduleId = id;
+    document.getElementById('confirmActivateBtn').disabled = false;
+}
+
+async function activateSchedule() {
+    if (!selectedScheduleId) return;
+    const btn = document.getElementById('confirmActivateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Activating...';
+
+    try {
+        const result = await apiRequest('/api/sem/activate/', {
+            method: 'POST',
+            body: JSON.stringify({ schedule_id: selectedScheduleId }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById('activateModal')).hide();
+        showAlert(`Schedule activated: ${result.name} (${result.total_wells} wells)`);
+        loadExecutions();
+    } catch (err) {
+        showAlert(err.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Activate';
+    }
+}
+
+function formatDate(d) {
+    if (!d) return '\u2014';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Load on page init
+document.addEventListener('DOMContentLoaded', loadExecutions);
+</script>
+{% endblock %}

@@ -1,0 +1,1968 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Well Basket - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* CRITICAL: Ensure Bootstrap Icons always display correctly */
+        .basket-page i.bi,
+        .basket-page .bi::before {
+            -webkit-text-fill-color: currentColor !important;
+            background: none !important;
+            background-clip: initial !important;
+            -webkit-background-clip: initial !important;
+            font-family: "bootstrap-icons" !important;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-imported {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-in_basket {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+        
+        /* Search section styling */
+        .search-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .search-section .form-label {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .search-textarea {
+            height: 100px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        
+        /* Existing baskets section */
+        .existing-baskets-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .existing-baskets-section #baskets-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .existing-baskets-section #baskets-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .existing-baskets-section #baskets-list > .basket-card {
+            margin: 0 !important;
+        }
+        
+        /* Ensure no margin on any basket-card in the list */
+        #baskets-list .basket-card {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Results section */
+        .results-section {
+            margin-top: 1.5rem;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .summary-card.success {
+            border-left: 4px solid #10b981;
+        }
+        
+        .summary-card.warning {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .summary-card.error {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .summary-card .count {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        .summary-card.success .count {
+            color: #10b981;
+        }
+        
+        .summary-card.warning .count {
+            color: #f59e0b;
+        }
+        
+        .summary-card.error .count {
+            color: #ef4444;
+        }
+        
+        .summary-card .label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        /* Wells list */
+        .wells-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .well-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .well-item.found {
+            border-left: 3px solid #10b981;
+        }
+        
+        .well-item.not-found {
+            border-left: 3px solid #ef4444;
+            background: #fef2f2;
+        }
+        
+        .well-item.in-basket {
+            border-left: 3px solid #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .well-item.imported {
+            border-left: 3px solid #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .well-item .well-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .well-item .well-meta {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        
+        .well-item .remove-btn {
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .well-item .remove-btn:hover {
+            background: #fee2e2;
+        }
+        
+        /* Basket name input */
+        .basket-name-section {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .basket-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 0;
+            transition: box-shadow 0.2s;
+            /* Override global sticky positioning from style.css */
+            position: relative !important;
+            top: auto !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        
+        .basket-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .basket-card .basket-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 1rem;
+        }
+        
+        .basket-card .basket-meta {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        
+        .basket-card .well-count-badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        /* Load and Process Baskets Section */
+        .process-basket-section {
+            margin-top: 2rem;
+        }
+        
+        .process-basket-section .wells-table {
+            margin-top: 1rem;
+        }
+        
+        .process-basket-section .missing-field-cell {
+            background: #fef2f2;
+            color: #dc2626;
+            font-style: italic;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .process-basket-section .filled-field-cell {
+            background: #f0fdf4;
+        }
+        
+        .hidden-section {
+            display: none;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 12px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 basket-page">
+    <!-- CSRF Token for API calls -->
+    {% csrf_token %}
+    
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h1 class="page-title mb-2">Create Well Basket</h1>
+            <p class="page-subtitle mb-0">Group staged wells into a basket for batch processing and planning</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <div class="row">
+        <!-- Left Column: Search & Create (40% width) -->
+        <div class="col-lg-5 mb-4">
+            <!-- Search Section -->
+            <div class="search-section position-relative" id="search-section">
+                <h5 class="mb-3"><i class="bi bi-search me-2"></i>Search Wells</h5>
+                <div class="mb-3">
+                    <label class="form-label">Paste Well Names (comma, space, or newline separated)</label>
+                    <textarea class="form-control search-textarea" id="well-names-input" 
+                        placeholder="Enter well names here, e.g.:
+WELL-A-001
+WELL-A-002, WELL-B-003
+WELL-C-004 WELL-D-005"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" id="search-wells-btn">
+                        <i class="bi bi-search me-2"></i>Search Wells
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="clear-search-btn">
+                        <i class="bi bi-x-circle me-2"></i>Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Results Section (Initially Hidden) -->
+            <div class="results-section hidden-section" id="results-section">
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="summary-card success">
+                            <div class="count" id="found-count">0</div>
+                            <div class="label">Total Wells to Add</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="summary-card warning">
+                            <div class="count" id="in-basket-count">0</div>
+                            <div class="label">From Other Baskets</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="summary-card error">
+                            <div class="count" id="not-found-count">0</div>
+                            <div class="label">Not Found</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Found Wells List -->
+                <div class="clean-card mb-3" id="found-wells-card">
+                    <div class="clean-card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>Found Wells (Proposed Basket)</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="selectAllWells()" title="Select all available wells">
+                                <i class="bi bi-check-all me-1"></i>All
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllWells()" title="Clear selection">
+                                <i class="bi bi-x me-1"></i>Clear
+                            </button>
+                            <span class="badge bg-success" id="found-wells-badge">0</span>
+                        </div>
+                    </div>
+                    <div class="clean-card-body">
+                        <div class="wells-list" id="found-wells-list">
+                            <!-- Found wells will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Already in Basket List -->
+                <div class="clean-card mb-3 hidden-section" id="in-basket-card">
+                    <div class="clean-card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Already in Another Basket</span>
+                        <span class="badge bg-warning" id="in-basket-badge">0</span>
+                    </div>
+                    <div class="clean-card-body">
+                        <div class="wells-list" id="in-basket-list">
+                            <!-- In-basket wells will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Already Imported List -->
+                <div class="clean-card mb-3 hidden-section" id="already-imported-card">
+                    <div class="clean-card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-check-circle-fill text-primary me-2"></i>Already Imported to Scheduler</span>
+                        <span class="badge bg-primary" id="already-imported-badge">0</span>
+                    </div>
+                    <div class="clean-card-body">
+                        <div class="wells-list" id="already-imported-list">
+                            <!-- Already imported wells will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Not Found List -->
+                <div class="clean-card mb-3 hidden-section" id="not-found-card">
+                    <div class="clean-card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-x-circle-fill text-danger me-2"></i>Not Found</span>
+                        <span class="badge bg-danger" id="not-found-badge">0</span>
+                    </div>
+                    <div class="clean-card-body">
+                        <div class="wells-list" id="not-found-list">
+                            <!-- Not found wells will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Create Basket Section -->
+                <div class="basket-name-section" id="create-basket-section">
+                    <h5 class="mb-3"><i class="bi bi-basket me-2"></i>Create Basket</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Basket Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="basket-name-input" 
+                                placeholder="Enter a name for this basket">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Description (Optional)</label>
+                            <input type="text" class="form-control" id="basket-description-input" 
+                                placeholder="Brief description or notes">
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success" id="create-basket-btn" disabled>
+                            <i class="bi bi-check-lg me-2"></i>Create Basket (<span id="create-count">0</span> wells)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="reset-search-btn">
+                            <i class="bi bi-arrow-repeat me-2"></i>New Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Existing Baskets (60% width) -->
+        <div class="col-lg-7">
+            <div class="existing-baskets-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-collection me-2"></i>Existing Baskets</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="refresh-baskets-btn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+                
+                <div id="baskets-container">
+                    <div class="text-center text-muted py-4 hidden-section" id="baskets-loading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        Loading baskets...
+                    </div>
+                    <div class="hidden-section" id="baskets-empty">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No baskets created yet</p>
+                        </div>
+                    </div>
+                    <div id="baskets-list">
+                        <!-- Basket cards will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load and Process Baskets Section -->
+    <div class="process-basket-section hidden-section" id="process-basket-section">
+        <div id="process-basket-header">
+            <!-- Will be populated when basket is loaded -->
+        </div>
+        <div class="wells-table" id="process-basket-table">
+            <!-- Wells table will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Removed View Basket Modal - Now using inline section -->
+
+<!-- Edit Well Modal -->
+<div class="modal fade" id="editWellModal" tabindex="-1" aria-labelledby="editWellModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWellModalLabel">Edit Well</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editWellForm">
+                    <input type="hidden" id="edit-well-id">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-field-name" class="form-label">Field Name</label>
+                            <input type="text" class="form-control" id="edit-field-name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-well-profile" class="form-label">Well Profile</label>
+                            <select class="form-select" id="edit-well-profile">
+                                <option value="">Select...</option>
+                                <option value="DI">Directional</option>
+                                <option value="VE">Vertical</option>
+                                <option value="SD">Sidetrack</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-latitude" class="form-label">Latitude</label>
+                            <input type="number" step="0.000001" class="form-control" id="edit-latitude">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-longitude" class="form-label">Longitude</label>
+                            <input type="number" step="0.000001" class="form-control" id="edit-longitude">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-rig-capacity" class="form-label">Rig Capacity (HP)</label>
+                            <input type="number" class="form-control" id="edit-rig-capacity">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-drl-days" class="form-label">DRL Days</label>
+                            <input type="number" class="form-control" id="edit-drl-days">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-pt-days" class="form-label">PT Days</label>
+                            <input type="number" class="form-control" id="edit-pt-days">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-duration" class="form-label">Duration</label>
+                            <input type="number" class="form-control" id="edit-duration">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-bop-stack" class="form-label">BOP Stack</label>
+                            <input type="number" class="form-control" id="edit-bop-stack">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="edit-tds-requirement" class="form-label">TDS Requirement</label>
+                            <select class="form-select" id="edit-tds-requirement">
+                                <option value="Y">Yes</option>
+                                <option value="N">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-footprint" class="form-label">Footprint</label>
+                            <select class="form-select" id="edit-footprint">
+                                <option value="">Select...</option>
+                                <option value="Mobile">Mobile</option>
+                                <option value="Fixed">Fixed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-preferred-rig" class="form-label">Preferred Rig</label>
+                            <input type="text" class="form-control" id="edit-preferred-rig">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-expected-potential" class="form-label">Expected Potential</label>
+                        <input type="text" class="form-control" id="edit-expected-potential">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveWellEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // State
+    let foundWells = [];
+    let wellsInOtherBasket = []; // Wells already in another basket
+    let wellsAlreadyImported = []; // Wells already imported to scheduler
+    let allSearchResults = null; // Store full search results for select all
+    let currentBasketId = null;
+    let currentBasketWells = [];
+    let suggestedValues = {}; // Store suggested values for approval
+    let benchmarks = [];
+    let rigsData = [];
+    let rigCapacityCache = {};
+    
+    // DOM Elements
+    const wellNamesInput = document.getElementById('well-names-input');
+    const searchBtn = document.getElementById('search-wells-btn');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    const resultsSection = document.getElementById('results-section');
+    const foundWellsList = document.getElementById('found-wells-list');
+    const inBasketList = document.getElementById('in-basket-list');
+    const notFoundList = document.getElementById('not-found-list');
+    const basketNameInput = document.getElementById('basket-name-input');
+    const basketDescInput = document.getElementById('basket-description-input');
+    const createBasketBtn = document.getElementById('create-basket-btn');
+    const resetSearchBtn = document.getElementById('reset-search-btn');
+    const refreshBasketsBtn = document.getElementById('refresh-baskets-btn');
+    
+    // Load existing baskets on page load
+    loadBaskets();
+    
+    // Search Wells Button
+    searchBtn.addEventListener('click', searchWells);
+    
+    // Clear Search Button
+    clearSearchBtn.addEventListener('click', function() {
+        wellNamesInput.value = '';
+        resetResults();
+    });
+    
+    // Reset Search Button
+    resetSearchBtn.addEventListener('click', function() {
+        wellNamesInput.value = '';
+        resetResults();
+        resultsSection.classList.add('hidden-section');
+    });
+    
+    // Basket Name Input - Enable/Disable Create Button
+    basketNameInput.addEventListener('input', function() {
+        updateCreateButtonState();
+    });
+    
+    // Create Basket Button
+    createBasketBtn.addEventListener('click', createBasket);
+    
+    // Refresh Baskets Button
+    refreshBasketsBtn.addEventListener('click', loadBaskets);
+    
+    // Search Wells Function
+    async function searchWells() {
+        const wellNames = wellNamesInput.value.trim();
+        
+        if (!wellNames) {
+            showToast('Please enter well names to search', 'warning');
+            return;
+        }
+        
+        try {
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Searching...';
+            
+            // Get location filter from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const locationFilter = urlParams.get('location');
+            
+            const response = await fetch('/api/baskets/search-wells/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ 
+                    well_names: wellNames,
+                    location: locationFilter 
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                displaySearchResults(data);
+            } else {
+                showToast(data.error || 'Search failed', 'error');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            showToast('Error searching wells', 'error');
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<i class="bi bi-search me-2"></i>Search Wells';
+        }
+    }
+    
+    // Display Search Results
+    function displaySearchResults(data) {
+        resultsSection.classList.remove('hidden-section');
+        
+        // Store all search results for later use
+        allSearchResults = data;
+        
+        // Store separate categories for display
+        wellsInOtherBasket = data.already_in_basket || [];
+        wellsAlreadyImported = data.already_imported || [];
+        
+        // Include ALL wells in foundWells by default (found + in basket + imported)
+        // This ensures all wells are added to the basket for indicative purposes
+        foundWells = [...(data.found_wells || [])];
+        
+        // Add wells already in other baskets (will be moved to new basket)
+        if (data.already_in_basket && data.already_in_basket.length > 0) {
+            data.already_in_basket.forEach(well => {
+                foundWells.push({
+                    id: well.id || well.staged_well_id,
+                    name: well.name,
+                    asset_id: well.asset_id,
+                    status: 'IN_BASKET',
+                    field_name: well.field_name,
+                    depth: well.depth,
+                    priority: well.priority,
+                    existing_basket: well.existing_basket,
+                    location_id: well.location_id,
+                    location_code: well.location_code
+                });
+            });
+        }
+        
+        // Add already imported wells (for reference/tracking)
+        if (data.already_imported && data.already_imported.length > 0) {
+            data.already_imported.forEach(well => {
+                foundWells.push({
+                    id: well.id || well.staged_well_id,
+                    name: well.name,
+                    asset_id: well.asset_id,
+                    status: 'IMPORTED',
+                    field_name: well.field_name,
+                    depth: well.depth,
+                    priority: well.priority,
+                    imported_well_id: well.imported_well_id,
+                    location_id: well.location_id,
+                    location_code: well.location_code
+                });
+            });
+        }
+        
+        // Update summary counts - show total wells in the badge (including all categories)
+        const totalWellsCount = foundWells.length;
+        document.getElementById('found-count').textContent = totalWellsCount;
+        document.getElementById('in-basket-count').textContent = data.already_in_basket_count || 0;
+        document.getElementById('not-found-count').textContent = data.not_found_count || 0;
+        document.getElementById('found-wells-badge').textContent = totalWellsCount;
+        document.getElementById('in-basket-badge').textContent = data.already_in_basket_count || 0;
+        document.getElementById('not-found-badge').textContent = data.not_found_count || 0;
+        updateCreateButtonText();
+        
+        // Display all wells in the found wells list (includes found, in-basket, and imported)
+        foundWellsList.innerHTML = '';
+        if (foundWells.length > 0) {
+            foundWells.forEach((well, index) => {
+                foundWellsList.innerHTML += createWellItem(well, 'found', index);
+            });
+        } else {
+            foundWellsList.innerHTML = '<div class="text-center text-muted py-3">No wells found</div>';
+        }
+        
+        // Hide the separate "Already in basket" and "Already imported" cards since they're now in the main list
+        const inBasketCard = document.getElementById('in-basket-card');
+        inBasketCard.classList.add('hidden-section');
+        
+        const alreadyImportedCard = document.getElementById('already-imported-card');
+        alreadyImportedCard.classList.add('hidden-section');
+        
+        // Display not found
+        const notFoundCard = document.getElementById('not-found-card');
+        if (data.not_found_wells && data.not_found_wells.length > 0) {
+            notFoundCard.classList.remove('hidden-section');
+            notFoundList.innerHTML = '';
+            data.not_found_wells.forEach(name => {
+                notFoundList.innerHTML += `
+                    <div class="well-item not-found">
+                        <div class="well-name">${escapeHtml(name)}</div>
+                        <span class="badge bg-danger">Not Found</span>
+                    </div>
+                `;
+            });
+        } else {
+            notFoundCard.classList.add('hidden-section');
+        }
+        
+        // Update create button state
+        updateCreateButtonState();
+    }
+    
+    // Create Well Item HTML
+    function createWellItem(well, type, index) {
+        let metaInfo = '';
+        if (well.field_name) metaInfo += escapeHtml(well.field_name);
+        if (well.depth) metaInfo += (metaInfo ? ' • ' : '') + well.depth + 'm';
+        if (well.priority) metaInfo += (metaInfo ? ' • ' : '') + 'Priority: ' + well.priority;
+        
+        // Add info for special statuses
+        if (well.status === 'IN_BASKET' && well.existing_basket) {
+            metaInfo += (metaInfo ? ' • ' : '') + '<span class="text-warning">From basket: ' + escapeHtml(well.existing_basket) + '</span>';
+        }
+        if (well.status === 'IMPORTED') {
+            metaInfo += (metaInfo ? ' • ' : '') + '<span class="text-primary">Already imported</span>';
+        }
+        
+        return `
+            <div class="well-item ${type}" data-well-id="${well.id}" data-index="${index}">
+                <div>
+                    <div class="well-name">${escapeHtml(well.name)}</div>
+                    <div class="well-meta">${metaInfo || '&nbsp;'}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="status-badge status-${well.status.toLowerCase()}">${well.status}</span>
+                    <span class="remove-btn" onclick="removeFoundWell(${index})" title="Remove from basket">
+                        <i class="bi bi-x-lg"></i>
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Remove well from found wells
+    window.removeFoundWell = function(index) {
+        foundWells.splice(index, 1);
+        
+        // Re-render found wells list
+        foundWellsList.innerHTML = '';
+        if (foundWells.length > 0) {
+            foundWells.forEach((well, i) => {
+                foundWellsList.innerHTML += createWellItem(well, 'found', i);
+            });
+        } else {
+            foundWellsList.innerHTML = '<div class="text-center text-muted py-3">No wells to add</div>';
+        }
+        
+        // Update counts
+        document.getElementById('found-count').textContent = foundWells.length;
+        document.getElementById('found-wells-badge').textContent = foundWells.length;
+        updateCreateButtonText();
+        
+        updateCreateButtonState();
+    };
+    
+    // Select all available wells (including those in other baskets and already imported)
+    window.selectAllWells = function() {
+        if (!allSearchResults) return;
+        
+        // Collect all wells that can be added
+        foundWells = [...(allSearchResults.found_wells || [])];
+        
+        // Add wells from other baskets (with indicator)
+        if (allSearchResults.already_in_basket) {
+            allSearchResults.already_in_basket.forEach(well => {
+                foundWells.push({
+                    id: well.id || well.staged_well_id,
+                    name: well.name,
+                    asset_id: well.asset_id,
+                    status: 'IN_BASKET',
+                    field_name: well.field_name,
+                    depth: well.depth,
+                    priority: well.priority,
+                    existing_basket: well.existing_basket
+                });
+            });
+        }
+        
+        // Add already imported wells (with indicator)
+        if (allSearchResults.already_imported) {
+            allSearchResults.already_imported.forEach(well => {
+                foundWells.push({
+                    id: well.id || well.staged_well_id,
+                    name: well.name,
+                    asset_id: well.asset_id,
+                    status: 'IMPORTED',
+                    field_name: well.field_name,
+                    depth: well.depth,
+                    priority: well.priority,
+                    imported_well_id: well.imported_well_id
+                });
+            });
+        }
+        
+        // Re-render found wells list
+        renderFoundWellsList();
+        updateCreateButtonState();
+    };
+    
+    // Clear all selected wells
+    window.clearAllWells = function() {
+        foundWells = [];
+        renderFoundWellsList();
+        updateCreateButtonState();
+    };
+    
+    // Helper function to render found wells list
+    function renderFoundWellsList() {
+        foundWellsList.innerHTML = '';
+        if (foundWells.length > 0) {
+            foundWells.forEach((well, index) => {
+                foundWellsList.innerHTML += createWellItem(well, 'found', index);
+            });
+        } else {
+            foundWellsList.innerHTML = '<div class="text-center text-muted py-3">No wells found</div>';
+        }
+        
+        // Update counts
+        document.getElementById('found-count').textContent = foundWells.length;
+        document.getElementById('found-wells-badge').textContent = foundWells.length;
+        updateCreateButtonText();
+    }
+    
+    // Update Create Button State
+    function updateCreateButtonState() {
+        const hasName = basketNameInput.value.trim().length > 0;
+        const hasWells = foundWells.length > 0;
+        createBasketBtn.disabled = !(hasName && hasWells);
+    }
+    
+    // Update Create Button Text
+    function updateCreateButtonText() {
+        const count = foundWells.length;
+        createBasketBtn.innerHTML = `<i class="bi bi-check-lg me-2"></i>Create Basket (<span id="create-count">${count}</span> wells)`;
+    }
+    
+    // Create Basket Function
+    async function createBasket() {
+        const basketName = basketNameInput.value.trim();
+        const description = basketDescInput.value.trim();
+        const wellIds = foundWells.map(w => w.id);
+        
+        if (!basketName) {
+            showToast('Please enter a basket name', 'warning');
+            return;
+        }
+        
+        if (wellIds.length === 0) {
+            showToast('No wells to add to basket', 'warning');
+            return;
+        }
+        
+        let createdSuccessfully = false;
+        
+        try {
+            createBasketBtn.disabled = true;
+            createBasketBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+            
+            const response = await fetch('/api/baskets/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    name: basketName,
+                    description: description,
+                    well_ids: wellIds
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showToast(data.message || 'Basket created successfully', 'success');
+                createdSuccessfully = true;
+                
+                // Reset form
+                wellNamesInput.value = '';
+                basketNameInput.value = '';
+                basketDescInput.value = '';
+                resetResults();
+                resultsSection.classList.add('hidden-section');
+                
+                // Refresh baskets list
+                loadBaskets();
+                
+                // Load the basket for processing
+                loadBasketForProcessing(data.basket_id);
+            } else {
+                showToast(data.error || 'Failed to create basket', 'error');
+            }
+        } catch (error) {
+            console.error('Create basket error:', error);
+            showToast('Error creating basket', 'error');
+        } finally {
+            createBasketBtn.disabled = createdSuccessfully ? false : false;
+            if (!createdSuccessfully) {
+                updateCreateButtonText();
+            } else {
+                // Reset button for new basket
+                createBasketBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Create Basket (0 wells)';
+            }
+        }
+    }
+    
+    // Load Existing Baskets
+    async function loadBaskets() {
+        const loading = document.getElementById('baskets-loading');
+        const empty = document.getElementById('baskets-empty');
+        const list = document.getElementById('baskets-list');
+        
+        loading.classList.remove('hidden-section');
+        empty.classList.add('hidden-section');
+        list.innerHTML = '';
+        
+        try {
+            // Pass location filter from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const locationFilter = urlParams.get('location');
+            let apiUrl = '/api/baskets/';
+            if (locationFilter) {
+                apiUrl += `?location=${encodeURIComponent(locationFilter)}`;
+            }
+            
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            loading.classList.add('hidden-section');
+            
+            if (data.success && data.baskets && data.baskets.length > 0) {
+                data.baskets.forEach(basket => {
+                    list.innerHTML += createBasketCard(basket);
+                });
+            } else {
+                empty.classList.remove('hidden-section');
+            }
+        } catch (error) {
+            console.error('Load baskets error:', error);
+            loading.classList.add('hidden-section');
+            list.innerHTML = '<div class="text-center text-danger py-3">Error loading baskets</div>';
+        }
+    }
+    
+    // Create Basket Card HTML
+    function createBasketCard(basket) {
+        const createdDate = basket.created_at ? new Date(basket.created_at).toLocaleDateString() : '';
+        const hasCompletedWells = basket.completed_count > 0;
+        
+        return `
+            <div class="basket-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="basket-name">${escapeHtml(basket.name)}</div>
+                        <div class="basket-meta">
+                            ${basket.description ? escapeHtml(basket.description) + ' • ' : ''}
+                            Created by ${escapeHtml(basket.created_by || 'Unknown')} on ${createdDate}
+                        </div>
+                    </div>
+                    <span class="well-count-badge">${basket.well_count} wells</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="basket-meta">
+                        <span class="text-warning">${basket.pending_count} pending</span> • 
+                        <span class="text-success">${basket.completed_count} completed</span> • 
+                        <span class="text-primary">${basket.imported_count} imported</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                        ${hasCompletedWells ? `
+                            <button class="btn btn-success btn-sm" onclick="finalizeBasketWells('${basket.id}', '${escapeHtml(basket.name)}')" title="Finalize ${basket.completed_count} completed wells">
+                                <i class="bi bi-check-all"></i> Finalize
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadBasketForProcessing('${basket.id}')">
+                            <i class="bi bi-box-arrow-down"></i> Load
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteBasket('${basket.id}', '${escapeHtml(basket.name)}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Load Basket for Processing
+    window.loadBasketForProcessing = async function(basketId) {
+        currentBasketId = basketId;
+        
+        try {
+            const response = await fetch(`/api/baskets/${basketId}/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.basket) {
+                displayBasketForProcessing(data.basket);
+            } else {
+                showToast('Could not load basket', 'error');
+            }
+        } catch (error) {
+            console.error('Load basket error:', error);
+            showToast('Error loading basket', 'error');
+        }
+    };
+    
+    // Display Basket for Processing
+    function displayBasketForProcessing(basket) {
+        const processSection = document.getElementById('process-basket-section');
+        const basketHeader = document.getElementById('process-basket-header');
+        const basketTable = document.getElementById('process-basket-table');
+        
+        // Show the section
+        processSection.classList.remove('hidden-section');
+        
+        // Update header
+        basketHeader.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h2 class="page-title mb-2">${escapeHtml(basket.name)}</h2>
+                    <p class="page-subtitle mb-0">
+                        ${basket.description ? escapeHtml(basket.description) + ' • ' : ''}
+                        <i class="bi bi-geo-alt"></i> ${basket.location_name || basket.location || 'Unknown Location'} • 
+                        ${basket.wells ? basket.wells.length : 0} wells
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-info btn-sm" onclick="intelligentFetch('${basket.id}')" id="intelligent-fetch-btn">
+                        <i class="bi bi-magic me-2"></i>Intelligent Fetch
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="closeProcessBasket()">
+                        <i class="bi bi-x-lg me-2"></i>Close
+                    </button>
+                </div>
+            </div>
+            <hr class="page-separator">
+        `;
+        
+        // Build table
+        let tableHtml = `
+            <div class="section-card">
+                <div class="section-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover dataTable mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-hash me-1"></i>Well Name</th>
+                                    <th><i class="bi bi-tag me-1"></i>Asset ID</th>
+                                    <th><i class="bi bi-map me-1"></i>Field</th>
+                                    <th><i class="bi bi-type me-1"></i>Type</th>
+                                    <th><i class="bi bi-rulers me-1"></i>Depth (m)</th>
+                                    <th><i class="bi bi-geo-alt me-1"></i>Latitude</th>
+                                    <th><i class="bi bi-geo-alt me-1"></i>Longitude</th>
+                                    <th><i class="bi bi-diagram-3 me-1"></i>Well Profile</th>
+                                    <th><i class="bi bi-speedometer me-1"></i>Rig Capacity (HP)</th>
+                                    <th><i class="bi bi-calendar-check me-1"></i>DRL Days</th>
+                                    <th><i class="bi bi-calendar-check me-1"></i>PT Days</th>
+                                    <th><i class="bi bi-clock me-1"></i>Duration</th>
+                                    <th><i class="bi bi-gear me-1"></i>BOP Stack</th>
+                                    <th><i class="bi bi-gear me-1"></i>TDS</th>
+                                    <th><i class="bi bi-box me-1"></i>Footprint</th>
+                                    <th><i class="bi bi-info-circle me-1"></i>Status</th>
+                                    <th><i class="bi bi-gear me-1"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+        
+        if (basket.wells && basket.wells.length > 0) {
+            basket.wells.forEach(well => {
+                tableHtml += `
+                    <tr data-well-id="${well.id}">
+                        <td><strong>${escapeHtml(well.name)}</strong></td>
+                        <td>${well.asset_id ? escapeHtml(well.asset_id) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.field_name ? escapeHtml(well.field_name) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.well_type ? escapeHtml(well.well_type) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.depth ? well.depth : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.latitude !== null && well.latitude !== undefined ? well.latitude : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.longitude !== null && well.longitude !== undefined ? well.longitude : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.well_profile ? escapeHtml(well.well_profile) : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.rig_capacity_required_hp ? well.rig_capacity_required_hp : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.drl_days ? well.drl_days : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.pt_days ? well.pt_days : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.duration ? well.duration : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.bop_stack ? escapeHtml(well.bop_stack) : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.tds_requirement ? escapeHtml(well.tds_requirement) : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td>${well.footprint ? escapeHtml(well.footprint) : '<span class="missing-field-cell">Missing</span>'}</td>
+                        <td><span class="status-badge status-${well.status.toLowerCase()}">${well.status}</span></td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openEditWellModal('${well.id}', '${escapeHtml(well.name)}')" title="Edit Well">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tableHtml += `
+                <tr>
+                    <td colspan="17" class="text-center text-muted py-4">No wells in this basket</td>
+                </tr>
+            `;
+        }
+        
+        tableHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        basketTable.innerHTML = tableHtml;
+        
+        // Scroll to the section
+        processSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Close Process Basket
+    window.closeProcessBasket = function() {
+        document.getElementById('process-basket-section').classList.add('hidden-section');
+        suggestedValues = {};
+        currentBasketWells = [];
+    };
+    
+    // ============================================================
+    // INTELLIGENT FETCH FUNCTIONALITY
+    // ============================================================
+    
+    // Load benchmarks from API
+    async function loadBenchmarks() {
+        try {
+            const response = await fetch('/api/benchmarks/');
+            const data = await response.json();
+            benchmarks = data.data || [];
+            console.log('Benchmarks loaded:', benchmarks.length);
+        } catch (error) {
+            console.error('Error loading benchmarks:', error);
+            benchmarks = [];
+        }
+    }
+    
+    // Load rigs from API
+    async function loadRigsData() {
+        try {
+            const response = await fetch('/api/rigs/');
+            const data = await response.json();
+            if (Array.isArray(data)) {
+                rigsData = data;
+            } else if (data && Array.isArray(data.results)) {
+                rigsData = data.results;
+            } else {
+                rigsData = [];
+            }
+            console.log('Rigs loaded:', rigsData.length);
+            buildRigCapacityCache();
+        } catch (error) {
+            console.error('Error loading rigs:', error);
+            rigsData = [];
+        }
+    }
+    
+    // Build rig capacity cache
+    function buildRigCapacityCache() {
+        // Build a cache table of location -> [{drilling_capacity_m, rig_capacity_hp, bop_stack}]
+        // This creates a lookup table grouped by location with sorted drilling capacities
+        rigCapacityCache = {};
+        
+        if (!Array.isArray(rigsData)) {
+            console.error('rigsData is not an array:', rigsData);
+            return;
+        }
+        
+        rigsData.forEach(rig => {
+            // Use asset_id to match well's location_value (asset_id is the location identifier in rigs)
+            const location = rig.asset_id || '';
+            if (!location) return;
+            
+            if (!rigCapacityCache[location]) {
+                rigCapacityCache[location] = [];
+            }
+            
+            // Check if this combination already exists
+            const exists = rigCapacityCache[location].some(entry => 
+                entry.drilling_capacity_m === rig.drilling_capacity_m &&
+                entry.rig_capacity_hp === rig.rig_capacity_hp &&
+                entry.bop_stack === rig.bop_stack
+            );
+            
+            if (!exists) {
+                rigCapacityCache[location].push({
+                    drilling_capacity_m: rig.drilling_capacity_m,
+                    rig_capacity_hp: rig.rig_capacity_hp,
+                    bop_stack: rig.bop_stack
+                });
+            }
+        });
+        
+        // Sort each location's entries by drilling_capacity_m ascending
+        for (const location in rigCapacityCache) {
+            rigCapacityCache[location].sort((a, b) => a.drilling_capacity_m - b.drilling_capacity_m);
+        }
+        
+        console.log('Rig capacity cache built:', Object.keys(rigCapacityCache));
+    }
+    
+    // Find matching rig capacity for a well
+    function findMatchingRigCapacity(wellLocation, wellDepth) {
+        // Find the minimum drilling capacity that can handle the well depth
+        // Returns {rig_capacity_hp, bop_stack} or null if no match
+        
+        console.log('==== Rig Capacity Matching ====');
+        console.log('Well Location:', wellLocation);
+        console.log('Well Depth:', wellDepth);
+        console.log('Available locations in cache:', Object.keys(rigCapacityCache));
+        
+        // Try exact match first, then case-insensitive match
+        let locationEntries = rigCapacityCache[wellLocation];
+        
+        if (!locationEntries || locationEntries.length === 0) {
+            // Try case-insensitive match
+            const wellLocationLower = (wellLocation || '').toLowerCase();
+            for (const cacheLocation of Object.keys(rigCapacityCache)) {
+                if (cacheLocation.toLowerCase() === wellLocationLower) {
+                    locationEntries = rigCapacityCache[cacheLocation];
+                    console.log('Found case-insensitive match:', cacheLocation);
+                    break;
+                }
+            }
+        }
+        
+        if (!locationEntries || locationEntries.length === 0) {
+            console.log('No rigs found for location:', wellLocation);
+            return null;
+        }
+        
+        console.log('Available rigs for location:', locationEntries);
+        
+        // Find the first (minimum) drilling capacity >= well depth
+        for (const entry of locationEntries) {
+            if (entry.drilling_capacity_m >= wellDepth) {
+                console.log(`✓ MATCH! Drilling Capacity: ${entry.drilling_capacity_m}m >= ${wellDepth}m`);
+                console.log(`  -> Rig Capacity: ${entry.rig_capacity_hp} HP, BOP Stack: ${entry.bop_stack}`);
+                return {
+                    rig_capacity_hp: entry.rig_capacity_hp,
+                    bop_stack: entry.bop_stack,
+                    drilling_capacity_m: entry.drilling_capacity_m
+                };
+            }
+        }
+        
+        console.log('No matching drilling capacity found for depth:', wellDepth);
+        return null;
+    }
+    
+    // Find matching well profile from benchmarks
+    function findMatchingWellProfile(wellName, wellLocation) {
+        const wellPrefix = (wellName || '').substring(0, 2).toUpperCase();
+        const wellCategoryMap = {
+            'Directional': 'DI',
+            'Vertical': 'VE',
+            'Sidetrack': 'SD'
+        };
+        
+        const matchedProfiles = [];
+        if (benchmarks && benchmarks.length > 0) {
+            benchmarks.forEach(benchmark => {
+                const poolPrefix = (benchmark.pool || '').substring(0, 2).toUpperCase();
+                const benchmarkLocation = benchmark.location || '';
+                
+                if (benchmarkLocation === wellLocation && poolPrefix === wellPrefix && benchmark.well_category) {
+                    const profileCode = wellCategoryMap[benchmark.well_category];
+                    if (profileCode && !matchedProfiles.includes(profileCode)) {
+                        matchedProfiles.push(profileCode);
+                    }
+                }
+            });
+        }
+        
+        // Return first match or 'DI' as default
+        return matchedProfiles.length > 0 ? matchedProfiles[0] : null;
+    }
+    
+    // Intelligent Fetch function
+    window.intelligentFetch = async function(basketId) {
+        const fetchBtn = document.getElementById('intelligent-fetch-btn');
+        fetchBtn.disabled = true;
+        fetchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fetching...';
+        
+        try {
+            // Load benchmarks and rigs data
+            await Promise.all([loadBenchmarks(), loadRigsData()]);
+            
+            // Get basket details
+            const response = await fetch(`/api/baskets/${basketId}/`);
+            const data = await response.json();
+            
+            if (!data.success || !data.basket || !data.basket.wells) {
+                showToast('Error loading basket data', 'error');
+                return;
+            }
+            
+            const wells = data.basket.wells;
+            currentBasketWells = wells;
+            suggestedValues = {};
+            
+            let processedCount = 0;
+            let suggestedCount = 0;
+            
+            // Process each well
+            for (const well of wells) {
+                const wellLocation = well.location_value || data.basket.location;
+                const suggestions = {};
+                let hasSuggestions = false;
+                
+                // 1. Well Profile - if missing
+                if (!well.well_profile) {
+                    const profile = findMatchingWellProfile(well.name, wellLocation);
+                    if (profile) {
+                        suggestions.well_profile = profile;
+                        hasSuggestions = true;
+                    }
+                }
+                
+                // 2. Rig Capacity and BOP Stack - if missing
+                if ((!well.rig_capacity_required_hp || !well.bop_stack) && well.depth) {
+                    const rigMatch = findMatchingRigCapacity(wellLocation, well.depth);
+                    if (rigMatch) {
+                        if (!well.rig_capacity_required_hp) {
+                            suggestions.rig_capacity_required_hp = rigMatch.rig_capacity_hp;
+                            hasSuggestions = true;
+                        }
+                        if (!well.bop_stack) {
+                            suggestions.bop_stack = rigMatch.bop_stack;
+                            hasSuggestions = true;
+                        }
+                    }
+                }
+                
+                // 3. TDS Requirement - default to 'N' if missing
+                if (!well.tds_requirement) {
+                    suggestions.tds_requirement = 'N';
+                    hasSuggestions = true;
+                }
+                
+                // 4. Footprint - default to 'Fixed' if missing
+                if (!well.footprint) {
+                    suggestions.footprint = 'Fixed';
+                    hasSuggestions = true;
+                }
+                
+                // 5. DRL Days and PT Days - if missing and field_name exists
+                if ((!well.drl_days || !well.pt_days) && well.field_name) {
+                    try {
+                        const calcResponse = await fetch('/api/calculate-well-parameters/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCsrfToken()
+                            },
+                            body: JSON.stringify({
+                                field_name: well.field_name,
+                                well_profile: suggestions.well_profile || well.well_profile || 'DI',
+                                depth: well.depth,
+                                location: well.location,
+                                location_value: wellLocation,
+                                well_type: well.well_type
+                            })
+                        });
+                        
+                        const calcData = await calcResponse.json();
+                        
+                        if (calcData.success) {
+                            if (calcData.drl_days !== null && !well.drl_days) {
+                                suggestions.drl_days = calcData.drl_days;
+                                hasSuggestions = true;
+                            }
+                            if (calcData.pt_days !== null && !well.pt_days) {
+                                suggestions.pt_days = parseFloat(calcData.pt_days).toFixed(2);
+                                hasSuggestions = true;
+                            }
+                            if (calcData.duration !== null && !well.duration) {
+                                suggestions.duration = calcData.duration;
+                                hasSuggestions = true;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error calculating days for well:', well.name, error);
+                    }
+                }
+                
+                if (hasSuggestions) {
+                    suggestedValues[well.id] = suggestions;
+                    suggestedCount++;
+                }
+                processedCount++;
+            }
+            
+            // Re-render the table with suggested values highlighted
+            displayBasketWithSuggestions(data.basket);
+            
+            showToast(`Processed ${processedCount} wells. ${suggestedCount} have suggested values.`, 'success');
+            
+        } catch (error) {
+            console.error('Intelligent fetch error:', error);
+            showToast('Error during intelligent fetch', 'error');
+        } finally {
+            fetchBtn.disabled = false;
+            fetchBtn.innerHTML = '<i class="bi bi-magic me-2"></i>Intelligent Fetch';
+        }
+    };
+    
+    // Display basket with suggested values highlighted
+    function displayBasketWithSuggestions(basket) {
+        const basketTable = document.getElementById('process-basket-table');
+        
+        // Check if there are any suggestions
+        const hasSuggestions = Object.keys(suggestedValues).length > 0;
+        
+        let tableHtml = `
+            <div class="section-card">
+                <div class="section-body p-0">
+                    ${hasSuggestions ? `
+                        <div class="alert alert-info m-3 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-info-circle me-2"></i>Suggested values are highlighted in <span class="badge bg-warning text-dark">yellow</span>. Click "Apply All Suggestions" to save them.</span>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" onclick="applyAllSuggestions('${basket.id}')">
+                                    <i class="bi bi-check-all me-2"></i>Apply All Suggestions
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="clearSuggestions('${basket.id}')">
+                                    <i class="bi bi-x-lg me-2"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div class="table-responsive">
+                        <table class="table table-hover dataTable mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-hash me-1"></i>Well Name</th>
+                                    <th><i class="bi bi-tag me-1"></i>Asset ID</th>
+                                    <th><i class="bi bi-map me-1"></i>Field</th>
+                                    <th><i class="bi bi-type me-1"></i>Type</th>
+                                    <th><i class="bi bi-rulers me-1"></i>Depth (m)</th>
+                                    <th><i class="bi bi-diagram-3 me-1"></i>Well Profile</th>
+                                    <th><i class="bi bi-speedometer me-1"></i>Rig Capacity (HP)</th>
+                                    <th><i class="bi bi-calendar-check me-1"></i>DRL Days</th>
+                                    <th><i class="bi bi-calendar-check me-1"></i>PT Days</th>
+                                    <th><i class="bi bi-clock me-1"></i>Duration</th>
+                                    <th><i class="bi bi-gear me-1"></i>BOP Stack</th>
+                                    <th><i class="bi bi-gear me-1"></i>TDS</th>
+                                    <th><i class="bi bi-box me-1"></i>Footprint</th>
+                                    <th><i class="bi bi-calendar-event me-1"></i>RTD Date</th>
+                                    <th><i class="bi bi-info-circle me-1"></i>Status</th>
+                                    <th><i class="bi bi-gear me-1"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+        
+        if (basket.wells && basket.wells.length > 0) {
+            basket.wells.forEach(well => {
+                const sugg = suggestedValues[well.id] || {};
+                
+                tableHtml += `
+                    <tr data-well-id="${well.id}">
+                        <td><strong>${escapeHtml(well.name)}</strong></td>
+                        <td>${well.asset_id ? escapeHtml(well.asset_id) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.field_name ? escapeHtml(well.field_name) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.well_type ? escapeHtml(well.well_type) : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${well.depth ? well.depth : '<span class="missing-field-cell">-</span>'}</td>
+                        <td>${renderCellValue(well.well_profile, sugg.well_profile, 'well_profile')}</td>
+                        <td>${renderCellValue(well.rig_capacity_required_hp, sugg.rig_capacity_required_hp, 'rig_capacity')}</td>
+                        <td>${renderCellValue(well.drl_days, sugg.drl_days, 'drl_days')}</td>
+                        <td>${renderCellValue(well.pt_days, sugg.pt_days, 'pt_days')}</td>
+                        <td>${renderCellValue(well.duration, sugg.duration, 'duration')}</td>
+                        <td>${renderCellValue(well.bop_stack, sugg.bop_stack, 'bop_stack')}</td>
+                        <td>${renderCellValue(well.tds_requirement, sugg.tds_requirement, 'tds')}</td>
+                        <td>${renderCellValue(well.footprint, sugg.footprint, 'footprint')}</td>
+                        <td>${well.rtd ? well.rtd : '<span class="missing-field-cell text-danger" title="RTD Date is required for import"><i class="bi bi-exclamation-triangle"></i> Missing</span>'}</td>
+                        <td>
+                            <span class="status-badge status-${well.status.toLowerCase()}">${well.status}</span>
+                            ${well.missing_fields && well.missing_fields.length > 0 && well.status !== 'IMPORTED' ? `<br><small class="text-danger" title="${well.missing_fields.join(', ')}"><i class="bi bi-exclamation-circle"></i> ${well.missing_fields.length} missing</small>` : ''}
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openEditWellModal('${well.id}', '${escapeHtml(well.name)}')" title="Edit Well">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tableHtml += `
+                <tr>
+                    <td colspan="16" class="text-center text-muted py-4">No wells in this basket</td>
+                </tr>
+            `;
+        }
+        
+        tableHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        basketTable.innerHTML = tableHtml;
+    }
+    
+    // Render cell value with suggestion highlight
+    function renderCellValue(currentValue, suggestedValue, fieldType) {
+        if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+            return escapeHtml(String(currentValue));
+        }
+        
+        if (suggestedValue !== null && suggestedValue !== undefined) {
+            return `<span class="badge bg-warning text-dark" title="Suggested value">${escapeHtml(String(suggestedValue))}</span>`;
+        }
+        
+        return '<span class="missing-field-cell">Missing</span>';
+    }
+    
+    // Apply all suggestions (bulk)
+    window.applyAllSuggestions = async function(basketId) {
+        if (Object.keys(suggestedValues).length === 0) {
+            showToast('No suggestions to apply', 'warning');
+            return;
+        }
+        
+        const wellCount = Object.keys(suggestedValues).length;
+        if (!confirm(`Apply suggested values to ${wellCount} wells?`)) {
+            return;
+        }
+        
+        // Build bulk updates array
+        const updates = Object.entries(suggestedValues).map(([wellId, fields]) => ({
+            id: wellId,
+            fields: fields
+        }));
+        
+        try {
+            const response = await fetch('/api/staged-wells/bulk-update/', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ updates })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                suggestedValues = {};
+                showToast(`Applied suggestions to ${data.updated_count} wells.${data.error_count > 0 ? ` ${data.error_count} errors.` : ''}`, data.updated_count > 0 ? 'success' : 'error');
+                loadBasketForProcessing(basketId);
+                loadBaskets();
+            } else {
+                showToast(data.error || 'Failed to apply suggestions', 'error');
+            }
+        } catch (error) {
+            console.error('Error applying suggestions:', error);
+            showToast('Error applying suggestions. Please try again.', 'error');
+        }
+    };
+    
+    // Clear suggestions
+    window.clearSuggestions = function(basketId) {
+        suggestedValues = {};
+        loadBasketForProcessing(basketId);
+    };
+    
+    // Remove Well from Basket
+    window.removeWellFromBasket = async function(basketId, wellId) {
+        if (!confirm('Remove this well from the basket?')) return;
+        
+        try {
+            const response = await fetch(`/api/baskets/${basketId}/wells/${wellId}/remove/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Well removed from basket', 'success');
+                // Refresh the modal
+                viewBasket(basketId);
+                // Refresh baskets list
+                loadBaskets();
+            } else {
+                showToast(data.error || 'Failed to remove well', 'error');
+            }
+        } catch (error) {
+            console.error('Remove well error:', error);
+            showToast('Error removing well', 'error');
+        }
+    };
+    
+    // Finalize Basket Wells
+    window.finalizeBasketWells = async function(basketId, basketName) {
+        if (!confirm(`Are you sure you want to finalize all completed wells in "${basketName}"?\n\nThis will move them from the staging area to the main wells database.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/baskets/${basketId}/finalize/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                let message = `Successfully imported ${data.imported_count} wells to main database.`;
+                if (data.skipped_count > 0) {
+                    message += `\nSkipped: ${data.skipped_count} wells.`;
+                }
+                if (data.rtd_missing_count > 0) {
+                    message += `\n\n⚠ ${data.rtd_missing_count} wells skipped due to missing RTD Date:`;
+                    message += `\n${data.rtd_missing_wells.slice(0, 10).join(', ')}`;
+                    if (data.rtd_missing_count > 10) {
+                        message += `\n... and ${data.rtd_missing_count - 10} more`;
+                    }
+                    message += `\n\nPlease set RTD dates for these wells before finalizing.`;
+                }
+                if (data.errors && data.errors.length > 0) {
+                    const nonRtdErrors = data.errors.filter(e => !e.includes('Missing RTD'));
+                    if (nonRtdErrors.length > 0) {
+                        message += `\n\nOther Errors:\n${nonRtdErrors.slice(0, 5).join('\n')}`;
+                        if (nonRtdErrors.length > 5) {
+                            message += `\n... and ${nonRtdErrors.length - 5} more errors (check console)`;
+                            console.error('All errors:', data.errors);
+                        }
+                    }
+                }
+                alert(message);
+                
+                // Reload baskets list
+                await loadBaskets();
+                
+                // If this basket is currently loaded for processing, reload it
+                if (currentBasketId === basketId) {
+                    await loadBasketForProcessing(basketId);
+                }
+            } else {
+                alert('Error: ' + (data.error || 'Failed to finalize basket wells'));
+            }
+        } catch (error) {
+            // Ignore errors caused by user navigating away (back button, link click, etc.)
+            if (error.name === 'AbortError' || error.name === 'TypeError') {
+                console.log('Finalize request interrupted (user navigated away)');
+                return;
+            }
+            console.error('Error finalizing basket wells:', error);
+            alert('Error finalizing basket wells. Please try again.');
+        }
+    };
+    
+    // Confirm Delete Basket
+    window.confirmDeleteBasket = function(basketId, basketName) {
+        if (confirm(`Are you sure you want to delete basket "${basketName}"?\n\nAll wells will be released from the basket.`)) {
+            deleteBasket(basketId);
+        }
+    };
+    
+    // Delete Basket
+    async function deleteBasket(basketId) {
+        try {
+            const response = await fetch(`/api/baskets/${basketId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message || 'Basket deleted', 'success');
+                
+                // Close process section if this basket is loaded
+                if (currentBasketId === basketId) {
+                    closeProcessBasket();
+                }
+                
+                // Refresh baskets list
+                loadBaskets();
+            } else {
+                showToast(data.error || 'Failed to delete basket', 'error');
+            }
+        } catch (error) {
+            console.error('Delete basket error:', error);
+            showToast('Error deleting basket', 'error');
+        }
+    }
+    
+    // Reset Results
+    function resetResults() {
+        foundWells = [];
+        wellsInOtherBasket = [];
+        wellsAlreadyImported = [];
+        allSearchResults = null;
+        foundWellsList.innerHTML = '';
+        inBasketList.innerHTML = '';
+        notFoundList.innerHTML = '';
+        const alreadyImportedList = document.getElementById('already-imported-list');
+        if (alreadyImportedList) alreadyImportedList.innerHTML = '';
+        document.getElementById('found-count').textContent = '0';
+        document.getElementById('in-basket-count').textContent = '0';
+        document.getElementById('not-found-count').textContent = '0';
+        document.getElementById('found-wells-badge').textContent = '0';
+        document.getElementById('in-basket-badge').textContent = '0';
+        document.getElementById('not-found-badge').textContent = '0';
+        const alreadyImportedBadge = document.getElementById('already-imported-badge');
+        if (alreadyImportedBadge) alreadyImportedBadge.textContent = '0';
+        updateCreateButtonText();
+        document.getElementById('in-basket-card').classList.add('hidden-section');
+        document.getElementById('not-found-card').classList.add('hidden-section');
+        const alreadyImportedCard = document.getElementById('already-imported-card');
+        if (alreadyImportedCard) alreadyImportedCard.classList.add('hidden-section');
+        updateCreateButtonState();
+    }
+    
+    // Helper Functions
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='))?.split('=')[1] || '';
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function showToast(message, type = 'info') {
+        // Use existing toast system if available, otherwise alert
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6',
+            }).showToast();
+        } else {
+            alert(message);
+        }
+    }
+    
+    // Edit Well Modal Functions
+    window.openEditWellModal = async function(wellId, wellName) {
+        try {
+            // Fetch well data
+            const response = await fetch(`/api/staged-wells/${wellId}/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.staged_well) {
+                const well = data.staged_well;
+                
+                // Populate form
+                document.getElementById('edit-well-id').value = wellId;
+                document.getElementById('editWellModalLabel').textContent = `Edit Well: ${wellName}`;
+                document.getElementById('edit-field-name').value = well.field_name || '';
+                document.getElementById('edit-well-profile').value = well.well_profile || '';
+                document.getElementById('edit-latitude').value = well.latitude || '';
+                document.getElementById('edit-longitude').value = well.longitude || '';
+                document.getElementById('edit-rig-capacity').value = well.rig_capacity_required_hp || '';
+                document.getElementById('edit-drl-days').value = well.drl_days || '';
+                document.getElementById('edit-pt-days').value = well.pt_days || '';
+                document.getElementById('edit-duration').value = well.duration || '';
+                document.getElementById('edit-bop-stack').value = well.bop_stack || '';
+                document.getElementById('edit-tds-requirement').value = well.tds_requirement || 'Y';
+                document.getElementById('edit-footprint').value = well.footprint || '';
+                document.getElementById('edit-preferred-rig').value = well.preferred_rig || '';
+                document.getElementById('edit-expected-potential').value = well.expected_potential || '';
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('editWellModal'));
+                modal.show();
+            } else {
+                showToast('Failed to load well data', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading well:', error);
+            showToast('Error loading well data', 'error');
+        }
+    };
+    
+    window.saveWellEdit = async function() {
+        const wellId = document.getElementById('edit-well-id').value;
+        
+        const updateData = {
+            field_name: document.getElementById('edit-field-name').value.trim(),
+            well_profile: document.getElementById('edit-well-profile').value,
+            latitude: document.getElementById('edit-latitude').value ? parseFloat(document.getElementById('edit-latitude').value) : null,
+            longitude: document.getElementById('edit-longitude').value ? parseFloat(document.getElementById('edit-longitude').value) : null,
+            rig_capacity_required_hp: document.getElementById('edit-rig-capacity').value ? parseInt(document.getElementById('edit-rig-capacity').value) : null,
+            drl_days: document.getElementById('edit-drl-days').value ? parseInt(document.getElementById('edit-drl-days').value) : null,
+            pt_days: document.getElementById('edit-pt-days').value ? parseInt(document.getElementById('edit-pt-days').value) : null,
+            duration: document.getElementById('edit-duration').value ? parseInt(document.getElementById('edit-duration').value) : null,
+            bop_stack: document.getElementById('edit-bop-stack').value ? parseInt(document.getElementById('edit-bop-stack').value) : null,
+            tds_requirement: document.getElementById('edit-tds-requirement').value,
+            footprint: document.getElementById('edit-footprint').value,
+            preferred_rig: document.getElementById('edit-preferred-rig').value.trim(),
+            expected_potential: document.getElementById('edit-expected-potential').value.trim()
+        };
+        
+        try {
+            const response = await fetch(`/api/staged-wells/${wellId}/update/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success || response.ok) {
+                showToast('Well updated successfully', 'success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editWellModal'));
+                modal.hide();
+                
+                // Reload basket to show updated values
+                if (currentBasketId) {
+                    loadBasketForProcessing(currentBasketId);
+                }
+                loadBaskets();
+            } else {
+                showToast(data.error || 'Failed to update well', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating well:', error);
+            showToast('Error updating well', 'error');
+        }
+    };
+});
+</script>
+{% endblock %}

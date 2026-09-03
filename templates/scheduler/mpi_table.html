@@ -1,0 +1,468 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Master Personnel Information - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/css/dataTables.bootstrap5.min.css' %}">
+<style>
+    body {
+        background: #f8f9fa;
+    }
+    
+    .mpi-table-page {
+        color: #212529;
+    }
+    
+    /* Page header styling is centralized in style.css */
+    
+    .table-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .table {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+    
+    .table-sm th,
+    .table-sm td {
+        padding: 0.4rem;
+    }
+    
+    .table th {
+        background-color: #f1f5f9;
+        color: #334155;
+        font-weight: 600;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        border: 1px solid #e5e7eb;
+        white-space: nowrap;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+    
+    /* Search box styling */
+    .input-group-text {
+        background: white;
+        border-right: none;
+    }
+    
+    .form-control {
+        border-left: none;
+    }
+    
+    .form-control:focus {
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25);
+    }
+    
+    .form-control:focus + .input-group-text {
+        border-color: #0ea5e9;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-spinner {
+        width: 3rem;
+        height: 3rem;
+        border: 0.3rem solid #e2e8f0;
+        border-top-color: #0ea5e9;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="container-fluid py-3">
+    <div class="mpi-table-page">
+        <!-- Main Header -->
+        <div class="row align-items-center mb-2">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi bi-people-fill" style="font-size: 2rem; margin-right: 0.75rem; color: #10b981;"></i>
+                    <h1 class="page-title mb-0">Master Personnel Information</h1>
+                </div>
+                <p class="page-subtitle">
+                    Complete personnel database - View and manage all employee records
+                </p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-3 justify-content-end">
+                    <button onclick="window.history.back()" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Separator Line -->
+        <hr class="page-separator">
+
+    <div class="table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-table me-2"></i>All Personnel Records
+            </h5>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Search in Header -->
+                <div class="input-group" style="width: 350px;">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" id="mpiTableSearch" class="form-control border-start-0" placeholder="Search personnel...">
+                </div>
+                <span class="badge bg-info" id="totalRecords">0 Records</span>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="table-responsive">
+            <table id="mpiTable" class="table table-hover table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>CPF NO</th>
+                        <th>CRC</th>
+                        <th>Duty Type</th>
+                        <th>Work Pattern</th>
+                        <th>PwD</th>
+                        <th>Q New</th>
+                        <th>ORG.UNIT</th>
+                        <th>GROUP 1</th>
+                        <th>GROUP 2</th>
+                        <th>ORG NEW</th>
+                        <th>ORG.UNIT TEXT</th>
+                        <th>POSITION TEXT</th>
+                        <th>LOCATION</th>
+                        <th>SECTOR</th>
+                        <th>NAME</th>
+                        <th>DESIGNATION</th>
+                        <th>LVL</th>
+                        <th>DISP</th>
+                        <th>SUBDISP</th>
+                        <th>GENDER KEY</th>
+                        <th>DOB</th>
+                        <th>DOR</th>
+                        <th>DOJ ONGC</th>
+                        <th>PERSONAL AREA</th>
+                        <th>STATE DEPLOYED</th>
+                        <th>QUAL_TEXT</th>
+                        <th>HOME STATE</th>
+                        <th>DL-DESIGNATION TEXT</th>
+                        <th>DL-DISCIPLINE TEXT</th>
+                        <th>DL-SUB DISP TEXT</th>
+                        <th>DATE OF JOIN POST</th>
+                        <th>EFF DATE PROM</th>
+                        <th>DATE OF JOIN PER AREA</th>
+                        <th>DATE OF JOIN POSITION</th>
+                        <th>DATE OF RETIREMENT</th>
+                        <th>Type-I</th>
+                        <th>Mobile No</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        
+        <!-- Bottom Controls -->
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <div class="d-flex align-items-center gap-2">
+                <label class="mb-0 text-muted">Show</label>
+                <select id="mpiPageLength" class="form-select form-select-sm" style="width: 70px;">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <label class="mb-0 text-muted">records per page</label>
+            </div>
+            <div id="mpiTableInfo" class="text-muted"></div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (required for DataTables) -->
+<script src="{% static 'vendor/jquery-3.7.1.min.js' %}"></script>
+<!-- DataTables JS (after jQuery) -->
+<script src="{% static 'vendor/datatables/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<script>
+    let mpiTable = null;
+    let currentPage = 1;
+    let totalRecords = 0;
+    let searchTimeout = null;
+    let currentSearch = '';
+    
+    // Load MPI data with pagination and search
+    async function loadMPIData(page = 1, search = '') {
+        try {
+            const pageSize = parseInt($('#mpiPageLength').val()) || 100;
+            
+            let url = `/api/mpi/all/?page=${page}&page_size=${pageSize}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            const response = await fetch(url, {
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            currentPage = result.page;
+            totalRecords = result.total;
+            currentSearch = search;
+            
+            initializeTable(result.data);
+            $('#totalRecords').text(`${result.total} Records`);
+            updatePaginationInfo(result);
+            $('#loadingOverlay').fadeOut();
+        } catch (error) {
+            console.error('Error loading MPI data:', error);
+            alert('Failed to load MPI data');
+            $('#loadingOverlay').fadeOut();
+        }
+    }
+    
+    // Update pagination information
+    function updatePaginationInfo(result) {
+        const start = (result.page - 1) * result.page_size + 1;
+        const end = Math.min(result.page * result.page_size, result.total);
+        $('#mpiTableInfo').html(`Showing ${start} to ${end} of ${result.total} records`);
+    }
+    
+    // Initialize DataTable
+    function initializeTable(data) {
+        if ($.fn.DataTable.isDataTable('#mpiTable')) {
+            $('#mpiTable').DataTable().destroy();
+        }
+        
+        mpiTable = $('#mpiTable').DataTable({
+            data: data,
+            dom: 'rt', // Only show table (custom controls)
+            searching: false, // Disable client-side search (using server-side)
+            lengthChange: false,
+            info: false,
+            paging: false, // Disable client-side paging (using server-side)
+            pageLength: 100,
+            columns: [
+                { data: 'cpf_no', defaultContent: '-' },
+                { data: 'crc', defaultContent: '-' },
+                { data: 'duty_type', defaultContent: '-' },
+                { data: 'work_pattern', defaultContent: '-' },
+                { data: 'pwd', defaultContent: '-' },
+                { data: 'q_new', defaultContent: '-' },
+                { data: 'org_unit', defaultContent: '-' },
+                { data: 'group_1', defaultContent: '-' },
+                { data: 'group_2', defaultContent: '-' },
+                { data: 'org_new', defaultContent: '-' },
+                { data: 'org_unit_text', defaultContent: '-' },
+                { data: 'position_text', defaultContent: '-' },
+                { data: 'location', defaultContent: '-' },
+                { data: 'sector', defaultContent: '-' },
+                { data: 'name', defaultContent: '-' },
+                { data: 'designation', defaultContent: '-' },
+                { data: 'lvl', defaultContent: '-' },
+                { data: 'disp', defaultContent: '-' },
+                { data: 'subdisp', defaultContent: '-' },
+                { data: 'gender_key', defaultContent: '-' },
+                { 
+                    data: 'dob',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'dor',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'doj_ongc',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { data: 'personal_area', defaultContent: '-' },
+                { data: 'state_deployed', defaultContent: '-' },
+                { data: 'qual_text', defaultContent: '-' },
+                { data: 'home_state', defaultContent: '-' },
+                { data: 'dl_designation_text', defaultContent: '-' },
+                { data: 'dl_discipline_text', defaultContent: '-' },
+                { data: 'dl_sub_disp_text', defaultContent: '-' },
+                { 
+                    data: 'date_of_join_post',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'eff_date_prom',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'date_of_join_per_area',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'date_of_join_position',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { 
+                    data: 'date_of_retirement',
+                    defaultContent: '-',
+                    render: function(data) {
+                        if (!data) return '-';
+                        try {
+                            return new Date(data).toLocaleDateString('en-GB');
+                        } catch {
+                            return '-';
+                        }
+                    }
+                },
+                { data: 'type_i', defaultContent: '-' },
+                { data: 'mobile_no', defaultContent: '-' }
+            ],
+            order: [[14, 'asc']], // Sort by name (column 14)
+            responsive: true,
+            language: {
+                emptyTable: "No personnel records available"
+            },
+            drawCallback: function(settings) {
+                updateTableInfo();
+            }
+        });
+        
+        // Server-side search handler with debounce
+        $('#mpiTableSearch').off('keyup').on('keyup', function() {
+            const searchValue = this.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Set new timeout for search (500ms debounce)
+            searchTimeout = setTimeout(function() {
+                $('#loadingOverlay').fadeIn();
+                loadMPIData(1, searchValue);
+            }, 500);
+        });
+        
+        // Custom page length handler
+        $('#mpiPageLength').on('change', function() {
+            $('#loadingOverlay').fadeIn();
+            loadMPIData(1, currentSearch); // Reload from first page with new page size
+        });
+    }
+    
+    // Update table info
+    function updateTableInfo() {
+        if (currentSearch) {
+            $('#mpiTableInfo').html(
+                `Showing ${totalRecords > 0 ? '1' : '0'} to ${totalRecords} of ${totalRecords} records (filtered from database)`
+            );
+        } else {
+            $('#mpiTableInfo').html(
+                `Showing ${totalRecords > 0 ? '1' : '0'} to ${Math.min(parseInt($('#mpiPageLength').val()), totalRecords)} of ${totalRecords} records`
+            );
+        }
+    }
+    
+    // Load data on page load
+    $(document).ready(function() {
+        loadMPIData();
+    });
+</script>
+{% endblock %}

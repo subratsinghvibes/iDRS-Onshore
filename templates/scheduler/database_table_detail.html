@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load currency_filters %}
+
+{% block title %}{{ verbose_name_plural }} - Database Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+
+    .back-button {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-button:hover {
+        background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-input {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .btn-search {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-search:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-clear {
+        background: #f3f4f6;
+        border: none;
+        color: #6b7280;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-clear:hover {
+        background: #e5e7eb;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .stat-item {
+        flex: 1;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #3b82f6;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        margin: 0;
+    }
+
+    .data-table thead {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .data-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .data-table tbody tr {
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s ease;
+    }
+
+    .data-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .data-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .null-value {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .pagination-container {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .pagination {
+        margin: 0;
+    }
+
+    .pagination .page-link {
+        border: 1px solid #e5e7eb;
+        color: #3b82f6;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        margin: 0 0.25rem;
+        font-weight: 600;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: #3b82f6;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f3f4f6;
+        color: #9ca3af;
+        border-color: #e5e7eb;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #9ca3af;
+    }
+
+    .no-results i {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .field-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: #e0e7ff;
+        color: #4f46e5;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Main Heading - Dashboard Style -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="d-flex align-items-start justify-content-between">
+                <div>
+                    <h1 class="dashboard-main-heading">
+                        <i class="bi bi-table me-3"></i>
+                        {{ verbose_name_plural }}
+                    </h1>
+                    <p class="dashboard-subtitle">
+                        {{ app_label }}.{{ model_name }}
+                    </p>
+                </div>
+                <a href="{% url 'database_viewer' %}" class="back-button">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Back to Overview
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <form method="get" action="" class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control search-input border-start-0" 
+                           placeholder="Search in all text fields..." 
+                           value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-search flex-grow-1">
+                        <i class="bi bi-search me-2"></i>
+                        Search
+                    </button>
+                    {% if search_query %}
+                    <a href="?page=1" class="btn btn-clear">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-card">
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-value">{{ total_count }}</span>
+                <span class="stat-label">Total Records</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ fields|length }}</span>
+                <span class="stat-label">Fields</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ page_obj.paginator.num_pages }}</span>
+                <span class="stat-label">Pages</span>
+            </div>
+            {% if search_query %}
+            <div class="stat-item">
+                <span class="stat-value">{{ page_obj.paginator.count }}</span>
+                <span class="stat-label">Search Results</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+        {% if records %}
+        <div style="overflow-x: auto;">
+            <table class="data-table table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        {% for field in fields %}
+                        <th>
+                            {{ field.verbose_name }}
+                            <span class="field-type-badge">{{ field.type }}</span>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td><strong>{{ forloop.counter|add:page_obj.start_index|add:"-1" }}</strong></td>
+                        {% for field in fields %}
+                        <td>
+                            {% with value=record|get_item:field.name %}
+                                {% if value %}
+                                    {{ value|truncatechars:100 }}
+                                {% else %}
+                                    <span class="null-value">null</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-container">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="no-results">
+            <i class="bi bi-inbox"></i>
+            <h4>No Records Found</h4>
+            {% if search_query %}
+            <p>No results match your search query: <strong>"{{ search_query }}"</strong></p>
+            <a href="?" class="btn btn-primary mt-3">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>
+                View All Records
+            </a>
+            {% else %}
+            <p>This table is currently empty.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Custom template filter for dictionary access in template
+// This is handled by Django template tags but adding for clarity
+</script>
+{% endblock %}

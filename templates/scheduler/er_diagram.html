@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+    
+    .model-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .model-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px 8px 0 0;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .model-body {
+        padding: 20px;
+    }
+
+    .field-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin: 4px 0;
+        border-radius: 4px;
+        background: #f8f9fa;
+        border-left: 4px solid #dee2e6;
+    }
+
+    .field-item.primary-key {
+        border-left-color: #ffc107;
+        background: #fff3cd;
+    }
+
+    .field-item.foreign-key {
+        border-left-color: #28a745;
+        background: #d4edda;
+    }
+
+    .field-item.unique {
+        border-left-color: #17a2b8;
+        background: #d1ecf1;
+    }
+
+    .field-name {
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .field-type {
+        font-size: 0.875em;
+        color: #6c757d;
+        background: #e9ecef;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    .field-attrs {
+        display: flex;
+        gap: 4px;
+    }
+
+    .field-attr {
+        font-size: 0.75em;
+        padding: 1px 6px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+    }
+
+    .attr-pk { background: #ffc107; }
+    .attr-fk { background: #28a745; }
+    .attr-unique { background: #17a2b8; }
+    .attr-null { background: #6c757d; }
+
+    .stats-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .stats-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .stats-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+
+    .relationship-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 500;
+        margin: 2px;
+        display: inline-block;
+    }
+
+    .er-diagram-container {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        min-height: 400px;
+        position: relative;
+    }
+
+    .table-node {
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px;
+        display: inline-block;
+        min-width: 150px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .table-title {
+        background: #667eea;
+        color: white;
+        padding: 8px;
+        margin: -10px -10px 8px -10px;
+        border-radius: 6px 6px 0 0;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .table-field {
+        padding: 2px 0;
+        font-size: 0.875em;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .table-field:last-child {
+        border-bottom: none;
+    }
+
+    .connection-line {
+        stroke: #667eea;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .breadcrumb-nav {
+        background: rgba(255,255,255,0.1);
+        padding: 10px 20px;
+        border-radius: 20px;
+        margin-bottom: 20px;
+    }
+
+    .breadcrumb-nav a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        margin: 0 5px;
+    }
+
+    .breadcrumb-nav a:hover {
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="er-diagram-page">
+    <!-- Main ER Diagram Heading -->
+    <div class="row align-items-center mb-2">
+        <div class="col-12">
+            <h1 class="er-diagram-main-heading">
+                <i class="bi bi-diagram-3 me-3"></i>
+                Database Schema & ER Diagram
+            </h1>
+            <p class="er-diagram-subtitle">
+                Complete database structure visualization and model relationships
+            </p>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+<div class="container-fluid">
+    <!-- Statistics Overview -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{{ total_models }}</div>
+                <div class="stats-label">Total Models</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{{ total_apps }}</div>
+                <div class="stats-label">Django Apps</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{% if stats.Rig %}{{ stats.Rig }}{% else %}0{% endif %}</div>
+                <div class="stats-label">Rigs</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{% if stats.Well %}{{ stats.Well }}{% else %}0{% endif %}</div>
+                <div class="stats-label">Wells</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{% if stats.Schedule %}{{ stats.Schedule }}{% else %}0{% endif %}</div>
+                <div class="stats-label">Schedules</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card">
+                <div class="stats-value">{% if stats.User %}{{ stats.User }}{% else %}0{% endif %}</div>
+                <div class="stats-label">Users</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4><i class="bi bi-collection me-2"></i>Django Applications</h4>
+            <div class="row">
+                {% for app_name, app_info in apps_info.items %}
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-folder2-open me-2 text-primary"></i>
+                                {{ app_info.display_name }}
+                            </h6>
+                            <p class="card-text small text-muted mb-1">
+                                <strong>App:</strong> <code>{{ app_name }}</code>
+                            </p>
+                            <p class="card-text small text-muted">
+                                <strong>Models:</strong> {{ app_info.models|length }}
+                            </p>
+                            <div class="mt-2">
+                                {% for model_name in app_info.models %}
+                                <span class="badge bg-light text-dark me-1 mb-1" style="font-size: 0.7em;">{{ model_name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ER Diagram Visualization -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="er-diagram-container">
+                <h4 class="text-center mb-4">Entity Relationship Diagram</h4>
+                <div id="er-diagram-svg"></div>
+                
+                <!-- ER representation - All Models -->
+                <div class="row">
+                    {% for model_name, model_info in models_info.items %}
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="table-node">
+                            <div class="table-title">
+                                {{ model_name }}
+                                <small class="d-block mt-1" style="font-size: 0.8em; opacity: 0.9;">
+                                    <i class="bi bi-folder2 me-1"></i>{{ model_info.app_label }} 
+                                    | {{ model_info.table_name }}
+                                </small>
+                            </div>
+                            {% for field in model_info.fields %}
+                            <div class="table-field">
+                                <strong>{{ field.name }}</strong>
+                                {% if field.primary_key %}<span class="text-warning">🔑</span>{% endif %}
+                                {% if field.related_model %}<span class="text-success">🔗</span>{% endif %}
+                                <small class="text-muted">({{ field.type }})</small>
+                            </div>
+                            {% endfor %}
+                            {% if model_info.relationships %}
+                            <div class="mt-2 pt-2" style="border-top: 1px solid #eee;">
+                                <small><strong>Relationships:</strong></small>
+                                {% for rel in model_info.relationships %}
+                                <div class="relationship-badge">
+                                    → {{ rel.to_model }} ({{ rel.relationship_type }})
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Model Information -->
+    <div class="row">
+        {% for model_name, model_info in models_info.items %}
+        <div class="col-lg-6 mb-4">
+            <div class="model-card">
+                <h4 class="model-header">
+                    <i class="bi bi-table me-2"></i>
+                    {{ model_name }}
+                    <small class="text-muted d-block mt-1">
+                        <i class="bi bi-folder2 me-1"></i>{{ model_info.app_label }} app
+                    </small>
+                </h4>
+                <div class="model-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Table Name:</strong></div>
+                        <div class="col-sm-8"><code>{{ model_info.table_name }}</code></div>
+                    </div>
+                    
+                    {% if model_info.verbose_name %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Verbose Name:</strong></div>
+                        <div class="col-sm-8">{{ model_info.verbose_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if model_info.doc_string %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4"><strong>Description:</strong></div>
+                        <div class="col-sm-8">{{ model_info.doc_string }}</div>
+                    </div>
+                    {% endif %}
+
+                    <h5>Fields:</h5>
+                    <div class="fields-list">
+                        {% for field in model_info.fields %}
+                        <div class="field-item 
+                            {% if field.primary_key %}primary-key{% endif %}
+                            {% if field.related_model %}foreign-key{% endif %}
+                            {% if field.unique and not field.primary_key %}unique{% endif %}">
+                            <div class="field-name">{{ field.name }}</div>
+                            <div class="d-flex align-items-center">
+                                <span class="field-type me-2">{{ field.type }}</span>
+                                <div class="field-attrs">
+                                    {% if field.primary_key %}<span class="field-attr attr-pk">PK</span>{% endif %}
+                                    {% if field.related_model %}<span class="field-attr attr-fk">FK</span>{% endif %}
+                                    {% if field.unique and not field.primary_key %}<span class="field-attr attr-unique">UQ</span>{% endif %}
+                                    {% if field.null %}<span class="field-attr attr-null">NULL</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if field.related_model %}
+                        <div style="font-size: 0.875em; color: #6c757d; margin-left: 16px; margin-bottom: 8px;">
+                            → References: <strong>{{ field.related_model }}</strong>
+                        </div>
+                        {% endif %}
+                        {% if field.choices %}
+                        <div style="font-size: 0.875em; color: #6c757d; margin-left: 16px; margin-bottom: 8px;">
+                            Choices: {{ field.choices }}
+                        </div>
+                        {% endif %}
+                        {% if field.help_text %}
+                        <div style="font-size: 0.875em; color: #6c757d; margin-left: 16px; margin-bottom: 8px;">
+                            {{ field.help_text }}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if model_info.relationships %}
+                    <h5 class="mt-4">Relationships:</h5>
+                    <div class="relationships-list">
+                        {% for rel in model_info.relationships %}
+                        <div class="relationship-badge">
+                            {{ rel.field_name }}: {{ rel.from_model }} → {{ rel.to_model }} ({{ rel.relationship_type }})
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('ER Diagram page loaded successfully');
+    console.log('Models:', {{ models_info|length }});
+    console.log('Statistics:', {{ stats|safe }});
+});
+</script>
+{% endblock %}

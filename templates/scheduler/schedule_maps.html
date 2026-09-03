@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Movement Maps - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page header styling is centralized in style.css */
+    
+    .nav-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .nav-btn {
+        padding: 8px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        text-decoration: none;
+    }
+
+    .nav-btn.active {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+    }
+
+    .plotly-container {
+        width: 100%;
+        height: auto;
+        min-height: 500px;
+    }
+
+    .error-container {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        color: #721c24;
+    }
+
+    .info-card {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #0c5460;
+    }
+
+    .schedule-info {
+        background: #f8f9fa;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    /* Leaflet map */
+    #leaflet-map {
+        width: 100%;
+        height: 600px;
+        border-radius: 8px;
+    }
+    .leaflet-fullscreen-btn {
+        background: #fff;
+        border: 2px solid rgba(0,0,0,0.2);
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        padding: 4px 8px;
+    }
+</style>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- MapTiler SDK plugin CSS (optional, bundled with JS) -->
+{% endblock %}
+
+{% block content %}
+<div class="schedule-maps-page">
+    <!-- Main Schedule Maps Heading -->
+    <div class="row align-items-center mb-2">
+        <div class="col-md-8">
+            <h1 class="schedule-maps-main-heading">
+                <i class="bi bi-geo-alt me-3"></i>
+                Movement Maps & Visualization
+            </h1>
+            <p class="schedule-maps-subtitle">
+                Interactive visualization of rig movements and drilling schedule analytics
+            </p>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center gap-3 justify-content-end">
+                <select class="form-select form-select-sm" id="location-selector" onchange="filterByLocation()" style="width: auto; min-width: 180px; height: 38px;">
+                    <option value="">All Locations</option>
+                    {% for asset_id in asset_ids %}
+                    <option value="{{ asset_id }}" {% if asset_id == selected_location %}selected{% endif %}>{{ asset_id }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="refreshMaps()" title="Refresh Maps" style="height: 38px; width: 42px; display: flex; align-items: center; justify-content: center; padding: 0;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Separator Line -->
+    <hr class="page-separator">
+
+    <!-- Movement Maps Section -->
+    <section id="movement-maps" class="mb-5">
+        {% if error %}
+        <div class="row">
+            <div class="col-12">
+                {% if available_schedules %}
+                <!-- Show schedule selector if available schedules exist -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-check me-2"></i>
+                            Select a Schedule to View Maps
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if selected_location %}
+                        <p class="mb-3">Showing schedules for location: <strong>{{ selected_location }}</strong></p>
+                        {% else %}
+                        <p class="mb-3">Please select a schedule from the list below to view its movement maps:</p>
+                        {% endif %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Schedule Name (ID)</th>
+                                        <th>Created At</th>
+                                        <th>Total Cost</th>
+                                        <th>Assignments</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for schedule in available_schedules %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ schedule.name|default:"Unnamed Schedule" }}</strong><br>
+                                            <small class="text-muted"><code>{{ schedule.id }}</code></small>
+                                        </td>
+                                        <td>{{ schedule.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>{% load currency_filters %}₹{{ schedule.total_cost|indian_currency_short|default:"N/A" }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ schedule.assignments.count }}</span>
+                                        </td>
+                                        <td>
+                                            {% if selected_location %}
+                                                <a href="?schedule_id={{ schedule.id }}&location={{ selected_location }}" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-map me-1"></i>
+                                                    View Maps
+                                                </a>
+                                            {% else %}
+                                                <a href="?schedule_id={{ schedule.id }}" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-map me-1"></i>
+                                                    View Maps
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Show error message when no schedules available -->
+                <div class="card shadow">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-clipboard-data display-1 text-muted mb-3"></i>
+                        <h5>No Schedules Available</h5>
+                        <p class="text-muted mb-4">{{ error }}</p>
+                        <p class="text-muted mb-4">Create an optimization schedule first to view movement maps and analytics.</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <a href="{% url 'data_management' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-database me-2"></i>
+                                Manage Data
+                            </a>
+                            <a href="{% url 'scheduling' %}" class="btn btn-success">
+                                <i class="bi bi-play me-2"></i>
+                                Create New Schedule
+                            </a>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        
+        <!-- Back to schedule selection button -->
+        <div class="d-flex justify-content-end mb-3">
+            <div>
+                {% if selected_location %}
+                    <a href="?location={{ selected_location }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back to Schedule Selection
+                    </a>
+                {% else %}
+                    <a href="{% url 'schedule_maps' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back to Schedule Selection
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Schedule Information -->
+        {% if schedule %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Schedule Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="mb-1"><strong>Schedule Name:</strong> {{ schedule.name|default:"Unnamed Schedule" }}</p>
+                                <p class="mb-1"><strong>Schedule ID:</strong> {{ schedule.id }}</p>
+                                <p class="mb-1"><strong>Created:</strong> {{ schedule.created_at|date:"M d, Y H:i" }}</p>
+                                <p class="mb-1"><strong>Assignments:</strong> {{ assignments_count }} wells assigned</p>
+                                <p class="mb-0"><strong>Total Cost:</strong> {% load currency_filters %}₹{{ schedule.total_cost|indian_currency_short|default:"0.00" }}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-lightbulb me-2"></i>
+                                    <strong>Tip:</strong> Click and drag on the maps to pan, use mouse wheel to zoom.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Geographical Map (Leaflet) -->
+        {% if map_assignments_json %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow" id="geographical-map">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-globe me-2"></i>
+                            Geographical Movement Map
+                        </h5>
+                        <p class="mb-0 text-muted small">Shows rig paths and well locations with movement sequences</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="leaflet-map"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Gantt Chart -->
+        {% if gantt_chart_html %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow" id="gantt-chart">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart me-2"></i>
+                            Drilling Schedule Gantt Chart
+                        </h5>
+                        <p class="mb-0 text-muted small">Timeline view of drilling operations and rig availability</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="plotly-container">
+                            {{ gantt_chart_html|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+
+        <!-- Instructions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            How to Use These Maps
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Geographical Map Features:</h6>
+                                <ul class="mb-0">
+                                    <li>Each rig has a unique color</li>
+                                    <li>Lines show movement paths between wells</li>
+                                    <li>Numbers indicate drilling sequence</li>
+                                    <li>Hover over points for well details</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Gantt Chart Features:</h6>
+                                <ul class="mb-0">
+                                    <li>Timeline shows drilling periods</li>
+                                    <li>Green areas show rig availability</li>
+                                    <li>Colors represent different RTD dates</li>
+                                    <li>Hover for detailed scheduling info</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MapTiler Leaflet plugin -->
+<script src="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/leaflet-maptilersdk.js"></script>
+
+<script>
+function scrollToMap(mapType) {
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const targetId = mapType === 'geographical' ? '#geographical-map' : '#gantt-chart';
+    const targetButton = document.querySelector(`a[href="${targetId}"]`);
+    if (targetButton) targetButton.classList.add('active');
+    const mapElement = document.querySelector(targetId);
+    if (mapElement) mapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Location filtering
+function filterByLocation() {
+    const selectedLocation = document.getElementById('location-selector').value;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (selectedLocation) {
+        urlParams.set('location', selectedLocation);
+    } else {
+        urlParams.delete('location');
+    }
+    window.location.search = urlParams.toString();
+}
+
+function refreshMaps() {
+    window.location.reload();
+}
+
+// ── Leaflet Map ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Schedule Maps page loaded');
+
+    const mapEl = document.getElementById('leaflet-map');
+    if (!mapEl) return;                       // no map section rendered
+
+    const assignments = {{ map_assignments_json|default:"[]"|safe }};
+    if (!assignments || !assignments.length) return;
+
+    // Create map centered on India
+    const map = L.map('leaflet-map', { attributionControl: false, maxZoom: 19 })
+                 .setView([22.5937, 78.9629], 5);
+
+    // ── Base layers ──────────────────────────────────────────
+    const MAPTILER_API_KEY = 'Z8INYIhDiu1ZOmXj9Ts8';
+
+    let mapTilerLayer;
+    try {
+        mapTilerLayer = L.maptiler.maptilerLayer({
+            apiKey: MAPTILER_API_KEY,
+            style: `https://api.maptiler.com/maps/019cc2a7-11fc-7bc6-a953-4b450848cd38/style.json?key=${MAPTILER_API_KEY}`,
+        });
+    } catch (e) {
+        // Fallback to OSM if MapTiler plugin not available
+        mapTilerLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors', maxZoom: 19
+        });
+    }
+
+    const esriSatelliteLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© Esri, Maxar, Earthstar Geographics',
+        maxZoom: 19
+    });
+
+    // Default layer
+    esriSatelliteLayer.addTo(map);
+
+    L.control.layers({
+        "🗺️ Street Map (MT)": mapTilerLayer,
+        "🛰️ Satellite (ESRI)": esriSatelliteLayer
+    }, null, { position: 'topright', collapsed: true }).addTo(map);
+
+    // ── Fullscreen toggle ────────────────────────────────────
+    const fsBtn = L.control({ position: 'topleft' });
+    fsBtn.onAdd = function () {
+        const div = L.DomUtil.create('div', 'leaflet-bar');
+        div.innerHTML = '<a class="leaflet-fullscreen-btn" title="Fullscreen">⛶</a>';
+        div.onclick = function (e) {
+            e.stopPropagation();
+            const el = document.getElementById('leaflet-map');
+            if (!document.fullscreenElement) {
+                el.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        };
+        return div;
+    };
+    fsBtn.addTo(map);
+
+    // Re-invalidate map size when entering/exiting fullscreen
+    document.addEventListener('fullscreenchange', function () {
+        setTimeout(function () { map.invalidateSize(); }, 200);
+    });
+
+    // ── Rig colours (Set1-inspired) ──────────────────────────
+    const RIG_COLORS = [
+        '#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00',
+        '#ffff33','#a65628','#f781bf','#999999','#66c2a5'
+    ];
+    const rigNames = [...new Set(assignments.map(a => a.rig))];
+    const rigColorMap = {};
+    rigNames.forEach((r, i) => { rigColorMap[r] = RIG_COLORS[i % RIG_COLORS.length]; });
+
+    // ── Group assignments by rig & sort by start date ────────
+    const rigGroups = {};
+    assignments.forEach(a => {
+        if (!rigGroups[a.rig]) rigGroups[a.rig] = [];
+        rigGroups[a.rig].push(a);
+    });
+    Object.values(rigGroups).forEach(arr =>
+        arr.sort((a, b) => new Date(a.well_start_date) - new Date(b.well_start_date))
+    );
+
+    const markersGroup = L.layerGroup().addTo(map);
+    const allLatLngs = [];
+
+    rigNames.forEach(rig => {
+        const wells = rigGroups[rig];
+        const color = rigColorMap[rig];
+        const coords = wells.map(w => [w.latitude, w.longitude]);
+
+        // Path polyline
+        if (coords.length > 1) {
+            L.polyline(coords, { color: color, weight: 3, opacity: 0.8 }).addTo(markersGroup);
+        }
+
+        // Well markers with sequence numbers
+        wells.forEach((w, idx) => {
+            const latlng = [w.latitude, w.longitude];
+            allLatLngs.push(latlng);
+
+            const seqNum = idx + 1;
+            const icon = L.divIcon({
+                className: '',
+                html: `<div style="
+                    background:${color};color:#fff;border:2px solid #fff;
+                    border-radius:50%;width:28px;height:28px;
+                    display:flex;align-items:center;justify-content:center;
+                    font-weight:bold;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.4);
+                ">${seqNum}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+
+            const marker = L.marker(latlng, { icon: icon }).addTo(markersGroup);
+            marker.bindPopup(
+                `<b>${w.well}</b><br>` +
+                `Rig: ${w.rig}<br>` +
+                `Seq: ${seqNum}<br>` +
+                `Depth: ${w.depth} m<br>` +
+                `HP: ${w.required_hp}<br>` +
+                `Duration: ${w.duration} days<br>` +
+                `Start: ${w.well_start_date}<br>` +
+                `End: ${w.well_end_date}`
+            );
+
+            // Start / End labels
+            if (idx === 0) {
+                L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div style="background:#fff;padding:2px 6px;border-radius:4px;font-size:10px;white-space:nowrap;border:1px solid ${color};color:#333;box-shadow:0 1px 3px rgba(0,0,0,.3);">▶ Start (${w.well})</div>`,
+                        iconAnchor: [-16, 14]
+                    })
+                }).addTo(markersGroup);
+            }
+            if (idx === wells.length - 1 && wells.length > 1) {
+                L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div style="background:#fff;padding:2px 6px;border-radius:4px;font-size:10px;white-space:nowrap;border:1px solid ${color};color:#333;box-shadow:0 1px 3px rgba(0,0,0,.3);">⏹ End (${w.well})</div>`,
+                        iconAnchor: [-16, 14]
+                    })
+                }).addTo(markersGroup);
+            }
+        });
+    });
+
+    // ── Legend ────────────────────────────────────────────────
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function () {
+        const div = L.DomUtil.create('div', 'leaflet-control');
+        div.style.cssText = 'background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25);font-size:12px;max-height:200px;overflow-y:auto;';
+        div.innerHTML = '<b>Rigs</b><br>' + rigNames.map(r =>
+            `<span style="display:inline-block;width:12px;height:12px;background:${rigColorMap[r]};border-radius:50%;margin-right:6px;"></span>${r}`
+        ).join('<br>');
+        return div;
+    };
+    legend.addTo(map);
+
+    // Fit map to markers
+    if (allLatLngs.length) {
+        map.fitBounds(L.latLngBounds(allLatLngs).pad(0.15));
+    }
+});
+</script>
+{% endblock %}

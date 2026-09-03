@@ -1,0 +1,522 @@
+[
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "05939b70-dcf9-4c28-a747-bf00ce96fc2a",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "F-4900",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.390Z",
+    "updated_at": "2026-01-28T15:48:18.390Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "08705ce4-aba4-4702-8725-5f5551762dcb",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "JOHN-18",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.280Z",
+    "updated_at": "2026-03-05T12:19:56.280Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "197ed41b-aca4-4efd-94ed-e272cde24992",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "E-1400",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-09T07:45:15.161Z",
+    "updated_at": "2026-01-10T07:09:43.949Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "1ec8ce4b-c796-4752-9983-b98a936fd27d",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "DR-23",
+    "days": 4,
+    "top_drive": false,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.461Z",
+    "updated_at": "2026-01-30T07:19:34.037Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "30e09486-f3ba-417f-a96e-20f20cb1c17d",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "JOHN-36",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.465Z",
+    "updated_at": "2026-01-30T07:19:27.861Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "31783ee7-9134-4544-bcd3-a86db9d20c50",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "IPS-M700",
+    "days": 3,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.395Z",
+    "updated_at": "2026-01-28T15:48:18.395Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "35395af6-8130-4198-9c01-9bde81e4abe6",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "E-2000",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.392Z",
+    "updated_at": "2026-01-28T15:48:18.392Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "36149c33-ea24-4335-9269-14b5f32aeeea",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "NG-2000",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.276Z",
+    "updated_at": "2026-03-05T12:19:56.276Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "3f8d90a3-0dfd-4142-bea6-ade31d733485",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "Mobile rigs",
+    "days": 3,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.394Z",
+    "updated_at": "2026-01-28T15:48:18.394Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "4a4c3419-6d73-4a3d-8ec4-c7490b8c3acc",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "IPS-M1000",
+    "days": 5,
+    "top_drive": true,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.279Z",
+    "updated_at": "2026-03-05T12:19:56.279Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "4b289dc2-89e6-49f9-b02c-e2905ab63350",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "NG-1500",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.275Z",
+    "updated_at": "2026-03-05T12:19:56.275Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "4d430c74-220b-40bb-8a8b-738e640f5b04",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "E-760",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-09T07:45:15.159Z",
+    "updated_at": "2026-01-10T07:09:43.948Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "5604e283-348b-46df-900b-e8f1023969c6",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "E-1400",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.458Z",
+    "updated_at": "2026-01-28T15:48:18.458Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "5657e400-5516-49eb-a7fd-617f40b3157a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "JOHN-12",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.279Z",
+    "updated_at": "2026-03-05T12:19:56.279Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "593c4fad-6584-4226-957b-d088b9fda3fd",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "Mobile rigs",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.282Z",
+    "updated_at": "2026-03-05T12:19:56.282Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "5ca99e9f-7978-4680-8ec2-479880b1aca3",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "BI-1500",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.391Z",
+    "updated_at": "2026-01-28T15:48:18.391Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "63dd6ca5-81d9-4fbe-b6a9-050c9eca1402",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "GTC-1000",
+    "days": 4,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.464Z",
+    "updated_at": "2026-01-28T15:48:18.464Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "6c03d204-977b-4129-962a-e64b64aeec13",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "DR-12",
+    "days": 4,
+    "top_drive": false,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.460Z",
+    "updated_at": "2026-01-30T07:19:08.718Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "79fb90ce-bcae-444d-9eae-5aa0767a7952",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "John-1000",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-09T07:45:15.164Z",
+    "updated_at": "2026-01-10T07:09:43.952Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "7b46e08d-a381-4fa0-9a5f-d43a9a0db3c9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "E-760",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.387Z",
+    "updated_at": "2026-01-28T15:48:18.387Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "7d35f6ee-4199-4509-842b-01b6af0181b9",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "BI-1500",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-09T07:45:15.162Z",
+    "updated_at": "2026-01-10T07:09:43.950Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "7f8db3c2-af95-4bc1-a5fc-2732fcf1cac3",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "F-3050",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.389Z",
+    "updated_at": "2026-01-28T15:48:18.389Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "804e3dcb-4bc1-4565-bf9b-6edcedf58e1b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "E-2000",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-09T07:45:15.162Z",
+    "updated_at": "2026-01-10T07:09:43.951Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "87304816-4d29-4fd6-b289-b6c2f5ec093a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "NG-1500-1",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.276Z",
+    "updated_at": "2026-03-05T12:19:56.276Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "87433e6a-89d5-49ad-8bf9-b11b1af64ec9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "F-6100",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.392Z",
+    "updated_at": "2026-01-28T15:48:18.392Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "8e4acc12-d8d0-427b-b1ac-d6d0292f7f6b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "Fixed rigs",
+    "days": 7,
+    "top_drive": false,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.283Z",
+    "updated_at": "2026-03-05T12:19:56.283Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "9384669b-a3f5-4e74-b142-a79bd543a77a",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "IR-900",
+    "days": 3,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.393Z",
+    "updated_at": "2026-01-30T07:41:43.751Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "a36df71e-4934-4581-9b6b-fb8c06194a06",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "E-1000",
+    "days": 7,
+    "top_drive": false,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.272Z",
+    "updated_at": "2026-03-05T12:19:56.272Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "a5e4200a-508e-4dac-82db-de225dfdf662",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "IR-750",
+    "days": 3,
+    "top_drive": true,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-30T07:42:02.750Z",
+    "updated_at": "2026-01-30T07:42:29.079Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "aa6f03b0-2b06-4e09-85d1-9374c73af801",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "E-1400",
+    "days": 10,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.390Z",
+    "updated_at": "2026-01-28T15:48:18.390Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "b5296b8d-5a75-4d2d-9f0c-19f61176e9ba",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "Mobile",
+    "days": 4,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.462Z",
+    "updated_at": "2026-01-28T15:48:18.462Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "bff6ed18-858c-4420-a3e9-a5cb3a48b127",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "JOHN-1000-29",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.281Z",
+    "updated_at": "2026-03-05T12:19:56.281Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "ce07823f-f20e-46d7-8b5a-7960bbfb8647",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "E-1400-5",
+    "days": 7,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-03-05T12:19:56.274Z",
+    "updated_at": "2026-03-05T12:19:56.274Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "d70fdba7-0447-4640-ab1f-548948fe3cd8",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "BHEL-M-450",
+    "days": 3,
+    "top_drive": true,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-30T07:43:54.047Z",
+    "updated_at": "2026-01-30T07:43:54.047Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "da5d7168-97a3-4e0d-b88e-d4e37f460656",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "IPS-M700",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-09T07:45:15.163Z",
+    "updated_at": "2026-01-10T07:09:43.951Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "dff1f446-fb9b-4112-9dde-3b6198ce2704",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "rig_name": "IPS-M700-9",
+    "days": 5,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-03-05T12:19:56.278Z",
+    "updated_at": "2026-03-05T12:19:56.278Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "e825b944-cdf9-46d0-8102-2790307ed44f",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "SS-1500",
+    "days": 9,
+    "top_drive": true,
+    "rig_type": "Fixed",
+    "created_at": "2026-01-28T15:48:18.467Z",
+    "updated_at": "2026-01-28T15:48:18.467Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "f60da030-4096-4194-a0db-5aba14ea16e1",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "rig_name": "IPS-M700",
+    "days": 4,
+    "top_drive": false,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-28T15:48:18.463Z",
+    "updated_at": "2026-01-28T15:48:18.463Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "f9858951-5232-4180-bee9-74be9d41b903",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "BHEL-M-900",
+    "days": 3,
+    "top_drive": true,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-30T07:44:15.910Z",
+    "updated_at": "2026-01-30T07:44:25.148Z"
+  }
+},
+{
+  "model": "scheduler.rigbuildingnorm",
+  "pk": "fdda3ebe-8fd1-4a90-b381-4a29a0bb3408",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "rig_name": "BHEL-M-750",
+    "days": 3,
+    "top_drive": true,
+    "rig_type": "Mobile",
+    "created_at": "2026-01-30T07:44:06.722Z",
+    "updated_at": "2026-01-30T07:44:06.722Z"
+  }
+}
+]

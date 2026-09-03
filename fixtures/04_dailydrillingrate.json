@@ -1,0 +1,1934 @@
+[
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "03252ac6-d261-4d59-be41-7f164a9b4b8b",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "All",
+    "per_day_depth": "200.00",
+    "loc_spec_factor": "3CP & DH",
+    "created_at": "2026-01-29T15:43:27.559Z",
+    "updated_at": "2026-01-29T15:43:27.559Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "038a4e6a-c3a9-4848-99b1-84eec1b77913",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": "Linch",
+    "per_day_depth": "65.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.205Z",
+    "updated_at": "2026-03-05T12:19:56.205Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "038afb85-ed3d-47b6-984b-ba2fc7ecef33",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1201,
+    "depth_end": 1400,
+    "field": "North Kadi",
+    "per_day_depth": "60.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.936Z",
+    "updated_at": "2026-01-30T07:10:42.936Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "067e3104-9282-4832-b8cc-5173ec7722f1",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1601,
+    "depth_end": 1800,
+    "field": "North Kadi",
+    "per_day_depth": "35.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.936Z",
+    "updated_at": "2026-01-30T07:10:42.936Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "06b0d847-aa8b-4698-a709-73753c93a4f2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Ng",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.553Z",
+    "updated_at": "2026-01-29T15:43:27.553Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "076046ce-1b1e-48cb-8fd5-8c570816609e",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "North Kadi",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.934Z",
+    "updated_at": "2026-01-30T07:10:42.935Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "0d29fa42-ef44-45c7-8cf9-0ed826b3da33",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": "Anklav",
+    "per_day_depth": "28.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.202Z",
+    "updated_at": "2026-03-05T12:19:56.202Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "0dd67b9d-7fdb-407e-9b5f-352e677036c0",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Bechraji",
+    "per_day_depth": "60.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.940Z",
+    "updated_at": "2026-01-30T07:10:42.940Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "0e1f9611-ef72-4cbf-8b8c-40e5303dc559",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Akholjuni",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.697Z",
+    "updated_at": "2026-01-16T09:01:47.698Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "0f5f203f-86ce-4e95-b7ad-d29553d85eb3",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Amd",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.545Z",
+    "updated_at": "2026-01-29T15:43:27.545Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "10272646-7db8-46a1-8abc-34f1c02ad1e5",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Santhal",
+    "per_day_depth": "145.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.937Z",
+    "updated_at": "2026-01-30T07:10:42.937Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "14083fc4-5daf-4652-b974-529f1db0d77d",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Akholjuni",
+    "per_day_depth": "75.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.701Z",
+    "updated_at": "2026-01-16T09:01:47.701Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "14fa29ff-6226-46be-9740-67c2e286627f",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Kathana",
+    "per_day_depth": "95.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.214Z",
+    "updated_at": "2026-03-05T12:19:56.214Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "17c9b5a0-ab6c-454b-b48b-9b0695231b06",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Jotna",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.945Z",
+    "updated_at": "2026-01-30T07:10:42.945Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "18a9f33b-6164-4e2e-8f8b-884250d31706",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Linch",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.949Z",
+    "updated_at": "2026-01-30T07:10:42.949Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "1ea5ccd1-7660-4daa-89e6-b1a40cc98b75",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Nandasan",
+    "per_day_depth": "85.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.955Z",
+    "updated_at": "2026-01-30T07:10:42.955Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "20c87c98-e8f3-4ca4-85d9-6dcae4828de3",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Ng",
+    "per_day_depth": "225.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.552Z",
+    "updated_at": "2026-01-29T15:43:27.552Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "2112b697-2749-4ab3-8e72-9201d60ab779",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Anklav",
+    "per_day_depth": "75.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.701Z",
+    "updated_at": "2026-01-16T09:01:47.701Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "2549bed2-8e5d-4892-887e-7375fd39474a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Kathana",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.705Z",
+    "updated_at": "2026-01-16T09:01:47.705Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "26058296-887c-424b-b491-c934ffb23e25",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Akholjuni",
+    "per_day_depth": "40.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.704Z",
+    "updated_at": "2026-01-16T09:01:47.704Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "2712e288-a6f9-475d-a89e-f52e04d580c7",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": "Linch",
+    "per_day_depth": "35.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.207Z",
+    "updated_at": "2026-03-05T12:19:56.207Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "273bdacb-8670-46ef-bb53-068575ffb8a8",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": null,
+    "per_day_depth": "36.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.224Z",
+    "updated_at": "2026-03-05T12:19:56.224Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "29266346-c1f7-47c9-9d6e-a0dea7620333",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Kathana",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.699Z",
+    "updated_at": "2026-01-16T09:01:47.699Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "2b0bebad-c6d1-4c78-83e5-2065041db65d",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Jotna",
+    "per_day_depth": "180.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.943Z",
+    "updated_at": "2026-01-30T07:10:42.943Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "2d86ae83-a70c-443a-be99-c3e4b93d2c9c",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Paliyad",
+    "per_day_depth": "170.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.553Z",
+    "updated_at": "2026-01-29T15:43:27.553Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "30792942-aaba-42fb-834c-abe0cec6480b",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Mewad",
+    "per_day_depth": "65.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.954Z",
+    "updated_at": "2026-01-30T07:10:42.954Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "3388c1d1-4e1c-4bb1-a3d9-2e87f086fada",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "All",
+    "per_day_depth": "75.00",
+    "loc_spec_factor": "3CP & DH",
+    "created_at": "2026-01-29T15:43:27.560Z",
+    "updated_at": "2026-01-29T15:43:27.560Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "34afe0ff-5fc5-41fa-ba0e-dc82660e762e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": "Linch",
+    "per_day_depth": "48.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.206Z",
+    "updated_at": "2026-03-05T12:19:56.206Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "3afd4fb7-743b-4adb-b660-c38de71fc310",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Nadiad",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.706Z",
+    "updated_at": "2026-01-16T09:01:47.706Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "3bd764e9-6b3a-4c6a-9be0-0677ca73c0b2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Ws",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.556Z",
+    "updated_at": "2026-01-29T15:43:27.556Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "3dd49aee-e43c-4622-b680-ad2b7bdcb857",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Mewad",
+    "per_day_depth": "115.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.953Z",
+    "updated_at": "2026-01-30T07:10:42.953Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "3f9f6845-28ca-40c6-9d49-60e468c367a5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2500,
+    "depth_end": 3000,
+    "field": "Akholjuni",
+    "per_day_depth": "22.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.196Z",
+    "updated_at": "2026-03-05T12:19:56.196Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "418878dc-c926-44f3-9a2a-62cd62a1efa7",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "All",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "3CP & DH",
+    "created_at": "2026-01-29T15:43:27.559Z",
+    "updated_at": "2026-01-29T15:43:27.559Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "443642e4-5bff-4ae7-96d6-58e76eef7b33",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Paliyad",
+    "per_day_depth": "220.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.553Z",
+    "updated_at": "2026-01-29T15:43:27.553Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "4436e5da-5335-4b03-a4e4-7d01f89c8e5e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Nawagam South",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.702Z",
+    "updated_at": "2026-01-16T09:01:47.702Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "44b34430-1287-45c8-9ae4-d7f53fdc6158",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Balol",
+    "per_day_depth": "65.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.942Z",
+    "updated_at": "2026-01-30T07:10:42.942Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "44e9d3a0-36ef-443f-8ff3-352a1660ca71",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Bechraji",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.941Z",
+    "updated_at": "2026-01-30T07:10:42.941Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "4ceafae8-2646-4a29-91d5-0e3492f956b4",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "All",
+    "per_day_depth": "75.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-29T15:43:27.562Z",
+    "updated_at": "2026-01-29T15:43:27.562Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "4d9df0f4-90af-4d4c-ba5a-33c7a8e2d525",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "All",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "3CP & DH",
+    "created_at": "2026-01-29T15:43:27.560Z",
+    "updated_at": "2026-01-29T15:43:27.560Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "4da7bcbd-d371-430c-98a9-e021ffab4473",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": null,
+    "per_day_depth": "26.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.224Z",
+    "updated_at": "2026-03-05T12:19:56.224Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "55099145-e645-4c08-af29-3b658bcd31ca",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Nawagam South",
+    "per_day_depth": "40.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.705Z",
+    "updated_at": "2026-01-16T09:01:47.705Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "55323379-046e-49cf-8b3d-1dbb1c554474",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Lanwa",
+    "per_day_depth": "55.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.951Z",
+    "updated_at": "2026-01-30T07:10:42.951Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "55516952-7633-4971-b6fd-ead618150521",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Lim",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.551Z",
+    "updated_at": "2026-01-29T15:43:27.551Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "587b0d8e-1138-408e-8307-98ed48abb7b5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Vadatal",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.706Z",
+    "updated_at": "2026-01-16T09:01:47.706Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "59507b8b-c0e6-4ff4-bbba-1acf1ce496bf",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Wavel",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.209Z",
+    "updated_at": "2026-03-05T12:19:56.209Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "5c5094d8-f344-4b42-8b34-a2efad4350c5",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Linch",
+    "per_day_depth": "30.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.950Z",
+    "updated_at": "2026-01-30T07:10:42.950Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "5c8534d9-55c5-496e-a511-d7f271fa8b27",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Balol",
+    "per_day_depth": "80.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.942Z",
+    "updated_at": "2026-01-30T07:10:42.942Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "611f21cc-63f9-40e0-bc21-8134f1c1cd59",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2500,
+    "depth_end": 3000,
+    "field": null,
+    "per_day_depth": "18.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.226Z",
+    "updated_at": "2026-03-05T12:19:56.226Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "61d7fa25-839a-42c4-9fc5-02c3ddc869b9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Bechraji",
+    "per_day_depth": "85.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.939Z",
+    "updated_at": "2026-01-30T07:10:42.939Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "65435909-d020-4b72-9186-7c148a97b9c0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": "Anklav",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.200Z",
+    "updated_at": "2026-03-05T12:19:56.200Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6a2ebc9e-97d9-4a4d-b941-1d9f99b586d1",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2500,
+    "depth_end": 3000,
+    "field": "Anklav",
+    "per_day_depth": "20.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.203Z",
+    "updated_at": "2026-03-05T12:19:56.203Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6a7de65a-3b1d-468b-a961-c4085b3340fc",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 3000,
+    "depth_end": 4000,
+    "field": "Akholjuni",
+    "per_day_depth": "15.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.197Z",
+    "updated_at": "2026-03-05T12:19:56.197Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6b33f64e-9e47-4feb-b066-a227f0d46b06",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Ng",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.552Z",
+    "updated_at": "2026-01-29T15:43:27.552Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6b935bf0-3015-4bbc-8f6a-cee1a6c9b609",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": "Linch",
+    "per_day_depth": "25.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.208Z",
+    "updated_at": "2026-03-05T12:19:56.208Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6be5f358-101b-48f5-bdee-0e896ccac766",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Nadiad",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.699Z",
+    "updated_at": "2026-01-16T09:01:47.699Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6c84db6b-ce6f-4ed6-8fd0-f4d235e0ccc9",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Nandasan",
+    "per_day_depth": "115.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.955Z",
+    "updated_at": "2026-01-30T07:10:42.955Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6d6c0c48-f7aa-4af9-a525-d375dec9d1ac",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Kalol",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.549Z",
+    "updated_at": "2026-01-29T15:43:27.549Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6e99738d-ab2d-45ad-8e07-0fb1b5b3a28e",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1200,
+    "field": "North Kadi",
+    "per_day_depth": "120.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.935Z",
+    "updated_at": "2026-01-30T07:10:42.935Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6ea1a44a-5d65-4f4b-8485-a3d6f434616b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": null,
+    "per_day_depth": "70.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.222Z",
+    "updated_at": "2026-03-05T12:19:56.222Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "6f1c60ed-9b9e-4e38-bdb2-da4db6778da5",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Wd",
+    "per_day_depth": "225.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.554Z",
+    "updated_at": "2026-01-29T15:43:27.554Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "706a68a6-4510-4960-9172-698ce38ae20c",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Jotna",
+    "per_day_depth": "115.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.944Z",
+    "updated_at": "2026-01-30T07:10:42.944Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "7171acdb-c8b9-4321-9531-61377c59a4e5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": "Wavel",
+    "per_day_depth": "52.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.212Z",
+    "updated_at": "2026-03-05T12:19:56.212Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "72699f06-0589-4e3c-b1ca-b5abb9e1b0a3",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Kalol",
+    "per_day_depth": "130.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.549Z",
+    "updated_at": "2026-01-29T15:43:27.549Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "75afb886-693c-4341-bbd8-f9e566a399a8",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Lim",
+    "per_day_depth": "130.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.551Z",
+    "updated_at": "2026-01-29T15:43:27.551Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "7a531b28-ecd9-4929-9bbd-f6890ccc7d11",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Lanwa",
+    "per_day_depth": "85.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.951Z",
+    "updated_at": "2026-01-30T07:10:42.951Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "7b3d073a-861d-4948-8170-1dcacc999f3e",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Jotna",
+    "per_day_depth": "80.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.945Z",
+    "updated_at": "2026-01-30T07:10:42.945Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "7b8b26cd-5294-4ac8-a2b0-f2c550f00159",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Nandasan",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.954Z",
+    "updated_at": "2026-01-30T07:10:42.954Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "7bf3173c-3bd1-48ff-a505-3382f79bdc0c",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Sobhasan",
+    "per_day_depth": "105.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.958Z",
+    "updated_at": "2026-01-30T07:10:42.958Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "85a75cf6-dea4-4c10-9fcb-46220573be3f",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Gamij",
+    "per_day_depth": "250.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.546Z",
+    "updated_at": "2026-01-29T15:43:27.546Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "878cacc8-f641-49a6-8cc6-9b74bb471e7a",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": "Anklav",
+    "per_day_depth": "38.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.201Z",
+    "updated_at": "2026-03-05T12:19:56.201Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8bc44ae1-194f-4947-a2fd-3637db9f1475",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Padra",
+    "per_day_depth": "120.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.707Z",
+    "updated_at": "2026-01-16T09:01:47.707Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8c3244d0-17b9-4aa2-873e-5db8b2a171b8",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": null,
+    "per_day_depth": "100.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.221Z",
+    "updated_at": "2026-03-05T12:19:56.221Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8caf2c6f-48f5-4681-8344-35ed5cf5c613",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Mewad",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.952Z",
+    "updated_at": "2026-01-30T07:10:42.952Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8d259c92-249d-4c5b-bfba-f33aaa73aed6",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Ws",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.556Z",
+    "updated_at": "2026-01-29T15:43:27.556Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8d903a4f-3ec8-4b35-9912-d553e47c17c0",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Linch",
+    "per_day_depth": "170.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.948Z",
+    "updated_at": "2026-01-30T07:10:42.948Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8efeaaa7-261e-47f5-8b67-8d57b221adb4",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 501,
+    "depth_end": 1100,
+    "field": "Padra",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.708Z",
+    "updated_at": "2026-01-16T09:01:47.708Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "8f7997c1-cbc0-4113-8d49-b6019768cc97",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Vadatal",
+    "per_day_depth": "95.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.703Z",
+    "updated_at": "2026-01-16T09:01:47.703Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "90fa0337-d660-4df1-9ce8-be1497f7dfba",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Kalol",
+    "per_day_depth": "225.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.548Z",
+    "updated_at": "2026-01-29T15:43:27.548Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "944c1a3e-4616-4681-bd81-a4ba04a2ed20",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1401,
+    "depth_end": 1600,
+    "field": "Santhal",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.938Z",
+    "updated_at": "2026-01-30T07:10:42.938Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "990f10f0-71ef-4de5-85ac-b28f056db818",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Langhnaj",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.946Z",
+    "updated_at": "2026-01-30T07:10:42.946Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "99484d13-9c67-45af-bb08-c2aafb225b78",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Paliyad",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.554Z",
+    "updated_at": "2026-01-29T15:43:27.554Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "994d6671-359a-4c27-bcef-8d4b19a08bd6",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Nandasan",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.956Z",
+    "updated_at": "2026-01-30T07:10:42.956Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "9c2c9a5e-e384-4528-b135-14d412f743b3",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": "Akholjuni",
+    "per_day_depth": "80.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.189Z",
+    "updated_at": "2026-03-05T12:19:56.189Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "9e11782b-0105-4818-8369-9886a1c23e0e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": "Kathana",
+    "per_day_depth": "68.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.215Z",
+    "updated_at": "2026-03-05T12:19:56.215Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "9e889ac4-51a4-4db5-998d-7bff16e68bc7",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Amd",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.545Z",
+    "updated_at": "2026-01-29T15:43:27.545Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "9ed31cff-2336-430d-a265-bebb80cba87f",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": "Akholjuni",
+    "per_day_depth": "30.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.194Z",
+    "updated_at": "2026-03-05T12:19:56.194Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a1dd7ea3-509b-4eb7-848a-2c9347dcb5f1",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Sobhasan",
+    "per_day_depth": "110.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.957Z",
+    "updated_at": "2026-01-30T07:10:42.957Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a37e9976-9a63-4661-af2d-448bd1b97390",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": "Akholjuni",
+    "per_day_depth": "55.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.191Z",
+    "updated_at": "2026-03-05T12:19:56.191Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a4936d64-1084-40bc-92f1-efc2958f1e35",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Ws",
+    "per_day_depth": "225.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.555Z",
+    "updated_at": "2026-01-29T15:43:27.555Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a5da6e58-d33b-4c0d-99ef-ad651dae560b",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Bechraji",
+    "per_day_depth": "150.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.939Z",
+    "updated_at": "2026-01-30T07:10:42.939Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a5fe85a7-bf88-460d-867f-becf192526e4",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Jr",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.548Z",
+    "updated_at": "2026-01-29T15:43:27.548Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a6af6580-ab38-4769-aafd-f87f8db21a6e",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1401,
+    "depth_end": 1600,
+    "field": "North Kadi",
+    "per_day_depth": "30.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.936Z",
+    "updated_at": "2026-01-30T07:10:42.936Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a72a2f34-837c-4672-9078-f41a4ce0f03a",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "All",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-29T15:43:27.562Z",
+    "updated_at": "2026-01-29T15:43:27.562Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "a7c07b24-a5f3-442a-8b82-9f7332a9999a",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Lanwa",
+    "per_day_depth": "45.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.952Z",
+    "updated_at": "2026-01-30T07:10:42.952Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "ae3ea2a6-239b-431c-907f-e3f65ff55aaf",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": "Anklav",
+    "per_day_depth": "75.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.199Z",
+    "updated_at": "2026-03-05T12:19:56.199Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "aed8ab5b-7db9-40a1-ace1-4928cf691851",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "All",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-29T15:43:27.561Z",
+    "updated_at": "2026-01-29T15:43:27.561Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "af912203-e27d-4797-940d-540fe8629f56",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": "Kathana",
+    "per_day_depth": "36.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.217Z",
+    "updated_at": "2026-03-05T12:19:56.217Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b07e939c-96f9-4015-b683-0cb8ceec0479",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Wd",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.554Z",
+    "updated_at": "2026-01-29T15:43:27.554Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b0c70e3e-fc27-4b9c-89a9-c68a3c58dec5",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 3000,
+    "depth_end": 4000,
+    "field": "Akholjuni",
+    "per_day_depth": "10.00",
+    "loc_spec_factor": "HPHT",
+    "created_at": "2026-03-05T12:19:56.220Z",
+    "updated_at": "2026-03-05T12:19:56.220Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b1b648ea-a437-4158-9d9e-6be4494cc60b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Anklav",
+    "per_day_depth": "110.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.198Z",
+    "updated_at": "2026-03-05T12:19:56.198Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b364e33e-b4de-4f9d-a7e0-098194930535",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Mewad",
+    "per_day_depth": "90.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.953Z",
+    "updated_at": "2026-01-30T07:10:42.953Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b38ba22f-c2f8-4638-954d-004bcdd43942",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2500,
+    "depth_end": 3000,
+    "field": "Akholjuni",
+    "per_day_depth": "15.00",
+    "loc_spec_factor": "HPHT",
+    "created_at": "2026-03-05T12:19:56.219Z",
+    "updated_at": "2026-03-05T12:19:56.219Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b4279d90-5cf9-40ee-93c4-9c27b75ba71e",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Jr",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.547Z",
+    "updated_at": "2026-01-29T15:43:27.547Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b5c3ea05-6c40-4d8b-a729-1b1d9010b870",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Nadiad",
+    "per_day_depth": "80.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.703Z",
+    "updated_at": "2026-01-16T09:01:47.703Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b61fdf74-6823-46b5-9f58-17465135670d",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1200,
+    "field": "Santhal",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.937Z",
+    "updated_at": "2026-01-30T07:10:42.937Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "b6e325ac-d74f-4c58-803b-9c02c76677c5",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "All",
+    "per_day_depth": "200.00",
+    "loc_spec_factor": "3CP",
+    "created_at": "2026-01-29T15:43:27.561Z",
+    "updated_at": "2026-01-29T15:43:27.561Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bb02f735-e9e4-4076-9c3e-e6a59d0f48ec",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1201,
+    "depth_end": 1400,
+    "field": "Santhal",
+    "per_day_depth": "60.00",
+    "loc_spec_factor": "other than Main",
+    "created_at": "2026-01-30T07:10:42.938Z",
+    "updated_at": "2026-01-30T07:10:42.938Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bb59e218-f345-482e-8bac-a50a026bda19",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": "Wavel",
+    "per_day_depth": "38.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.213Z",
+    "updated_at": "2026-03-05T12:19:56.213Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bbd49bef-c9b8-4f1f-ab8a-5e6999c5f9e6",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Balol",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.943Z",
+    "updated_at": "2026-01-30T07:10:42.943Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bc39cf7c-c03b-4095-99d4-0a15580cf421",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Sobhasan",
+    "per_day_depth": "115.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.957Z",
+    "updated_at": "2026-01-30T07:10:42.957Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "becd1ecc-8f69-4ee1-8618-87a5815fc435",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Langhnaj",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.947Z",
+    "updated_at": "2026-01-30T07:10:42.947Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bee5f771-431d-4fcc-acdc-f3b5a18fc8ce",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Langhnaj",
+    "per_day_depth": "160.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.946Z",
+    "updated_at": "2026-01-30T07:10:42.946Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "bf0df037-c220-439a-b056-78becb78188e",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Linch",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.949Z",
+    "updated_at": "2026-01-30T07:10:42.949Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "c027c7c6-c1b6-4785-8b84-551e3a75ce85",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "field": "Akholjuni",
+    "per_day_depth": "40.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.192Z",
+    "updated_at": "2026-03-05T12:19:56.192Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "c5450f14-a7e8-4610-9ad7-f5e50580be0b",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Lim",
+    "per_day_depth": "250.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.550Z",
+    "updated_at": "2026-01-29T15:43:27.550Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "cb648b66-40dd-46f8-9c58-e6952db539c0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": "Kathana",
+    "per_day_depth": "50.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.216Z",
+    "updated_at": "2026-03-05T12:19:56.216Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "cbc8a6aa-14a8-431a-bb4f-c1e38fdef96d",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Kathana",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.702Z",
+    "updated_at": "2026-01-16T09:01:47.702Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "cff68878-5ffb-45ec-8361-ce2506816566",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": "Akholjuni",
+    "per_day_depth": "22.00",
+    "loc_spec_factor": "HPHT",
+    "created_at": "2026-03-05T12:19:56.218Z",
+    "updated_at": "2026-03-05T12:19:56.218Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "d48d856f-71c6-4b14-bbd8-28cef9bce678",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Vadatal",
+    "per_day_depth": "175.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.700Z",
+    "updated_at": "2026-01-16T09:01:47.700Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "dc9186b9-d7b8-479a-89c6-9bc85e0915fd",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Langhnaj",
+    "per_day_depth": "55.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.948Z",
+    "updated_at": "2026-01-30T07:10:42.948Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "dcb1d65e-77e7-4115-b588-0d39fc166738",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Amd",
+    "per_day_depth": "250.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.544Z",
+    "updated_at": "2026-01-29T15:43:27.544Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e30b9f5d-129c-4fcf-b4c9-38fa7ee43203",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "field": "Kathana",
+    "per_day_depth": "26.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.217Z",
+    "updated_at": "2026-03-05T12:19:56.217Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e42271f9-2f49-491a-a4dc-ef4259e17e22",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Balol",
+    "per_day_depth": "150.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.941Z",
+    "updated_at": "2026-01-30T07:10:42.941Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e45e52d2-7716-49a5-9f3e-ac076f564cc6",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Jr",
+    "per_day_depth": "250.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.547Z",
+    "updated_at": "2026-01-29T15:43:27.547Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e60f7015-84c0-41d3-a503-ddbd00d1af3b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Linch",
+    "per_day_depth": "90.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.204Z",
+    "updated_at": "2026-03-05T12:19:56.204Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e73a379b-61f6-452d-9cd5-f516f0ed4ba2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Wd",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.555Z",
+    "updated_at": "2026-01-29T15:43:27.555Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e7b9ede8-99d7-4f23-9ffe-95a39a78a374",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Gamij",
+    "per_day_depth": "140.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.547Z",
+    "updated_at": "2026-01-29T15:43:27.547Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "e91de6eb-45ed-435e-861d-1f3e2e65e5a2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1501,
+    "depth_end": 2000,
+    "field": "Anklav",
+    "per_day_depth": "40.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.704Z",
+    "updated_at": "2026-01-16T09:01:47.704Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "ec08eff3-be2c-4969-8c11-c04a9f2efd19",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "field": "Wavel",
+    "per_day_depth": "70.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.211Z",
+    "updated_at": "2026-03-05T12:19:56.211Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "ee306350-484f-440c-9cab-575acb2f3955",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 3000,
+    "depth_end": 4000,
+    "field": null,
+    "per_day_depth": "12.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.227Z",
+    "updated_at": "2026-03-05T12:19:56.227Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "eeb34e10-e606-4495-99f4-9e42ecd48b50",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Anklav",
+    "per_day_depth": "140.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.698Z",
+    "updated_at": "2026-01-16T09:01:47.698Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "f1ae3bc2-75ee-4208-a048-592c97ab0c25",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Lanwa",
+    "per_day_depth": "125.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.950Z",
+    "updated_at": "2026-01-30T07:10:42.950Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "f26523b0-bcaa-4ab7-9de8-089778b5c1b0",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "field": "Akholjuni",
+    "per_day_depth": "120.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-03-05T12:19:56.186Z",
+    "updated_at": "2026-03-05T12:19:56.186Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "f2a29746-b00c-43d5-ba24-f77f0c303b71",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "field": null,
+    "per_day_depth": "50.00",
+    "loc_spec_factor": null,
+    "created_at": "2026-03-05T12:19:56.223Z",
+    "updated_at": "2026-03-05T12:19:56.223Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "fb7918f4-3d25-4b95-ac2a-843780019119",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2001,
+    "depth_end": 2500,
+    "field": "Kathana",
+    "per_day_depth": "35.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.707Z",
+    "updated_at": "2026-01-16T09:01:47.707Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "fcc73360-2aef-410b-b598-e881ab97ac26",
+  "fields": {
+    "location": "2836bd36-4d42-4e1c-8d8f-987b37a7767a",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Sobhasan",
+    "per_day_depth": "160.00",
+    "loc_spec_factor": "Main Pool",
+    "created_at": "2026-01-30T07:10:42.956Z",
+    "updated_at": "2026-01-30T07:10:42.956Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "fcdc7877-92a0-4a07-ab0d-780e70b76706",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "field": "Nawagam South",
+    "per_day_depth": "100.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-16T09:01:47.699Z",
+    "updated_at": "2026-01-16T09:01:47.699Z"
+  }
+},
+{
+  "model": "scheduler.dailydrillingrate",
+  "pk": "fdb807f3-c113-4df8-8bfd-5751b30bf768",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 1500,
+    "field": "Gamij",
+    "per_day_depth": "200.00",
+    "loc_spec_factor": "2CP",
+    "created_at": "2026-01-29T15:43:27.546Z",
+    "updated_at": "2026-01-29T15:43:27.546Z"
+  }
+}
+]

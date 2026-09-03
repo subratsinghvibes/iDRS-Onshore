@@ -1,0 +1,85 @@
+# =============================================================================
+# .dockerignore — files excluded from the Docker build context
+# =============================================================================
+# Excluding these reduces build context size and prevents secrets or
+# dev-only files from leaking into the production image.
+
+# ---- Python runtime artefacts -----------------------------------------------
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/.pytest_cache/
+**/*.egg-info/
+dist/
+build/
+*.egg
+
+# ---- Virtual environments ---------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Version control --------------------------------------------------------
+.git/
+.gitignore
+.gitattributes
+
+# ---- Environment / secret files (keep .env.example as documentation) --------
+.env
+.env.production
+.django_secret_key
+
+# ---- OS / editor noise ------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+*.code-workspace
+
+# ---- Local development database (the container uses a volume instead) -------
+db.sqlite3
+*.sqlite3
+
+# ---- Collected static files (re-collected during image build) ---------------
+staticfiles/
+
+# ---- Logs -------------------------------------------------------------------
+logs/
+*.log
+
+# ---- Docker build output artefacts (must never be sent back into the build) --
+idrs-docker-bundle/
+idrs-docker-bundle.tar.gz
+idrs-v11-docker-bundle.tar.gz
+*.image.tar.gz
+
+# ---- Media uploaded files (served from a Docker volume, not baked in) -------
+# Videos and user uploads must NOT be baked into the image — they are too large
+# and must be persisted across container recreations via a named Docker volume.
+# To pre-populate tutorial videos, copy them into the idrs_media volume after
+# first boot: docker cp media/. idrs_app:/app/media/
+media/
+
+# ---- Offline packages and Windows installer artefacts ----------------------
+offline_packages/
+"Install Windows"/
+
+# ---- Documentation and markdown files (not needed at runtime) ---------------
+MD\ Files/
+IDRS_*.md
+*.md
+
+# ---- Test files (target only dedicated test files, NOT migration files) -----
+# Use precise patterns to avoid matching migration files like
+# 0038_add_location_to_additional_test.py which contain "test" in the name.
+**/test_*.py
+**/*_tests.py
+scheduler/tests.py
+
+# ---- Backup / scratch copies ------------------------------------------------
+scheduler/views\ copy.py
+scheduler/optimization\ copy.py
+scheduler/well_rejection_analyzer\ *.py

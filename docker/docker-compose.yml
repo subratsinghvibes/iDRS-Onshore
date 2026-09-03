@@ -1,0 +1,124 @@
+# =============================================================================
+# IDRS v11 – docker-compose.yml
+# =============================================================================
+# Usage:
+#   docker compose up -d          # start in background
+#   docker compose logs -f        # follow logs
+#   docker compose down           # stop and remove containers
+#   docker compose down -v        # stop and WIPE all data volumes (destructive!)
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # IDRS application (Django + Gunicorn)
+  # ---------------------------------------------------------------------------
+  idrs:
+    image: idrs:v11           # built via docker/build-offline.sh
+    container_name: idrs_app
+    restart: unless-stopped
+
+    ports:
+      - "8011:8011"           # HOST_PORT:CONTAINER_PORT — adjust host port if needed
+
+    environment:
+      # -----------------------------------------------------------------------
+      # Django core
+      # CHANGE SECRET_KEY to a strong random value before going live.
+      # -----------------------------------------------------------------------
+      SECRET_KEY: "${SECRET_KEY:-change-me-to-a-very-long-random-string-in-dot-env-file}"
+      DEBUG: "${DEBUG:-False}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}"
+
+      # -----------------------------------------------------------------------
+      # Database — defaults to SQLite stored in the 'idrs_data' volume.
+      # To use PostgreSQL, uncomment and configure the DATABASE_URL below,
+      # and add a 'db' service (see commented section at the bottom).
+      # -----------------------------------------------------------------------
+      DATABASE_URL: "${DATABASE_URL:-sqlite:////app/data/db.sqlite3}"
+
+      # -----------------------------------------------------------------------
+      # LDAP authentication (optional — leave defaults to skip LDAP)
+      # -----------------------------------------------------------------------
+      LDAP_SERVER: "${LDAP_SERVER:-ldap://127.0.0.1:389}"
+      LDAP_BASE_DN: "${LDAP_BASE_DN:-DC=ONGC,DC=ONGCGroup,DC=co,DC=in}"
+      LDAP_USE_SSL: "${LDAP_USE_SSL:-False}"
+      LDAP_VERIFY_SSL: "${LDAP_VERIFY_SSL:-False}"
+      LDAP_DOMAIN: "${LDAP_DOMAIN:-ongcgroup.co.in}"
+
+      # -----------------------------------------------------------------------
+      # Django superuser (created automatically on first run)
+      # -----------------------------------------------------------------------
+      DJANGO_SUPERUSER_USERNAME: "${DJANGO_SUPERUSER_USERNAME:-admin}"
+      DJANGO_SUPERUSER_EMAIL: "${DJANGO_SUPERUSER_EMAIL:-admin@idrs.local}"
+      DJANGO_SUPERUSER_PASSWORD: "${DJANGO_SUPERUSER_PASSWORD:-ChangeMe@2024!}"
+
+    volumes:
+      # settings.py is NOT baked into the image — bind-mount it from the host.
+      # The file must exist at ./settings.py next to docker-compose.yml.
+      # A copy is included in the deployment bundle from build-offline.sh.
+      - ./settings.py:/app/drilling_scheduler/settings.py:ro
+      # Persist the SQLite database across container restarts and upgrades
+      - idrs_data:/app/data
+      # Persist uploaded media files (video tutorials, etc.)
+      - idrs_media:/app/media
+      # Persist application logs
+      - idrs_logs:/app/logs
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/admin/login/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+# =============================================================================
+# Named volumes — Docker manages these on the host under /var/lib/docker/volumes/
+# =============================================================================
+volumes:
+  idrs_data:
+    driver: local
+  idrs_media:
+    driver: local
+  idrs_logs:
+    driver: local
+
+
+# =============================================================================
+# OPTIONAL: PostgreSQL service
+# Uncomment the section below (and the 'db' dependency in the 'idrs' service)
+# if you prefer PostgreSQL over SQLite.
+# Also update DATABASE_URL to:
+#   postgresql://idrs_user:idrs_password@db:5432/idrs_db
+# =============================================================================
+#
+#  db:
+#    image: postgres:16-alpine
+#    container_name: idrs_db
+#    restart: unless-stopped
+#    environment:
+#      POSTGRES_DB: idrs_db
+#      POSTGRES_USER: idrs_user
+#      POSTGRES_PASSWORD: idrs_password
+#    volumes:
+#      - idrs_pgdata:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U idrs_user -d idrs_db"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+# Add to idrs service:
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#
+# volumes:
+#   idrs_pgdata:
+#     driver: local

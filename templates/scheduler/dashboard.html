@@ -1,0 +1,850 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Interactive Drilling Rig Scheduler{% endblock %}
+
+{% block extra_css %}
+    <style>
+        /* Enhanced Bootstrap Icons fix - more comprehensive targeting */
+        .dashboard-page i.bi, .dashboard-page .bi, i.bi, .bi {
+            font-family: "Bootstrap Icons" !important;
+        }
+        
+        /* Bootstrap Icons loaded via base.html - no need for @font-face override */
+        
+        /* Force white text in card headers */
+        .card-header.bg-gradient-primary .text-white,
+        .card-header.bg-gradient-primary h5,
+        .card-header.bg-gradient-primary small {
+            color: white !important;
+        }
+        
+        /* Enhance statistics card icons */
+        .stats-card-icon {
+            font-size: 2.5rem !important;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover .stats-card-icon {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        /* Clickable card hover effect */
+        #optimization-score-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #optimization-score-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1.5rem rgba(246, 194, 62, 0.4) !important;
+            border-left-width: 0.5rem !important;
+        }
+        
+        #optimization-score-card:active {
+            transform: translateY(-1px);
+        }
+        
+        /* Hero section optimization */
+        .hero-section .card-body {
+            padding: 1.5rem !important;
+            min-height: 400px;
+        }
+        
+        .hero-image-container {
+            height: 100%;
+            min-height: 400px;
+            display: flex;
+            align-items: stretch;
+        }
+        
+        .hero-image-container img {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        
+        .hero-content-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 2rem;
+        }
+        
+        .hero-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Page header styling is centralized in style.css - no overrides needed */
+        
+        /* Recent Schedules Table Column Width Optimization */
+        #recent-schedules-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        #recent-schedules-table th,
+        #recent-schedules-table td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+        
+        /* Specific column width allocations - minimal widths for compact columns */
+        #recent-schedules-table th:nth-child(1),
+        #recent-schedules-table td:nth-child(1) {
+            width: auto; /* Schedule Name - takes remaining space */
+            white-space: normal;
+            word-wrap: break-word;
+            min-width: 200px;
+        }
+        
+        #recent-schedules-table th:nth-child(2),
+        #recent-schedules-table td:nth-child(2) {
+            width: 100px; /* Status - minimal for badges */
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        #recent-schedules-table th:nth-child(3),
+        #recent-schedules-table td:nth-child(3) {
+            width: 90px; /* Created - minimal for dates */
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        #recent-schedules-table th:nth-child(4),
+        #recent-schedules-table td:nth-child(4) {
+            width: 80px; /* Wells - increased width for header visibility */
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        #recent-schedules-table th:nth-child(5),
+        #recent-schedules-table td:nth-child(5) {
+            width: 110px; /* Cost - minimal for currency */
+            text-align: right;
+            white-space: nowrap;
+        }
+        
+        #recent-schedules-table th:nth-child(6),
+        #recent-schedules-table td:nth-child(6) {
+            width: 100px; /* Actions - increased width for header visibility */
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        /* Prevent header text wrapping */
+        #recent-schedules-table thead th {
+            white-space: nowrap;
+            font-size: 0.85rem;
+            padding: 0.75rem 0.4rem;
+            font-weight: 600;
+        }
+        
+        #recent-schedules-table tbody td {
+            font-size: 0.9rem;
+            padding: 0.75rem 0.4rem;
+        }
+        
+        /* Responsive behavior for smaller screens */
+        @media (max-width: 992px) {
+            #recent-schedules-table th:nth-child(1),
+            #recent-schedules-table td:nth-child(1) {
+                min-width: 150px; /* Maintain readability on tablets */
+            }
+            
+            #recent-schedules-table th:nth-child(3),
+            #recent-schedules-table td:nth-child(3) {
+                width: 80px; /* Compress date column */
+            }
+            
+            #recent-schedules-table th:nth-child(5),
+            #recent-schedules-table td:nth-child(5) {
+                width: 90px; /* Compress cost column */
+            }
+            
+            #recent-schedules-table th:nth-child(6),
+            #recent-schedules-table td:nth-child(6) {
+                width: 85px; /* Compress actions column but keep readable */
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #recent-schedules-table thead th {
+                font-size: 0.75rem;
+                padding: 0.5rem 0.2rem;
+            }
+            
+            #recent-schedules-table tbody td {
+                padding: 0.5rem 0.2rem;
+                font-size: 0.8rem;
+            }
+            
+            #recent-schedules-table th:nth-child(4),
+            #recent-schedules-table td:nth-child(4) {
+                width: 60px;
+            }
+            
+            #recent-schedules-table th:nth-child(6),
+            #recent-schedules-table td:nth-child(6) {
+                width: 70px;
+            }
+        }
+        
+        /* Dashboard main heading with blue gradient */
+        .dashboard-main-heading {
+            background: linear-gradient(45deg, #0A2F5A 0%, #1e40af 20%, #3b82f6 40%, #60a5fa 80%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-align: left;
+            line-height: 1.2;
+        }
+        
+        .dashboard-subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            text-align: left;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        /* Section headings with same gradient style */
+        .section-heading-gradient {
+            background: linear-gradient(45deg, #0A2F5A 0%, #1e40af 20%, #3b82f6 40%, #60a5fa 80%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        
+        /* Recent schedules section spacing */
+        .recent-schedules-section {
+            padding-top: 1.5rem;
+            margin-top: 0.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-main-heading {
+                font-size: 1.8rem;
+            }
+            
+            .dashboard-subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Page indicator for JavaScript detection -->
+    <div id="dashboard-page-indicator" style="display: none;"></div>
+    
+    <div class="dashboard-page">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="mb-5">
+            <!-- Main Dashboard Heading - Direct on Page -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <h1 style="font-size: 2rem; font-weight: 600; color: #0A2F5A; margin-bottom: 0.5rem;">
+                        <i class="bi bi-speedometer2 me-3"></i>
+                        Home
+                    </h1>
+                    <p style="font-size: 0.875rem; color: #475569; margin-bottom: 0;">
+                        Interactive Drilling Rig Scheduler
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Separator Line -->
+            <hr class="page-separator">
+            
+            <!-- Stats Cards -->
+            <div class="row mb-3">
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card h-100 py-2" style="border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600; letter-spacing: 0.05em;">
+                                        Total Rigs
+                                    </div>
+                                    <div style="font-size: 1.5rem; margin-bottom: 0; font-weight: 600; color: #0f172a;" id="total-rigs">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-tools" style="font-size: 2rem; color: #0A2F5A; opacity: 0.7;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card h-100 py-2" style="border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600; letter-spacing: 0.05em;">
+                                        Total Wells
+                                    </div>
+                                    <div style="font-size: 1.5rem; margin-bottom: 0; font-weight: 600; color: #0f172a;" id="total-wells">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-circle-fill" style="font-size: 2rem; color: #0A2F5A; opacity: 0.7;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <div class="card h-100 py-2" style="border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 0.25rem; font-weight: 600; letter-spacing: 0.05em;">
+                                        Active Schedules
+                                    </div>
+                                    <div style="font-size: 1.5rem; margin-bottom: 0; font-weight: 600; color: #0f172a;" id="active-schedules">-</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-calendar3" style="font-size: 2rem; color: #0A2F5A; opacity: 0.7;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-3">
+                    <a href="{% url 'product_showcase' %}" class="text-decoration-none">
+                        <div class="card h-100 py-2" 
+                             style="border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: all 0.3s ease;"
+                             onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'"
+                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 2px 0 rgba(0, 0, 0, 0.05)'">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem; color: #6b7280; letter-spacing: 0.05em;">
+                                            <i class="bi bi-stars me-1"></i>Product Showcase
+                                        </div>
+                                        <div style="font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 600; color: #0f172a;">
+                                            Explore Features
+                                        </div>
+                                        <small style="font-size: 0.75rem; color: #6b7280;">
+                                            <i class="bi bi-hand-index-thumb me-1"></i>Click to discover capabilities
+                                        </small>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-gem" style="font-size: 2rem; color: #0A2F5A; opacity: 0.7;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Enhanced Introduction Section -->
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="hero-section">
+                        <div class="card border-0 shadow-lg bg-gradient-light">
+                            <div class="card-body p-4">
+                                <div class="row h-100">
+                                    <div class="col-lg-4">
+                                        <div class="hero-image-container">
+                                            <img src="{% static 'images/oil-offshore-drilling-platform-ocean-600nw-787312033.jpg' %}" 
+                                                 alt="Offshore Drilling Platform" 
+                                                 class="shadow">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="hero-content-container">
+                                            <div class="hero-content">
+                                                <div>
+                                                    <h3 style="font-size: 1.125rem; font-weight: 600; color: #0A2F5A; margin-bottom: 1rem;">
+                                                        Welcome to the Interactive Drilling Rig Scheduler
+                                                    </h3>
+                                                    <p style="font-size: 0.875rem; color: #475569; text-align: justify; margin-bottom: 1rem;">
+                                                        The Interactive Drilling Rig Scheduler (IDRS) represents a revolutionary approach to drilling operations management, 
+                                                        utilizing advanced optimization algorithms to efficiently assign drilling rigs to wells while minimizing operational 
+                                                        costs and maximizing resource utilization.
+                                                    </p>
+                                                    <p style="font-size: 0.875rem; color: #475569; text-align: justify; margin-bottom: 1rem;">
+                                                        Our sophisticated system evaluates thousands of possible rig-well combinations in real-time, incorporating critical 
+                                                        factors such as rig capacity specifications, well complexity parameters, inter-location travel distances, operational 
+                                                        priorities, and temporal constraints. The platform delivers comprehensive schedule visualization through interactive 
+                                                        Gantt charts and detailed cost analysis reports.
+                                                    </p>
+                                                    <p style="font-size: 0.875rem; color: #475569; text-align: justify; margin-bottom: 1rem;">
+                                                        Beyond scheduling, the platform delivers intelligent insights that adapt to changing field conditions, combining intuitive visuals with analytical modeling to bridge strategy and execution, enabling data-driven, responsive decisions across all stakeholder levels.
+                                                    </p>
+                                                    <!-- <div class="mb-4">
+                                                        <a href="{% url 'about' %}" class="btn btn-outline-primary btn-sm">
+                                                            <i class="bi bi-info-circle me-2"></i>More Details
+                                                        </a>
+                                                    </div> -->
+                                                </div>
+                                                <div class="optimization-explanation bg-white p-3 rounded" style="border-left: 4px solid #0A2F5A;">
+                                                    <h6 style="font-size: 0.875rem; font-weight: 600; color: #0A2F5A; margin-bottom: 0.5rem;">
+                                                        <i class="bi bi-gear-fill me-2"></i>
+                                                        Optimizer Constraints
+                                                    </h6>
+                                                    <div style="font-size: 0.875rem; color: #475569;">
+                                                        <p class="mb-2"><strong>The scheduling optimizer enforces the following constraints:</strong></p>
+                                                        <ul class="mb-2">
+                                                            <li><strong>Assignment:</strong> Each well is assigned to at most one rig</li>
+                                                            <li><strong>No Overlap:</strong> A rig cannot drill multiple wells simultaneously</li>
+                                                            <li><strong>Rig Availability:</strong> Wells can only be drilled during rig's contract period (start/end dates)</li>
+                                                            <li><strong>Ready-to-Drill (RTD):</strong> Wells cannot start before their RTD date</li>
+                                                            <li><strong>Rig Capacity:</strong> Rig horsepower must meet or exceed well's HP requirement</li>
+                                                            <li><strong>Drilling Depth:</strong> Rig's drilling capacity must accommodate well depth</li>
+                                                            <li><strong>BOP Stack:</strong> Rig's BOP stack rating must meet well requirements</li>
+                                                            <li><strong>TDS Equipment:</strong> If well requires TDS, rig must have TDS availability</li>
+                                                        </ul>
+                                                        <p style="margin-bottom: 0; font-size: 0.75rem; color: #6b7280;"><em>The optimizer minimizes total project duration + inter-location movement costs while minimizing the number of unassigned wells (especially HIGH priority).</em></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Schedules Section -->
+            <div class="row mt-2">
+                <div class="col-12">
+                    <div class="recent-schedules-section">
+                        <!-- Section Header with Gradient Style -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h2 style="font-size: 1.125rem; font-weight: 600; color: #0A2F5A; margin-bottom: 0.5rem;">
+                                    <i class="bi bi-calendar-check me-2"></i>
+                                    Recent Schedules Overview
+                                </h2>
+                                <p style="font-size: 0.875rem; color: #475569; margin-bottom: 0;">Monitor your latest drilling schedule activities and performance metrics</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0" style="border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                            <div class="card-body p-4">
+                                <div class="row mb-2">
+                                    <div class="col-12">
+                                        <p style="font-size: 0.875rem; color: #475569; text-align: justify; margin-bottom: 0.5rem;">
+                                            This comprehensive overview displays your most recently created and active drilling schedules, providing 
+                                            real-time insights into schedule performance, assignment status, and cost implications. Each schedule 
+                                            represents a carefully optimized allocation of drilling resources designed to maximize operational efficiency 
+                                            while minimizing total project costs. The system continuously monitors schedule progress, tracks key performance 
+                                            indicators, and provides actionable insights for ongoing optimization and strategic decision-making in your 
+                                            drilling operations management workflow.
+                                        </p>
+                                    </div>
+                                </div>
+                                <hr class="page-separator my-3">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped" id="recent-schedules-table">
+                                        <thead style="background-color: #f9fafb; border-bottom: 2px solid #e2e8f0;">
+                                            <tr>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-tag me-1"></i>Schedule Name</th>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-circle-fill me-1"></i>Status</th>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-calendar me-1"></i>Created</th>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-diagram-3 me-1"></i>Wells</th>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-currency-rupee me-1"></i>Cost (Cr)</th>
+                                                <th style="color: #374151; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="bi bi-gear me-1"></i>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-5">
+                                                    <div class="loading-state">
+                                                        <div class="spinner-border text-primary mb-2" role="status">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <div>Loading recent schedules...</div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Optimization Score Details Modal -->
+    <div class="modal fade" id="optimizationScoreModal" tabindex="-1" aria-labelledby="optimizationScoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content" style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                <div class="modal-header" style="background: #ffffff; border-bottom: 1px solid #f3f4f6; padding: 1.25rem 1.5rem;">
+                    <h5 class="modal-title" id="optimizationScoreModalLabel" style="color: #374151; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-calculator" style="color: #0A2F5A;"></i>Optimization Score Calculation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="background: #f9fafb; padding: 1.5rem;">
+                    <!-- Current Score Display -->
+                    <div class="text-center mb-4 p-4" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;">
+                        <h6 class="mb-2" style="color: #6b7280; font-weight: 600;">Current Optimization Score</h6>
+                        <div class="display-4 font-weight-bold" style="color: #0A2F5A;" id="modal-optimization-score">-</div>
+                    </div>
+                    
+                    <!-- Formula Explanation -->
+                    <div class="mb-4" style="background: #dbeafe; border: 1px solid #93c5fd; border-radius: 10px; padding: 1.25rem;">
+                        <h6 class="mb-2" style="color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-info-circle"></i>How It's Calculated
+                        </h6>
+                        <p class="mb-0" style="color: #1e3a8a; font-size: 0.9rem;">
+                            The optimization score is a weighted composite metric based on four key performance indicators. 
+                            Each factor contributes to the overall score based on its importance in drilling operations.
+                        </p>
+                    </div>
+                    
+                    <!-- Factor 1: Cost Minimization -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f3f4f6; padding: 0.875rem 1rem;">
+                            <strong style="color: #374151; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-currency-dollar" style="color: #3b82f6;"></i>Factor 1: Cost Minimization Efficiency (40% weight)</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Formula:</strong>
+                                <code class="d-block mt-1 p-2 bg-light">
+                                    costEfficiency = (minCost / avgCost) × 100<br>
+                                    contribution = costEfficiency × 0.4
+                                </code>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Calculation:</strong>
+                                <ul class="mb-0" id="cost-calculation">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 2: Resource Utilization -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f3f4f6; padding: 0.875rem 1rem;">
+                            <strong style="color: #374151; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-gear" style="color: #10b981;"></i>Factor 2: Resource Utilization (30% weight)</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Formula:</strong>
+                                <code class="d-block mt-1 p-2 bg-light">
+                                    utilizationRate = (totalAssignments / totalWells) × 100<br>
+                                    contribution = min(utilizationRate, 100) × 0.3
+                                </code>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Calculation:</strong>
+                                <ul class="mb-0" id="utilization-calculation">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 3: Schedule Adherence -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f3f4f6; padding: 0.875rem 1rem;">
+                            <strong style="color: #374151; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-calendar-check" style="color: #06b6d4;"></i>Factor 3: Schedule Adherence (20% weight)</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Formula:</strong>
+                                <code class="d-block mt-1 p-2 bg-light">
+                                    scheduleAdherence = ((totalWells - highPriorityWells) / totalWells × 50) + 50<br>
+                                    contribution = scheduleAdherence × 0.2
+                                </code>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Calculation:</strong>
+                                <ul class="mb-0" id="adherence-calculation">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Factor 4: Constraint Satisfaction -->
+                    <div class="card mb-3" style="border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="card-header" style="background: #ffffff; border-bottom: 1px solid #f3f4f6; padding: 0.875rem 1rem;">
+                            <strong style="color: #374151; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-check-circle" style="color: #3b82f6;"></i>Factor 4: Constraint Satisfaction (10% weight)</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Formula:</strong>
+                                <code class="d-block mt-1 p-2 bg-light">
+                                    rigCapacityMatch = if (rigs ≥ wells) then 100 else (rigs / wells) × 100<br>
+                                    contribution = min(rigCapacityMatch, 100) × 0.1
+                                </code>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Calculation:</strong>
+                                <ul class="mb-0" id="constraint-calculation">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Final Score -->
+                    <div class="card" style="border: 2px solid #3b82f6; border-radius: 10px; box-shadow: 0 2px 8px rgba(59,130,246,0.2);">
+                        <div class="card-header" style="background: #dbeafe; border-bottom: 1px solid #3b82f6; padding: 0.875rem 1rem;">
+                            <strong style="color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-trophy" style="color: #0A2F5A;"></i>Final Score Calculation</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Formula:</strong>
+                                <code class="d-block mt-1 p-2 bg-light">
+                                    finalScore = sum of all contributions<br>
+                                    result = min(max(finalScore, 0), 100) + "%"
+                                </code>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Calculation:</strong>
+                                <ul class="mb-0" id="final-calculation">
+                                    <li>Loading...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #ffffff; border-top: 1px solid #f3f4f6; padding: 1rem 1.5rem;">
+                    <button type="button" class="btn" style="background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 500;" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Plotly.js - Latest version -->
+    <script src="{% static 'vendor/plotly-2.26.0.min.js' %}"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Optimization Score Modal Setup -->
+    <script>
+        console.log('=== DASHBOARD SCRIPT STARTING ===');
+        console.log('Dashboard extra_js block executing...');
+        console.log('Document ready state:', document.readyState);
+        console.log('Bootstrap loaded?', typeof bootstrap);
+        console.log('jQuery loaded?', typeof $);
+        
+        // Simple modal opener - let Bootstrap do its job
+        window.openOptimizationScoreModal = function() {
+            let modalElement = document.getElementById('optimizationScoreModal');
+            if (!modalElement) return;
+            
+            // CRITICAL FIX: move modal to <body> to escape stacking contexts
+            if (modalElement.parentElement !== document.body) {
+                document.body.appendChild(modalElement);
+            }
+            
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            
+            // Wait for Bootstrap to FINISH showing before populating
+            modalElement.addEventListener(
+                'shown.bs.modal',
+                function handler() {
+                    populateOptimizationScoreModal();
+                    modalElement.removeEventListener('shown.bs.modal', handler);
+                },
+                { once: true }
+            );
+            
+            modal.show();
+        };
+        
+        // Define populateOptimizationScoreModal function - fetches data from API
+        async function populateOptimizationScoreModal() {
+            console.log('populateOptimizationScoreModal called (dashboard version)');
+            
+            // Get modal score display element
+            const modalScoreEl = document.getElementById('modal-optimization-score');
+            const costCalcEl = document.getElementById('cost-calculation');
+            const utilizationCalcEl = document.getElementById('utilization-calculation');
+            const adherenceCalcEl = document.getElementById('adherence-calculation');
+            const constraintCalcEl = document.getElementById('constraint-calculation');
+            const finalCalcEl = document.getElementById('final-calculation');
+            
+            if (!modalScoreEl || !costCalcEl) {
+                console.error('Modal elements not found');
+                return;
+            }
+            
+            // Show loading state
+            modalScoreEl.textContent = '-';
+            costCalcEl.innerHTML = '<li class="text-muted">Loading...</li>';
+            utilizationCalcEl.innerHTML = '<li class="text-muted">Loading...</li>';
+            adherenceCalcEl.innerHTML = '<li class="text-muted">Loading...</li>';
+            constraintCalcEl.innerHTML = '<li class="text-muted">Loading...</li>';
+            finalCalcEl.innerHTML = '<li class="text-muted">Loading...</li>';
+            
+            try {
+                // Fetch data from API with credentials
+                console.log('Fetching data from API...');
+                const [rigsResponse, wellsResponse, schedulesResponse] = await Promise.all([
+                    fetch('/api/rigs/', { credentials: 'same-origin' }).then(r => r.json()),
+                    fetch('/api/wells/', { credentials: 'same-origin' }).then(r => r.json()),
+                    fetch('/api/schedules/', { credentials: 'same-origin' }).then(r => r.json())
+                ]);
+                
+                const rigsData = rigsResponse.results || rigsResponse || [];
+                const wellsData = wellsResponse.results || wellsResponse || [];
+                const schedulesData = schedulesResponse.results || schedulesResponse || [];
+                
+                console.log('Fetched data - rigs:', rigsData.length, 'wells:', wellsData.length, 'schedules:', schedulesData.length);
+                
+                if (rigsData.length === 0 || wellsData.length === 0) {
+                    console.log('No data available for calculation');
+                    modalScoreEl.textContent = '-';
+                    costCalcEl.innerHTML = '<li class="text-muted">No data available - please add rigs and wells</li>';
+                    utilizationCalcEl.innerHTML = '<li class="text-muted">No data available</li>';
+                    adherenceCalcEl.innerHTML = '<li class="text-muted">No data available</li>';
+                    constraintCalcEl.innerHTML = '<li class="text-muted">No data available</li>';
+                    finalCalcEl.innerHTML = '<li class="text-muted">No data available</li>';
+                    return;
+                }
+                
+                let contributions = [];
+                
+                // Factor 1: Cost minimization
+                let costContribution = 0;
+                if (rigsData.length > 0) {
+                    const costs = rigsData.map(rig => parseFloat(rig.daily_cost_inr) || 0);
+                    const avgCost = costs.reduce((sum, cost) => sum + cost, 0) / rigsData.length;
+                    const minCost = Math.min(...costs);
+                    const costEfficiency = minCost > 0 ? (minCost / avgCost) * 100 : 50;
+                    costContribution = costEfficiency * 0.4;
+                    
+                    costCalcEl.innerHTML = `
+                        <li>Total Rigs: <strong>${rigsData.length}</strong></li>
+                        <li>Average Daily Cost: <strong>₹${avgCost.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></li>
+                        <li>Minimum Daily Cost: <strong>₹${minCost.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></li>
+                        <li>Cost Efficiency: <strong>${costEfficiency.toFixed(2)}%</strong></li>
+                        <li>Weighted Contribution (×0.4): <strong>${costContribution.toFixed(2)}</strong></li>
+                    `;
+                    contributions.push(costContribution);
+                }
+                
+                // Factor 2: Resource utilization
+                const totalAssignments = schedulesData.reduce((count, schedule) => {
+                    return count + (schedule.assignments ? schedule.assignments.length : 0);
+                }, 0);
+                
+                const utilizationRate = wellsData.length > 0 ? (totalAssignments / wellsData.length) * 100 : 0;
+                const utilizationContribution = Math.min(utilizationRate, 100) * 0.3;
+                
+                utilizationCalcEl.innerHTML = `
+                    <li>Total Wells: <strong>${wellsData.length}</strong></li>
+                    <li>Total Assignments: <strong>${totalAssignments}</strong></li>
+                    <li>Utilization Rate: <strong>${utilizationRate.toFixed(2)}%</strong></li>
+                    <li>Capped Utilization: <strong>${Math.min(utilizationRate, 100).toFixed(2)}%</strong></li>
+                    <li>Weighted Contribution (×0.3): <strong>${utilizationContribution.toFixed(2)}</strong></li>
+                `;
+                contributions.push(utilizationContribution);
+                
+                // Factor 3: Schedule adherence
+                const highPriorityWells = wellsData.filter(well => 
+                    well.priority === 'HIGH' || well.priority === 'High' || well.priority === 'high'
+                ).length;
+                const scheduleAdherence = wellsData.length > 0 ? 
+                    ((wellsData.length - highPriorityWells) / wellsData.length * 50 + 50) : 75;
+                const adherenceContribution = scheduleAdherence * 0.2;
+                
+                adherenceCalcEl.innerHTML = `
+                    <li>Total Wells: <strong>${wellsData.length}</strong></li>
+                    <li>High Priority Wells: <strong>${highPriorityWells}</strong></li>
+                    <li>Schedule Adherence: <strong>${scheduleAdherence.toFixed(2)}%</strong></li>
+                    <li>Weighted Contribution (×0.2): <strong>${adherenceContribution.toFixed(2)}</strong></li>
+                `;
+                contributions.push(adherenceContribution);
+                
+                // Factor 4: Constraint satisfaction
+                const rigCapacityMatch = rigsData.length > 0 && wellsData.length > 0 ? 
+                    (rigsData.length >= wellsData.length ? 100 : (rigsData.length / wellsData.length) * 100) : 50;
+                const constraintContribution = Math.min(rigCapacityMatch, 100) * 0.1;
+                
+                constraintCalcEl.innerHTML = `
+                    <li>Total Rigs: <strong>${rigsData.length}</strong></li>
+                    <li>Total Wells: <strong>${wellsData.length}</strong></li>
+                    <li>Capacity Match: <strong>${rigCapacityMatch.toFixed(2)}%</strong></li>
+                    <li>Weighted Contribution (×0.1): <strong>${constraintContribution.toFixed(2)}</strong></li>
+                `;
+                contributions.push(constraintContribution);
+                
+                // Final score
+                const totalContribution = contributions.reduce((sum, val) => sum + val, 0);
+                const finalScore = Math.round(totalContribution);
+                const cappedScore = Math.min(Math.max(finalScore, 0), 100);
+                
+                finalCalcEl.innerHTML = `
+                    <li>Factor 1 (Cost): <strong>${costContribution.toFixed(2)}</strong></li>
+                    <li>Factor 2 (Utilization): <strong>${utilizationContribution.toFixed(2)}</strong></li>
+                    <li>Factor 3 (Adherence): <strong>${adherenceContribution.toFixed(2)}</strong></li>
+                    <li>Factor 4 (Constraints): <strong>${constraintContribution.toFixed(2)}</strong></li>
+                    <li class="mt-2 pt-2 border-top">Total Sum: <strong>${totalContribution.toFixed(2)}</strong></li>
+                    <li>Rounded: <strong>${finalScore}</strong></li>
+                    <li>Capped (0-100): <strong>${cappedScore}</strong></li>
+                    <li class="mt-2 pt-2 border-top"><strong>Final Score: ${cappedScore}%</strong></li>
+                `;
+                
+                modalScoreEl.textContent = `${cappedScore}%`;
+                console.log('Modal populated successfully with score:', cappedScore + '%');
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                modalScoreEl.textContent = 'Error';
+                costCalcEl.innerHTML = '<li class="text-danger">Error loading data. Please try again.</li>';
+                utilizationCalcEl.innerHTML = '<li class="text-danger">Error loading data</li>';
+                adherenceCalcEl.innerHTML = '<li class="text-danger">Error loading data</li>';
+                constraintCalcEl.innerHTML = '<li class="text-danger">Error loading data</li>';
+                finalCalcEl.innerHTML = '<li class="text-danger">Error loading data</li>';
+            }
+        }
+        
+        // Single clean event listener setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const scoreCard = document.getElementById('optimization-score-card');
+            if (scoreCard) {
+                scoreCard.addEventListener('click', window.openOptimizationScoreModal);
+            }
+            
+            // Defensive cleanup for modal backdrop in complex layouts
+            const modalEl = document.getElementById('optimizationScoreModal');
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', () => {
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                });
+            }
+        });
+    </script>
+{% endblock %}

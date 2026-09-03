@@ -1,0 +1,158 @@
+[
+{
+  "model": "scheduler.coringnorm",
+  "pk": "2541a30f-38ea-4bda-8da4-1a0a1edaf04b",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 0,
+    "depth_end": 500,
+    "additional_days": "0.50",
+    "created_at": "2026-03-05T12:19:56.327Z",
+    "updated_at": "2026-03-05T12:19:56.327Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "404cbee9-a7bf-4fc9-a7fe-1d3c73f52620",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 500,
+    "depth_end": 1000,
+    "additional_days": "0.75",
+    "created_at": "2026-03-05T12:19:56.328Z",
+    "updated_at": "2026-03-05T12:19:56.328Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "4434e343-70b6-4f9f-80a8-83df92c76c0e",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1001,
+    "depth_end": 2000,
+    "additional_days": "1.50",
+    "created_at": "2026-01-10T08:40:31.617Z",
+    "updated_at": "2026-01-16T15:02:12.556Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "44b8e691-7fe3-4241-a893-33f602fb8199",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1,
+    "depth_end": 1000,
+    "additional_days": "1.00",
+    "created_at": "2026-01-10T08:40:31.617Z",
+    "updated_at": "2026-01-16T15:01:58.270Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "9b20652f-a180-4d6c-a184-bdeab96033f5",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 0,
+    "depth_end": 1000,
+    "additional_days": "1.00",
+    "created_at": "2026-01-28T15:48:57.030Z",
+    "updated_at": "2026-01-28T15:48:57.030Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "a07f0d39-2514-418e-8785-05d5bf23af30",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1000,
+    "depth_end": 1500,
+    "additional_days": "1.00",
+    "created_at": "2026-03-05T12:19:56.329Z",
+    "updated_at": "2026-03-05T12:19:56.329Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "c31511b6-2f34-49dd-93ce-635c4a104835",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2001,
+    "depth_end": 3000,
+    "additional_days": "2.00",
+    "created_at": "2026-01-10T08:40:31.618Z",
+    "updated_at": "2026-01-16T15:02:04.633Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "d92fadd5-9799-4cce-8e34-e02897388dd7",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2000,
+    "depth_end": 2500,
+    "additional_days": "1.50",
+    "created_at": "2026-03-05T12:19:56.330Z",
+    "updated_at": "2026-03-05T12:19:56.330Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "dc94855e-7055-4524-978a-b3168e1c20c2",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 3000,
+    "depth_end": 4000,
+    "additional_days": "2.50",
+    "created_at": "2026-03-05T12:19:56.332Z",
+    "updated_at": "2026-03-05T12:19:56.332Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "ecaae7f1-d8e8-42a3-a8cd-4cb32093b8f7",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 2500,
+    "depth_end": 3000,
+    "additional_days": "2.00",
+    "created_at": "2026-03-05T12:19:56.331Z",
+    "updated_at": "2026-03-05T12:19:56.331Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "eede009e-beae-4065-8f81-74e2afdb6684",
+  "fields": {
+    "location": "de1f3002-4fb0-4352-9305-707961827730",
+    "depth_start": 1500,
+    "depth_end": 2000,
+    "additional_days": "1.25",
+    "created_at": "2026-03-05T12:19:56.330Z",
+    "updated_at": "2026-03-05T12:19:56.330Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "f08e7486-41d7-40b7-8889-e145541ae4ad",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 1001,
+    "depth_end": 2000,
+    "additional_days": "1.50",
+    "created_at": "2026-01-28T15:48:18.472Z",
+    "updated_at": "2026-01-28T15:48:18.472Z"
+  }
+},
+{
+  "model": "scheduler.coringnorm",
+  "pk": "f168951c-a390-4608-9933-d54b78f775a2",
+  "fields": {
+    "location": "36907b13-d206-4bc9-b1c4-2bee6ab15297",
+    "depth_start": 2001,
+    "depth_end": 3000,
+    "additional_days": "2.00",
+    "created_at": "2026-01-28T15:48:18.474Z",
+    "updated_at": "2026-01-28T15:48:18.474Z"
+  }
+}
+]
