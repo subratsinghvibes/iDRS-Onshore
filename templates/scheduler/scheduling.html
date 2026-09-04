@@ -647,6 +647,23 @@
                             <div class="col-6"><span class="text-muted">Time:</span> <strong id="result-time">-</strong>
                             </div>
                         </div>
+                        <!-- Determinism provenance. Populated by showResults(). The full
+                             hash / fingerprint go in the title attribute because the panel
+                             is only ~0.8rem wide; the truncated value is what is shown. -->
+                        <div class="row g-1 mb-2">
+                            <div class="col-6"><span class="text-muted">Hash:</span> <code id="result-hash"
+                                    style="font-size: 0.7rem;" title="">-</code></div>
+                            <div class="col-6"><span class="text-muted">Model:</span> <code id="result-fingerprint"
+                                    style="font-size: 0.7rem;" title="">-</code></div>
+                        </div>
+                        <!-- Shown ONLY when deterministic_stop === false. role="alert" so
+                             assistive technology announces it when it appears, and the state
+                             is carried in the text rather than by the amber colour. -->
+                        <div id="result-determinism-warning" class="alert alert-warning py-1 px-2 mb-2"
+                            style="display: none; font-size: 0.7rem;" role="alert">
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                            <span id="result-determinism-warning-text"></span>
+                        </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-outline-primary btn-sm flex-fill"
                                 style="font-size: 0.7rem; padding: 0.375rem;" onclick="viewLastScheduleDetails()">
@@ -1293,7 +1310,57 @@
             document.getElementById('result-unassigned').textContent = result.unassigned_wells ? result.unassigned_wells.length : 0;
             document.getElementById('result-cost').textContent = formatCost(result.total_cost || 0);
             document.getElementById('result-time').textContent = result.solve_time_seconds ? result.solve_time_seconds.toFixed(2) + 's' : '< 1s';
+
+            showDeterminismProvenance(result);
         }, 500);
+    }
+
+    // Render the determinism provenance into the results panel.
+    //
+    // Escaping: every value here is written with .textContent or .setAttribute,
+    // never innerHTML, so the browser cannot interpret any of it as markup. That
+    // is the pattern showResults() already uses for its own four fields, and it is
+    // stronger than the manual < / > replacement showError() needs — showError has
+    // to build markup, this does not.
+    function showDeterminismProvenance(result) {
+        const truncate = (value) => (value && value.length > 12) ? value.slice(0, 12) + '…' : (value || '—');
+
+        const hashEl = document.getElementById('result-hash');
+        if (hashEl) {
+            const hash = result.schedule_hash || '';
+            hashEl.textContent = truncate(hash);
+            hashEl.setAttribute('title', hash
+                ? 'Schedule hash (full): ' + hash + ' — identical hashes confirm identical schedules.'
+                : 'No schedule hash was recorded for this run.');
+        }
+
+        const fpEl = document.getElementById('result-fingerprint');
+        if (fpEl) {
+            const fingerprint = result.model_fingerprint || '';
+            fpEl.textContent = truncate(fingerprint);
+            fpEl.setAttribute('title', fingerprint
+                ? 'Model fingerprint (full): ' + fingerprint + ' — identifies the question put to the solver. Two runs are only comparable when this matches.'
+                : 'No model fingerprint was recorded for this run.');
+        }
+
+        // Strict === false. A missing or null deterministic_stop means "not
+        // recorded", which must NOT raise a warning — only an explicit false does.
+        const warnEl = document.getElementById('result-determinism-warning');
+        const warnTextEl = document.getElementById('result-determinism-warning-text');
+        if (warnEl && warnTextEl) {
+            if (result.deterministic_stop === false) {
+                const reason = result.stop_reason || 'unknown reason';
+                warnTextEl.textContent =
+                    'Not guaranteed reproducible (' + reason + '): this run stopped on the wall clock '
+                    + 'before its work budget completed, so re-running it may produce a different schedule. '
+                    + 'This indicator is advisory — run the check_determinism management command for the '
+                    + 'authoritative cross-run check.';
+                warnEl.style.display = 'block';
+            } else {
+                warnEl.style.display = 'none';
+                warnTextEl.textContent = '';
+            }
+        }
     }
 
     function showError(message) {

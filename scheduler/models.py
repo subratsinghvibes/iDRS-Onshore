@@ -729,12 +729,17 @@ class WellPairDistance(models.Model):
         try:
             from scheduler.views import calculate_ilm_days
             calculate_ilm = calculate_ilm_days
-            # Pre-fetch adjustment rules once for the entire location
+            # Pre-fetch adjustment rules once for the entire location.
+            # ('-priority', 'category', 'id') is a TOTAL ordering: rules that tie
+            # on priority AND category would otherwise come back in database
+            # order, and calculate_ilm_days applies the FIRST matching 'replace'
+            # rule. These cached ILM values are what the optimizer reads, so an
+            # unordered fetch keeps the hazard alive one layer below the solver.
             from scheduler.models import RigBuildingAdjustment
             prefetched_adjustments = list(RigBuildingAdjustment.objects.filter(
                 location=location,
                 is_active=True
-            ).order_by('-priority', 'category'))
+            ).order_by('-priority', 'category', 'id'))
         except ImportError:
             pass
         
@@ -810,10 +815,11 @@ def _compute_and_store_ilm(location, records_to_update):
         from scheduler.views import calculate_ilm_days
         from scheduler.models import RigBuildingAdjustment, WellPairDistance
 
-        # Pre-fetch all adjustment rules for this location once
+        # Pre-fetch all adjustment rules for this location once.
+        # ('-priority', 'category', 'id') is total — see the note above.
         prefetched_adjustments = list(RigBuildingAdjustment.objects.filter(
             location=location, is_active=True
-        ).order_by('-priority', 'category'))
+        ).order_by('-priority', 'category', 'id'))
 
         to_update = []
         for d in records_to_update:
@@ -876,9 +882,10 @@ def _background_add_well_pairs(well_id, location_id):
                 return
 
             # Pre-fetch adjustment rules
+            # ('-priority', 'category', 'id') is total — see the note above.
             prefetched_adjustments = list(RigBuildingAdjustment.objects.filter(
                 location=location, is_active=True
-            ).order_by('-priority', 'category'))
+            ).order_by('-priority', 'category', 'id'))
 
             # Delete existing pairs for this well (both directions)
             WellPairDistance.objects.filter(
@@ -947,9 +954,10 @@ def _background_add_rig_pairs(rig_id, location_id):
             rig = Rig.objects.get(id=rig_id)
 
             # Pre-fetch adjustments
+            # ('-priority', 'category', 'id') is total — see the note above.
             prefetched_adjustments = list(RigBuildingAdjustment.objects.filter(
                 location=location, is_active=True
-            ).order_by('-priority', 'category'))
+            ).order_by('-priority', 'category', 'id'))
 
             # Existing records for this rig
             existing = WellPairDistance.objects.filter(location=location, rig=rig).select_related(
@@ -1538,7 +1546,59 @@ class Schedule(models.Model):
         blank=True,
         help_text="Solver time limit in seconds as requested by user"
     )
-    
+
+    # Determinism provenance (why this schedule is or is not reproducible).
+    #
+    # All six are nullable with no default and no backfill: rows created before
+    # migration 0063 genuinely have no provenance, and inventing a value for them
+    # would be worse than a null. A null here reads as "not recorded", never as
+    # "not reproducible" — the two must stay distinguishable, which is why
+    # deterministic_stop is a nullable Boolean rather than a Boolean defaulting
+    # to False.
+    #
+    # schedule_hash (migration 0061) answers "which schedule is this?". These
+    # answer "can I expect to get it again?".
+    model_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text="SHA-256 of the CP-SAT model proto. Identifies the question put "
+                  "to the solver; two runs are only comparable if this matches."
+    )
+    solver_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text="SHA-256 of the solver parameters, OR-Tools version and "
+                  "determinism settings. Identifies the machinery used to answer."
+    )
+    deterministic_stop = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="ADVISORY. True when the solve stopped on its work budget rather "
+                  "than the wall clock. A single run cannot prove reproducibility; "
+                  "the authoritative check is the check_determinism command."
+    )
+    stop_reason = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        help_text="Why the solver stopped: OPTIMAL_PROVEN, DETERMINISTIC_BUDGET, "
+                  "WALL_CLOCK_BACKSTOP, INFEASIBLE or OTHER."
+    )
+    deterministic_time_used = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Deterministic-time units consumed by the solve. A work counter, "
+                  "not seconds, so it is independent of machine load."
+    )
+    deterministic_budget = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Deterministic-time units the solve was allowed. Null on the "
+                  "performance path, which is given no work budget."
+    )
+
     def get_root_schedule(self):
         """Get the root/original schedule in the family"""
         current = self

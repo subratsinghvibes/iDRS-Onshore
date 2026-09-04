@@ -27,9 +27,602 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Tuple, Optional, Union
 
 import pandas as pd
+from django.conf import settings
 from ortools.sat.python import cp_model
 
 logger = logging.getLogger(__name__)
+
+# ==============================================================================
+# DETERMINISTIC STOPPING CRITERION
+# ==============================================================================
+# The deterministic solve path stops on CP-SAT's *deterministic time* (a work
+# counter) rather than on the wall clock. Wall-clock time is not a function of
+# the request — the machine's own load is not part of the request — so a
+# wall-clock stop lands on a different search node whenever the box is busy and
+# returns a different schedule for identical inputs. Deterministic time is a
+# function of the work performed, so the stop lands in the same place every run.
+#
+# See .kiro/specs/deterministic-schedule-fix/design.md, design decision 1.
+
+#: Defaults for ``settings.IDRS_SOLVER_DETERMINISM``. Duplicated here rather
+#: than assumed present so the optimizer still runs against a settings module
+#: that predates the block, and so ``override_settings`` with a partial dict
+#: behaves sensibly in tests.
+#:
+#: These must stay in step with ``drilling_scheduler/settings.py``, which is
+#: where the reasoning for each value is recorded — in particular why
+#: ``DETERMINISTIC_TIME_RATIO`` is 0.60 (search quality) and why
+#: ``WALL_BACKSTOP_FACTOR`` is sized from measured contention on this host
+#: rather than from a wall-time target.
+DETERMINISM_SETTING_DEFAULTS: Dict[str, Any] = {
+    "DETERMINISTIC_TIME_RATIO": 0.60,
+    "WALL_BACKSTOP_FACTOR": 1.5,
+    "CANONICALIZE_BUDGET_SHARE": 0.15,
+    "FIXED_SEARCH": False,
+}
+
+#: Number of interleaved tasks CP-SAT completes before synchronising and
+#: scheduling the next batch.
+#:
+#: Pinned rather than left at the proto default of 0, which means "derive it
+#: from the worker count". Verified against the pinned ortools 9.15.6755: with
+#: ``num_search_workers = 1`` the solver log reads "Setting number of tasks in
+#: each batch of interleaved search to 1", so 1 is exactly the value the
+#: derivation produces today and pinning it preserves current behaviour. What
+#: the pin buys is that an OR-Tools upgrade can no longer change the batch size
+#: — and with it the search path, and with it the schedule — silently: the value
+#: is now a recorded parameter instead of an invisible default.
+DETERMINISTIC_INTERLEAVE_BATCH_SIZE = 1
+
+STOP_REASON_OPTIMAL_PROVEN = "OPTIMAL_PROVEN"
+STOP_REASON_INFEASIBLE = "INFEASIBLE"
+STOP_REASON_DETERMINISTIC_BUDGET = "DETERMINISTIC_BUDGET"
+STOP_REASON_WALL_CLOCK_BACKSTOP = "WALL_CLOCK_BACKSTOP"
+STOP_REASON_OTHER = "OTHER"
+
+#: Fraction of the deterministic budget that counts as "the budget bound".
+#: CP-SAT overshoots its own budget slightly — measured 7.0001 units against a
+#: 7.0 budget — and can land a hair under it, so the test is a tolerance rather
+#: than an equality.
+#:
+#: Relaxed from 0.995 to 0.93 after the task 3 follow-on measurement. Under
+#: contention (8 of 12 cores busy) a run stopped at 3.4378 of its 3.6000 budget
+#: — 95.49 % — while returning the *identical* schedule: same ``schedule_hash``
+#: (``1a6136917eac05eb``), same objective, same 23 wells, five runs out of five.
+#: At 0.995 that run classified ``OTHER`` with ``deterministic_stop = False``,
+#: i.e. a false amber on a run that was in fact reproducible. 0.93 rather than
+#: 0.95: the observed short stop is at 95.49 %, so 0.95 leaves no margin and
+#: would false-amber again on the next slightly busier host.
+#:
+#: Why relaxing this is safe:
+#:
+#: * The single-solve ``deterministic_stop`` badge is **advisory**. It is a
+#:   proxy for reproducibility, and one solve cannot actually prove
+#:   reproducibility — that needs more than one run to compare.
+#: * The **authoritative** check is the cross-run ``schedule_hash`` comparison
+#:   in the ``check_determinism`` management command (task 10).
+#: * The two genuinely non-reproducible modes are caught by *separate*
+#:   classifiers, neither of which depends on this threshold: a run cut short by
+#:   the clock is caught by ``WALL_BACKSTOP_BINDING_FRACTION`` as
+#:   ``WALL_CLOCK_BACKSTOP``, and a genuinely divergent schedule is caught as a
+#:   different ``schedule_hash``.
+#: * The ``OTHER``/short-stop case this absorbs is a benign contention
+#:   artefact: CP-SAT stopping a hair short of its own work budget while
+#:   producing the same answer.
+DETERMINISTIC_BUDGET_BINDING_FRACTION = 0.93
+
+#: Fraction of the wall-clock backstop that counts as "the backstop bound".
+WALL_BACKSTOP_BINDING_FRACTION = 0.98
+
+
+# ==============================================================================
+# INPUT VALIDATION — DUPLICATE NAMES
+# ==============================================================================
+# The optimizer keys *everything* on ``name``: the assignment / start / end /
+# interval variable dicts, the distance matrix index and columns, the per-rig ILM
+# matrices, the circuit arcs, every objective term, the extraction lookup and the
+# assignment payload the save path consumes.  ``Well.name`` carries no
+# ``unique=True``, so two selected wells can share a name — and when they do the
+# two wells silently collapse onto one set of model variables and the run dies
+# later with an error that names no well at all.
+#
+# Design decision 5 chooses to *reject* that input rather than re-key the model
+# on ``Well.id``: re-keying is a cross-module contract change reaching into
+# views.py, sem_views.py and well_rejection_analyzer.py, all to defend against a
+# state that is already fatal today (``wells.get(name=...)`` in the save path
+# raises ``MultipleObjectsReturned`` inside ``transaction.atomic()``).  Rejecting
+# is a cheap invariant with an actionable message.
+#
+# See .kiro/specs/deterministic-schedule-fix/design.md, design decision 5.
+
+
+class DuplicateNameError(ValueError):
+    """A frame the optimizer keys by name contains a repeated name.
+
+    Subclasses :class:`ValueError` so callers that already funnel bad input
+    through ``except ValueError`` keep working; the typed class exists so the
+    API layer can recognise this specific condition and translate it.
+    """
+
+    #: What the duplicated names label, for the message ("well" / "rig").
+    entity = "record"
+
+    def __init__(self, duplicate_names: Iterable[str]) -> None:
+        self.duplicate_names: List[str] = sorted({str(n) for n in duplicate_names})
+        super().__init__(self._build_message())
+
+    def _build_message(self) -> str:
+        names = ", ".join(self.duplicate_names)
+        plural = "s" if len(self.duplicate_names) != 1 else ""
+        return (
+            f"Duplicate {self.entity} name{plural}: {names}. "
+            f"The scheduler identifies each {self.entity} by its name, so two "
+            f"{self.entity}s sharing a name cannot be scheduled separately. "
+            f"Rename or remove the duplicate {self.entity}{plural} and run again."
+        )
+
+
+class DuplicateWellNameError(DuplicateNameError):
+    """Two or more selected wells share a ``name`` (clauses 1.6 / 1.7, 2.9)."""
+
+    entity = "well"
+
+
+class DuplicateRigNameError(DuplicateNameError):
+    """Two or more selected rigs share a ``name``.
+
+    ``Rig.name`` is ``unique=True`` in the model, so this cannot fire from the
+    database paths.  The check is free and documents the assumption for callers
+    that build the frames by hand.
+    """
+
+    entity = "rig"
+
+
+def find_duplicate_names(names: Iterable[Any]) -> List[str]:
+    """Names appearing more than once, sorted, de-duplicated.
+
+    Works on any iterable (a pandas ``Series``, a list of dicts' values, a
+    queryset's ``values_list``) so the same helper serves the optimizer
+    invariant and the API-boundary check.
+    """
+    seen: Dict[str, int] = {}
+    for raw in names:
+        key = str(raw)
+        seen[key] = seen.get(key, 0) + 1
+    return sorted(name for name, count in seen.items() if count > 1)
+
+
+def determinism_settings() -> Dict[str, Any]:
+    """The in-force ``IDRS_SOLVER_DETERMINISM`` values, defaults filled in.
+
+    Read at call time and never cached, so ``override_settings`` works and a
+    deployment can change the ratio without a code change.
+    """
+    configured = getattr(settings, "IDRS_SOLVER_DETERMINISM", None) or {}
+    return {
+        key: configured.get(key, default)
+        for key, default in DETERMINISM_SETTING_DEFAULTS.items()
+    }
+
+
+def compute_solver_fingerprint(parameters: Any) -> str:
+    """SHA-256 over everything that decides *how* the search runs.
+
+    The companion to ``model_fingerprint``. That one identifies the *question*
+    put to CP-SAT; this one identifies the *machinery* used to answer it. Two
+    runs are only expected to agree when **both** match — a schedule produced
+    under a different time ratio, or under ``FIXED_SEARCH``, is a different
+    experiment even though the model is identical.
+
+    Three components, and each is load-bearing:
+
+    * ``str(parameters)`` — the protobuf text format of the ``SatParameters``
+      message, which by protobuf's rules lists only the fields that were
+      explicitly set. So it is the parameter *block the code chose*, not a dump
+      of every default, and an OR-Tools upgrade that changes an unset default
+      cannot silently perturb the fingerprint.
+    * ``ortools.__version__`` — a solver upgrade can change the search path for
+      an unchanged model and unchanged parameters, so the version is part of the
+      identity of a run. This is the component that makes the fingerprint honest
+      about reproducibility across a dependency bump.
+    * The ``IDRS_SOLVER_DETERMINISM`` block plus
+      ``DETERMINISTIC_INTERLEAVE_BATCH_SIZE`` — mostly redundant against the
+      parameter text (the ratio reaches it through ``max_deterministic_time``,
+      ``FIXED_SEARCH`` through ``search_branching``) and included anyway, because
+      relying on that indirection would be relying on a coincidence. A future
+      setting that changed behaviour without landing in the parameter proto would
+      otherwise be invisible here.
+
+    Deliberately **not** included: anything measured. No wall time, no
+    deterministic time used, no timestamp. The fingerprint has to be a pure
+    function of the configuration, or it could not be compared between runs —
+    which is the only thing it is for.
+    """
+    try:
+        import ortools
+
+        ortools_version = getattr(ortools, "__version__", None)
+    except Exception:  # pragma: no cover - ortools is a hard dependency
+        ortools_version = None
+
+    config = determinism_settings()
+    payload = json.dumps(
+        {
+            # Text format rather than SerializeToString(): protobuf does not
+            # guarantee deterministic binary output across versions, but the
+            # text format of a message with a fixed field set is stable and is
+            # additionally readable in a log when a mismatch needs diagnosing.
+            "parameters": str(parameters),
+            "ortools_version": ortools_version,
+            "determinism_settings": {key: config[key] for key in sorted(config)},
+            "interleave_batch_size": DETERMINISTIC_INTERLEAVE_BATCH_SIZE,
+        },
+        sort_keys=True,
+        default=str,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+#: Identifies which solve stage a :class:`SolverBudget` was cut for.
+STAGE_WHOLE_REQUEST = 0
+STAGE_PRIMARY = 1
+STAGE_CANONICALIZE = 2
+
+
+@dataclass(frozen=True)
+class SolverBudget:
+    """How one selected time limit maps onto the solver's stopping parameters.
+
+    Every field is a pure function of ``time_limit_seconds`` and the settings
+    block. Nothing here is derived from a measured elapsed time — that is the
+    whole point: a parameter computed from "time remaining" would feed this
+    machine's clock back into the parameter proto and reintroduce the defect.
+    """
+
+    time_limit_seconds: float
+    #: Binding limit for the deterministic path, in deterministic-time units.
+    #: ``None`` on the performance path, which is given no work budget at all.
+    deterministic_budget: Optional[float]
+    #: Backstop only. Bounds the damage if the fixed work budget cannot be
+    #: completed in time on a heavily contended machine.
+    wall_backstop_seconds: float
+    deterministic_time_ratio: float
+    wall_backstop_factor: float
+    #: Which stage this budget belongs to: ``STAGE_WHOLE_REQUEST`` for the
+    #: undivided calibration, ``STAGE_PRIMARY`` / ``STAGE_CANONICALIZE`` for the
+    #: two shares of the two-stage lexicographic solve.
+    stage: int = STAGE_WHOLE_REQUEST
+    #: Fraction of the whole-request budget this share represents. ``1.0`` for
+    #: the undivided calibration.
+    stage_share: float = 1.0
+
+
+def calibrate_solver_budget(
+    time_limit_seconds: float, deterministic: bool = True
+) -> SolverBudget:
+    """Map the user's selected time limit ``T`` onto ``(D, backstop)``.
+
+    ``D = DETERMINISTIC_TIME_RATIO x T`` in deterministic-time units and
+    ``backstop = WALL_BACKSTOP_FACTOR x T`` in seconds.
+
+    Deterministic time is a work counter whose unit is only "as close as
+    possible to a second", so the ratio is an empirical headroom allowance and
+    not a unit conversion: the fixed work budget still has to complete inside
+    the backstop when the machine is busy.
+
+    ``deterministic=False`` reproduces the performance path's pre-existing
+    wall-clock limit exactly (``max(1, int(T))``) and grants no work budget,
+    because clause 3.12 attaches no determinism promise to that path.
+    """
+    limit = float(time_limit_seconds)
+    config = determinism_settings()
+    ratio = float(config["DETERMINISTIC_TIME_RATIO"])
+    backstop_factor = float(config["WALL_BACKSTOP_FACTOR"])
+
+    if not deterministic:
+        return SolverBudget(
+            time_limit_seconds=limit,
+            deterministic_budget=None,
+            wall_backstop_seconds=float(max(1, int(limit))),
+            deterministic_time_ratio=ratio,
+            wall_backstop_factor=backstop_factor,
+        )
+
+    return SolverBudget(
+        time_limit_seconds=limit,
+        deterministic_budget=ratio * limit,
+        wall_backstop_seconds=backstop_factor * limit,
+        deterministic_time_ratio=ratio,
+        wall_backstop_factor=backstop_factor,
+    )
+
+
+@dataclass(frozen=True)
+class TwoStageBudget:
+    """The whole-request budget, split between the two lexicographic stages.
+
+    ``stage_two`` is ``None`` on the performance path, which runs one stage and
+    is promised no determinism at all (clause 3.12).
+    """
+
+    time_limit_seconds: float
+    canonicalize_budget_share: float
+    #: The undivided calibration, kept so the split can be checked against it.
+    whole_request: SolverBudget
+    stage_one: SolverBudget
+    stage_two: Optional[SolverBudget]
+
+    @property
+    def deterministic_budgets_sum_exactly(self) -> bool:
+        """Do the two work shares add back up to the whole-request budget?"""
+        if self.stage_two is None or self.whole_request.deterministic_budget is None:
+            return True
+        return (
+            self.stage_one.deterministic_budget + self.stage_two.deterministic_budget  # type: ignore[operator]
+        ) == self.whole_request.deterministic_budget
+
+    @property
+    def wall_backstops_sum_exactly(self) -> bool:
+        """Do the two wall shares add back up to ``FACTOR x T``?"""
+        if self.stage_two is None:
+            return True
+        return (
+            self.stage_one.wall_backstop_seconds + self.stage_two.wall_backstop_seconds
+        ) == self.whole_request.wall_backstop_seconds
+
+
+def calibrate_two_stage_budgets(
+    time_limit_seconds: float, deterministic: bool = True
+) -> TwoStageBudget:
+    """Split ``(D, backstop)`` between the primary and canonicalising stages.
+
+    ``D1 = (1 - share) x D`` and ``D2 = share x D`` in deterministic-time units;
+    the wall backstop is split on the *same* share, so::
+
+        stage_one.wall_backstop_seconds + stage_two.wall_backstop_seconds
+            == WALL_BACKSTOP_FACTOR x T          (exactly)
+
+    which is the total wall ceiling Property 4 bounds. Mirroring the split keeps
+    each stage's wall allowance proportional to the work it was granted, and the
+    two shares can never sum above the factor — if they did, the two-stage solve
+    would silently exceed the ceiling the design states.
+
+    **Both shares come from ``T`` and the settings block only.** Neither is
+    "whatever wall time is left after stage 1". That is not a stylistic
+    preference: a remaining-time computation would feed this machine's elapsed
+    time back into the parameter proto, which is the exact defect this whole
+    spec exists to remove. Under a same-machine scope it is the *only* channel
+    left through which the bug could return, so it is closed by construction —
+    this function cannot see a clock.
+
+    The far share is computed first and the near share by subtraction
+    (``D1 = D - D2``) rather than as ``(1 - share) x D``. Both spell the same
+    quantity, but subtraction makes the two shares sum back to the whole exactly
+    in floating point instead of within a rounding error, and "sums to exactly
+    ``1.0 x FACTOR x T``" is the property the design asserts.
+
+    On the performance path (``deterministic=False``) there is no second stage:
+    ``stage_one`` is the pre-existing single-stage performance budget, unchanged.
+    """
+    whole = calibrate_solver_budget(time_limit_seconds, deterministic=deterministic)
+    share = float(determinism_settings()["CANONICALIZE_BUDGET_SHARE"])
+
+    if not deterministic:
+        return TwoStageBudget(
+            time_limit_seconds=whole.time_limit_seconds,
+            canonicalize_budget_share=share,
+            whole_request=whole,
+            stage_one=whole,
+            stage_two=None,
+        )
+
+    stage_two_backstop = share * whole.wall_backstop_seconds
+    stage_one_backstop = whole.wall_backstop_seconds - stage_two_backstop
+
+    whole_budget = whole.deterministic_budget
+    assert whole_budget is not None, "the deterministic path always has a budget"
+    stage_two_budget = share * whole_budget
+    stage_one_budget = whole_budget - stage_two_budget
+
+    def _share(stage: int, budget: float, backstop: float, fraction: float) -> SolverBudget:
+        return SolverBudget(
+            time_limit_seconds=whole.time_limit_seconds,
+            deterministic_budget=budget,
+            wall_backstop_seconds=backstop,
+            deterministic_time_ratio=whole.deterministic_time_ratio,
+            wall_backstop_factor=whole.wall_backstop_factor,
+            stage=stage,
+            stage_share=fraction,
+        )
+
+    return TwoStageBudget(
+        time_limit_seconds=whole.time_limit_seconds,
+        canonicalize_budget_share=share,
+        whole_request=whole,
+        stage_one=_share(
+            STAGE_PRIMARY, stage_one_budget, stage_one_backstop, 1.0 - share
+        ),
+        stage_two=_share(
+            STAGE_CANONICALIZE, stage_two_budget, stage_two_backstop, share
+        ),
+    )
+
+
+# ------------------------------------------------------------------------------
+# Stage-2 tie-break weights (design decision 3)
+# ------------------------------------------------------------------------------
+
+def max_rig_well_order(num_wells: int, num_rigs: int) -> int:
+    """Upper bound on ``rig_well_order`` over all feasible assignments.
+
+    ``rig_well_order`` sums ``well_index x num_rigs + rig_index`` over the
+    *selected* ``(well, rig)`` pairs. Each well is assigned to at most one rig,
+    so at most ``num_wells`` order indices are ever active and the bound is
+    ``num_wells x num_pairs`` — not ``num_pairs x num_pairs``, which assumes
+    every pair can be active at once and is loose by a factor of ``num_rigs``.
+
+    Used to derive the dominating start-time weight. Deliberately *not* used to
+    re-derive ``BIG_M_WELLS``: the design offers that as a padding correction,
+    but Big-M is a coefficient of the stage-1 objective, and stage 1's objective
+    has to stay byte-identical to today's or the reported ``objective_value``
+    moves on requests that are already correct. Measured on the preservation
+    scenario: tightening the padding shifted ``objective_value`` from
+    698,525,729 to 698,525,679 and changed the model fingerprint. Tightening
+    Big-M remains available as separate, independently-verified work.
+    """
+    return int(num_wells) * int(num_wells) * int(num_rigs)
+
+
+def tiebreak_weights(num_wells: int, num_rigs: int) -> Tuple[int, int]:
+    """``(W1, W2)`` for the stage-2 tie-break objective.
+
+    ``W2 = 1`` and ``W1 = max(rig_well_order) + 1``, so ``W1`` strictly
+    dominates every value the finer tier can take and the two tiers form a real
+    hierarchy: start times decide first, and the canonical ``(well, rig)`` order
+    only breaks what start times leave tied. With both weights at 1 — which is
+    what stage 1 uses, unchanged — they are commensurate and form no order at
+    all, which is the tie the canonicalising stage exists to resolve.
+
+    These weights live only in stage 2, whose objective contains no Big-M, so
+    they cannot be "a percentage of Big-M" and cannot widen any LP relaxation.
+    That is the whole reason the tie-break moved into its own solve.
+    """
+    return max_rig_well_order(num_wells, num_rigs) + 1, 1
+
+
+# ------------------------------------------------------------------------------
+# Canonicalization outcomes (stage 2)
+# ------------------------------------------------------------------------------
+
+#: Stage 2 closed: the tie-break minimum is proven, so the selection is
+#: canonical.
+CANONICALIZATION_CANONICAL_OPTIMAL = "CANONICAL_OPTIMAL"
+#: Stage 2 improved the tie-break but did not prove its minimum. The selection
+#: is reproducible (its stop is deterministic) but not provably canonical.
+CANONICALIZATION_CANONICAL_INCUMBENT = "CANONICAL_INCUMBENT"
+#: Stage 2 found nothing better than stage 1, so stage 1's solution is kept.
+CANONICALIZATION_ALREADY_CANONICAL = "ALREADY_CANONICAL"
+#: Not attempted: performance mode makes no determinism promise (clause 3.12).
+CANONICALIZATION_SKIPPED_PERFORMANCE_MODE = "SKIPPED_PERFORMANCE_MODE"
+#: Not attempted: stage 1 returned neither OPTIMAL nor FEASIBLE, so there is no
+#: solution to canonicalise and no ``V*`` to lock.
+CANONICALIZATION_SKIPPED_NO_STAGE_1_SOLUTION = "SKIPPED_NO_STAGE_1_SOLUTION"
+#: Not attempted: ``set_objective`` did not publish the expressions.
+CANONICALIZATION_SKIPPED_NO_EXPRESSIONS = "SKIPPED_NO_EXPRESSIONS"
+#: Attempted and failed. Stage 1's solution is returned intact in every case.
+CANONICALIZATION_FAILED_INFEASIBLE = "FAILED_INFEASIBLE"
+CANONICALIZATION_FAILED_NO_SOLUTION = "FAILED_NO_SOLUTION"
+CANONICALIZATION_FAILED_EXCEPTION = "FAILED_EXCEPTION"
+
+#: Every outcome in which stage 1's solution is what the caller receives.
+CANONICALIZATION_STAGE_ONE_PRESERVED = (
+    CANONICALIZATION_ALREADY_CANONICAL,
+    CANONICALIZATION_SKIPPED_PERFORMANCE_MODE,
+    CANONICALIZATION_SKIPPED_NO_STAGE_1_SOLUTION,
+    CANONICALIZATION_SKIPPED_NO_EXPRESSIONS,
+    CANONICALIZATION_FAILED_INFEASIBLE,
+    CANONICALIZATION_FAILED_NO_SOLUTION,
+    CANONICALIZATION_FAILED_EXCEPTION,
+)
+
+
+@dataclass(frozen=True)
+class CanonicalizationOutcome:
+    """What the canonicalising stage did, and whether its answer was adopted."""
+
+    status: str
+    #: True only when stage 2's variable values replaced stage 1's.
+    adopted: bool
+    stage_two_solver_status: Optional[str] = None
+    #: Tie-break objective value of stage 1's solution, and of stage 2's.
+    tiebreak_before: Optional[int] = None
+    tiebreak_after: Optional[int] = None
+    deterministic_time: Optional[float] = None
+    wall_time: Optional[float] = None
+    model_fingerprint: Optional[str] = None
+    detail: Optional[str] = None
+    #: Stage 2's variable values, keyed by variable index. Never part of the
+    #: result payload — the payload gets the *status*, because stage 2's
+    #: objective is a tie-break index with no business meaning.
+    values: Optional[Dict[int, int]] = field(default=None, repr=False)
+
+    def as_dict(self) -> Dict[str, Any]:
+        """The reportable fields. Excludes ``values``."""
+        return {
+            "canonicalization_status": self.status,
+            "canonicalization_adopted": self.adopted,
+            "canonicalization_solver_status": self.stage_two_solver_status,
+            "canonicalization_tiebreak_before": self.tiebreak_before,
+            "canonicalization_tiebreak_after": self.tiebreak_after,
+            "canonicalization_deterministic_time": self.deterministic_time,
+            "canonicalization_wall_time": self.wall_time,
+            "canonicalization_model_fingerprint": self.model_fingerprint,
+            "canonicalization_detail": self.detail,
+        }
+
+
+@dataclass(frozen=True)
+class StopClassification:
+    """Why the solver stopped, and whether that reason is reproducible."""
+
+    stop_reason: str
+    deterministic_stop: bool
+    deterministic_time_used: float
+    deterministic_budget: Optional[float]
+    wall_backstop_seconds: Optional[float]
+
+    def as_dict(self) -> Dict[str, Any]:
+        """The five fields, ready for the result payload (task 8's work)."""
+        return {
+            "stop_reason": self.stop_reason,
+            "deterministic_stop": self.deterministic_stop,
+            "deterministic_time_used": self.deterministic_time_used,
+            "deterministic_budget": self.deterministic_budget,
+            "wall_backstop_seconds": self.wall_backstop_seconds,
+        }
+
+
+def classify_stop_reason(
+    status: Any,
+    deterministic_time: float,
+    wall_time: float,
+    deterministic_budget: Optional[float],
+    wall_backstop_seconds: Optional[float],
+) -> StopClassification:
+    """Classify the stop, in the order the design fixes.
+
+    ``OPTIMAL`` is checked first because a proof needs no budget: a run that
+    proved optimality is reproducible whatever the clock did. ``INFEASIBLE`` is
+    likewise a complete answer. Only then does the budget matter, and the
+    wall-clock backstop comes last because it is the one outcome that is *not*
+    reproducible — it is flagged rather than hidden (clause 2.4).
+    """
+    used = float(deterministic_time)
+    elapsed = float(wall_time)
+
+    if status == cp_model.OPTIMAL:
+        reason, deterministic_stop = STOP_REASON_OPTIMAL_PROVEN, True
+    elif status == cp_model.INFEASIBLE:
+        reason, deterministic_stop = STOP_REASON_INFEASIBLE, True
+    elif deterministic_budget and used >= (
+        DETERMINISTIC_BUDGET_BINDING_FRACTION * float(deterministic_budget)
+    ):
+        reason, deterministic_stop = STOP_REASON_DETERMINISTIC_BUDGET, True
+    elif wall_backstop_seconds and elapsed >= (
+        WALL_BACKSTOP_BINDING_FRACTION * float(wall_backstop_seconds)
+    ):
+        reason, deterministic_stop = STOP_REASON_WALL_CLOCK_BACKSTOP, False
+    else:
+        reason, deterministic_stop = STOP_REASON_OTHER, False
+
+    return StopClassification(
+        stop_reason=reason,
+        deterministic_stop=deterministic_stop,
+        deterministic_time_used=used,
+        deterministic_budget=deterministic_budget,
+        wall_backstop_seconds=wall_backstop_seconds,
+    )
 
 
 # ==============================================================================
@@ -548,6 +1141,38 @@ class DrillingScheduler:
         self.project_end: Optional[cp_model.IntVar] = None
 
         self.status = None
+        #: The stopping-criterion calibration applied by the last
+        #: ``_configure_solver_for_determinism`` call.
+        self.solver_budget: Optional[SolverBudget] = None
+
+        # --- Two-stage lexicographic solve (design decision 3) --------------
+        #: The full composite expression stage 1 minimises (P-expr). Published
+        #: by ``set_objective`` so stage 2 can lock it as an equality.
+        self.primary_objective_expr: Optional[Any] = None
+        #: ``W1 x start_time_sum + W2 x rig_well_order`` (T-expr), the only
+        #: thing stage 2 minimises.
+        self.tiebreak_objective_expr: Optional[Any] = None
+        self.tiebreak_weights: Optional[Tuple[int, int]] = None
+        #: ``(well, rig) -> canonical order index``, in the canonical insertion
+        #: order. Lets the tie-break value be evaluated for a captured solution
+        #: without going back to a solver.
+        self.rig_well_order_index: Dict[Tuple[str, str], int] = {}
+        #: Metrics captured from **stage 1**, which are the only ones the
+        #: business may see. Stage 2's objective is a tie-break index.
+        self.stage_one_metrics: Optional[Dict[str, Any]] = None
+        #: What the canonicalising stage did.
+        self.canonicalization: Optional[CanonicalizationOutcome] = None
+        #: Fingerprint of the stage-1 model proto, recorded before stage 2
+        #: mutates the model. This is *the* model fingerprint of the request.
+        self.model_fingerprint: Optional[str] = None
+        #: Fingerprint of the stage-2 proto. A deterministic function of stage
+        #: 1's result, so the chain fp1 -> V* -> fp2 is itself reproducible.
+        self.model_fingerprint_stage_two: Optional[str] = None
+        #: The budget split in force for the last solve.
+        self.two_stage_budget: Optional[TwoStageBudget] = None
+        #: Why the last ``Solve()`` stopped. Set by ``solve`` and
+        #: ``solve_with_actuals``; consumed by the result payload.
+        self.stop_classification: Optional[StopClassification] = None
         self.distance_matrix: pd.DataFrame = pd.DataFrame()
         self.ilm_days_matrix: Dict[str, pd.DataFrame] = {}  # Per-rig ILM days matrices
         self.circuit_arcs: Dict[Tuple[str, str, str], cp_model.IntVar] = {}  # Circuit arc variables: (well_i, well_j, rig) -> BoolVar
@@ -650,6 +1275,47 @@ class DrillingScheduler:
             ts = ts.fillna(fallback)
         return ts
 
+    @staticmethod
+    def _sort_frame_totally(df: pd.DataFrame) -> pd.DataFrame:
+        """Sort a rig/well frame on a TOTAL key, stably, and reindex.
+
+        Design decision 6 (ordering hardening).  ``name`` on its own is not a
+        total key — ``Well.name`` has no ``unique=True`` — so rows that tie on it
+        would keep whatever relative position the upstream queryset, DataFrame
+        construction or dict iteration happened to give them.  Adding ``id``
+        makes the key total; ``kind="stable"`` guarantees that when ``id`` is
+        absent the caller's order is preserved instead of being permuted by the
+        default (introsort) algorithm.
+        """
+        sort_keys = ["name", "id"] if "id" in df.columns else ["name"]
+        return df.sort_values(by=sort_keys, kind="stable").reset_index(drop=True)
+
+    def _reject_duplicate_names(self) -> None:
+        """Refuse a run whose rig or well names are not unique (clause 2.9).
+
+        Raises :class:`DuplicateWellNameError` / :class:`DuplicateRigNameError`
+        naming *every* duplicate.  ``Rig.name`` is ``unique=True`` in the model
+        so the rig branch cannot fire from a database-built frame, but the check
+        is free and documents the assumption for hand-built frames.
+        """
+        duplicate_wells = find_duplicate_names(self.wells_df["name"])
+        if duplicate_wells:
+            logger.error(
+                "Rejecting run: duplicate well name(s) %s among %d wells",
+                duplicate_wells,
+                len(self.wells_df),
+            )
+            raise DuplicateWellNameError(duplicate_wells)
+
+        duplicate_rigs = find_duplicate_names(self.rigs_df["name"])
+        if duplicate_rigs:
+            logger.error(
+                "Rejecting run: duplicate rig name(s) %s among %d rigs",
+                duplicate_rigs,
+                len(self.rigs_df),
+            )
+            raise DuplicateRigNameError(duplicate_rigs)
+
     def preprocess_data(self) -> None:
         """Normalize types, compute rig windows & distance matrix."""
         # Dates – safely convert and cap extreme years (e.g. 9999)
@@ -680,11 +1346,36 @@ class DrillingScheduler:
         # Priority normalization
         self.wells_df["priority"] = self.wells_df["priority"].fillna("MEDIUM").astype(str).str.upper()
 
+        # Reject duplicate names BEFORE the sort, and before any expensive work.
+        #
+        # Design decision 5.  Everything downstream of here is keyed by name —
+        # the distance matrix, the per-rig ILM matrices, the assignment /
+        # start / end / interval variable dicts, every objective term and the
+        # assignment payload the save path consumes — so a repeated name does
+        # not produce a wrong answer, it produces *no* answer for one of the
+        # colliding wells: the two collapse onto one set of variables and the
+        # pipeline dies further downstream naming no well at all.
+        #
+        # This is the single choke point for the invariant: every ``solve`` /
+        # ``solve_with_actuals`` call site and the SEM path all route through
+        # ``preprocess_data``.  The message names the duplicates so the operator
+        # has something to act on.
+        self._reject_duplicate_names()
+
         # Sort rigs and wells by name BEFORE building matrices
         # so that variable IDs, constraint ordering, and the model proto
         # are identical across runs regardless of upstream row order.
-        self.rigs_df = self.rigs_df.sort_values(by="name").reset_index(drop=True)
-        self.wells_df = self.wells_df.sort_values(by="name").reset_index(drop=True)
+        #
+        # The key must be TOTAL, not merely sorted: ``name`` alone ties whenever
+        # two rows share a name (Well.name carries no unique=True), and a tied
+        # sort leaves those rows wherever the input happened to put them.  The
+        # ``id`` column — present because both production paths build these
+        # frames from ``.values()`` — is what makes the key total.
+        # ``kind="stable"`` is belt-and-braces for frames that arrive without
+        # ``id``: it at least preserves the caller's order rather than letting
+        # NumPy's default quicksort permute tied rows unpredictably.
+        self.rigs_df = self._sort_frame_totally(self.rigs_df)
+        self.wells_df = self._sort_frame_totally(self.wells_df)
 
         # Distance matrix (km, Haversine)
         self._calculate_distance_matrix()
@@ -730,7 +1421,7 @@ class DrillingScheduler:
         
         Creates a per-rig ILM days matrix stored in self.ilm_days_matrix[rig_name]
         """
-        from .models import WellPairDistance, Rig as RigModel, Well as WellModel
+        from .models import WellPairDistance, Rig as RigModel
         from .views import calculate_ilm_days
         
         wells = self.wells_df
@@ -740,17 +1431,13 @@ class DrillingScheduler:
         
         logger.info("Building ILM days matrix from WellPairDistance table...")
         
-        # Build a lookup of well name -> Well object
-        well_name_to_obj = {}
-        try:
-            for wname in well_names:
-                try:
-                    well_name_to_obj[wname] = WellModel.objects.get(name=wname)
-                except WellModel.DoesNotExist:
-                    logger.warning(f"Well {wname} not found in database")
-                    well_name_to_obj[wname] = None
-        except Exception as e:
-            logger.warning(f"Error building well lookup: {e}")
+        # NOTE: a ``well name -> Well object`` lookup used to be built here with
+        # ``Well.objects.get(name=...)`` per well.  It was never read, and its
+        # broad ``except Exception`` swallowed the ``MultipleObjectsReturned``
+        # that duplicate well names raise — aborting the loop silently.  Deleted
+        # under design decision 5: one fewer name-keyed database lookup and one
+        # fewer swallowed exception.  Duplicate names are now rejected up front
+        # in ``_reject_duplicate_names``.
         
         for _, rig_row in rigs.iterrows():
             rig_name = rig_row["name"]
@@ -778,9 +1465,16 @@ class DrillingScheduler:
             distance_cache: Dict[Tuple[str, str], float] = {}
             if rig_obj:
                 try:
+                    # TOTAL ordering (design decision 6).  Each row below writes
+                    # BOTH directions into distance_cache, and the filter is
+                    # rig=rig_obj with no location predicate, so two rows can
+                    # cover the same (well_1.name, well_2.name) pair.  Unordered,
+                    # whichever the database returned last silently won.
                     well_pair_distances = WellPairDistance.objects.filter(
                         rig=rig_obj
-                    ).select_related('well_1', 'well_2')
+                    ).select_related('well_1', 'well_2').order_by(
+                        'well_1__name', 'well_2__name', 'id'
+                    )
                     
                     for wpd in well_pair_distances:
                         w1_name = wpd.well_1.name
@@ -902,75 +1596,184 @@ class DrillingScheduler:
     # --------------------------
     # Solver Configuration
     # --------------------------
-    def _configure_solver_for_determinism(self, time_limit_seconds: float, deterministic: bool = True) -> None:
-        """Configure solver for optimal balance of solution quality and determinism.
-        
+    def _configure_solver_for_determinism(
+        self,
+        time_limit_seconds: float,
+        deterministic: bool = True,
+        *,
+        budget: Optional[SolverBudget] = None,
+        solver: Optional[cp_model.CpSolver] = None,
+        record: bool = True,
+    ) -> SolverBudget:
+        """Configure the solver's stopping criterion and search parameters.
+
         Args:
-            time_limit_seconds: Maximum solve time
-            deterministic: If True, use single-threaded mode for full reproducibility.
-                          If False, use multi-threaded for faster/better solutions.
-        
-        For deterministic mode:
-        - Single-threaded execution (num_search_workers=1) - prevents non-deterministic branching
-        - Fixed random seed (random_seed=42) - stabilises internal randomness
-        - AUTOMATIC_SEARCH - uses fast heuristics (single-thread + fixed seed is already deterministic!)
-        - symmetry_level=0 - disables symmetry-breaking heuristics that might alter selection
-        
-        For performance mode:
-        - Multi-threaded execution (all available workers)
-        - Still uses fixed seed for some reproducibility
-        - Better solution quality in shorter time
+            time_limit_seconds: The time limit the user selected, ``T``.
+            deterministic: If True, stop on a fixed work budget so the run is
+                          reproducible. If False, use the performance path
+                          (multi-threaded, wall-clock stop, no guarantee).
+            budget: A pre-cut budget to apply instead of the whole-request
+                   calibration. Used to hand each stage of the two-stage solve
+                   its own share. Still a pure function of ``T`` and the
+                   settings block — see ``calibrate_two_stage_budgets``.
+            solver: Configure this solver instead of ``self.solver``. Stage 2
+                   runs on its own ``CpSolver`` so that ``self.solver`` keeps
+                   holding stage 1's parameters and counters, which is what the
+                   reported metrics and the stop classification are read from.
+            record: Whether to retain the applied budget as
+                   ``self.solver_budget``. False for stage 2, so the stop
+                   classification stays stage 1's.
+
+        Returns:
+            The :class:`SolverBudget` that was applied, so the caller can
+            classify the stop after ``Solve()``.
+
+        Deterministic mode stops on **work, not elapsed time**:
+
+        - ``max_deterministic_time = RATIO x T`` is the binding limit
+        - ``max_time_in_seconds = WALL_BACKSTOP_FACTOR x T`` is a backstop only
+        - ``num_search_workers = 1``, ``random_seed = 42``,
+          ``AUTOMATIC_SEARCH``, ``symmetry_level = 2``, ``use_lns = True``,
+          ``interleave_search = True``, ``interleave_batch_size`` pinned
+
+        Scope of the guarantee: **same machine.** The same request run
+        repeatedly on this machine performs the same amount of search and
+        returns the same schedule regardless of how busy the machine is, because
+        the stop is metered in work rather than in elapsed time. ``ortools`` is
+        pinned in ``requirements.txt`` (``ortools==9.15.6755``), so the solver
+        build is a fixed, recorded input to that guarantee. Nothing here claims
+        anything about a different machine or a different CPU architecture.
+
+        Hard rule, and the reason this function takes only ``T``: no solver
+        parameter may be derived from a measured wall time. Every parameter is a
+        pure function of ``T`` and the settings block. A "time remaining"
+        computation would feed this machine's clock back into the parameter
+        proto, which is precisely the defect being fixed.
+
+        Performance mode (``deterministic=False``) is deliberately left exactly
+        as it was — wall-clock limit, ``num_search_workers = 0``,
+        ``PORTFOLIO_SEARCH``, no work budget. Clause 3.12 attaches no
+        determinism promise to it.
         """
-        assert self.solver is not None, "Solver must be initialized"
-        
-        # Time limit
-        self.solver.parameters.max_time_in_seconds = max(1, int(time_limit_seconds))
-        
+        target = solver if solver is not None else self.solver
+        assert target is not None, "Solver must be initialized"
+
+        if budget is None:
+            budget = calibrate_solver_budget(
+                time_limit_seconds, deterministic=deterministic
+            )
+        if record:
+            self.solver_budget = budget
+
         if deterministic:
-            # Deterministic execution: single-threaded mode
-            # THIS IS THE KEY PARAMETER FOR DETERMINISM
-            self.solver.parameters.num_search_workers = 1
-            
-            # Fixed random seed for reproducibility
-            self.solver.parameters.random_seed = 42
-            
-            # Use AUTOMATIC_SEARCH to restore solver speed (FIXED_SEARCH is too slow)
-            self.solver.parameters.search_branching = cp_model.AUTOMATIC_SEARCH
-            
-            # Enable symmetry breaking and LNS - they ARE deterministic on a single thread!
-            self.solver.parameters.symmetry_level = 2
-            self.solver.parameters.use_lns = True
-            
-            # Enable strategy interleaving for combined heuristics
-            self.solver.parameters.interleave_search = True
-            
-            # CRITICAL ENTERPRISE FIX: 
-            # We must use standard wall-clock timeout. 
-            # `max_deterministic_time` and `max_num_branches` natively cripple the LNS (Large Neighborhood Search) 
-            # heuristics which rely on real CPU cycles to perform random walks.
-            # CP-SAT guarantees perfect determinism for identical inputs, seeds, and threads out-of-the-box.
-            # The ONLY source of variance on a server is if the time limit interrupt hits *exactly* while exploring different branches.
-            # For 99.9% of enterprise schedules running to completion or settling on an optima before timeout, this is perfectly deterministic.
-            self.solver.parameters.max_time_in_seconds = float(time_limit_seconds) 
-            
+            # --- Stopping criterion -------------------------------------------
+            # Measured, not assumed. On this machine, at an identical model
+            # proto fingerprint: idle, five runs returned 1 schedule; under CPU
+            # load, 2 of 3 runs differed, with deterministic_time drifting
+            # (0.7595 / 0.8579 loaded against 3.4378 idle). The stop was being
+            # taken at different amounts of completed search work, which is what
+            # a wall-clock limit does when the cores are contended. The earlier
+            # comment here claimed CP-SAT is "perfectly deterministic
+            # out-of-the-box" with a wall-clock stop; the measurement says the
+            # opposite, so the claim is gone.
+            #
+            # It also claimed max_deterministic_time cripples LNS because LNS
+            # "relies on real CPU cycles". It does not: LNS is already metered in
+            # deterministic time. Its sibling parameters say so in their names —
+            # probing_deterministic_time_limit, shaving_search_deterministic_time,
+            # lns_initial_deterministic_limit, feasibility_jump_batch_dtime — and
+            # the solver log reports a dtime limit per LNS subsolver. Putting the
+            # global budget on the same counter is what makes an LNS-heavy search
+            # reproducible run to run.
+            target.parameters.max_deterministic_time = budget.deterministic_budget
+            # Backstop only, never expected to bind. When it does bind the run is
+            # flagged as a non-deterministic stop (clause 2.4) rather than being
+            # silently irreproducible.
+            target.parameters.max_time_in_seconds = budget.wall_backstop_seconds
+
+            # --- Search parameters, unchanged (clause 3.4) ---------------------
+            # Single worker: prevents non-deterministic branching.
+            target.parameters.num_search_workers = 1
+
+            # Fixed random seed for reproducibility.
+            target.parameters.random_seed = 42
+
+            # AUTOMATIC_SEARCH keeps solver speed, and it is what makes the two
+            # decision strategies from _add_decision_strategy a *hint*: CP-SAT
+            # consults them for the first descent, then branches as it sees fit.
+            #
+            # FIXED_SEARCH promotes those same strategies to a mandate — the
+            # solver follows them and explores nothing else. That is the setting
+            # for an audit run, where a stable search *path* matters more than
+            # the quality of the answer. It stays off by default because it
+            # costs a great deal of solution quality on large models; it is the
+            # knob that was removed once for exactly that reason, and its cost
+            # is only bounded at all now because task 3 stops the solve on
+            # completed work rather than on the clock.
+            #
+            # It changes the answer, so it belongs in the solver fingerprint
+            # (task 8) — a run made under FIXED_SEARCH is not comparable to one
+            # made without it.
+            if determinism_settings()["FIXED_SEARCH"]:
+                target.parameters.search_branching = cp_model.FIXED_SEARCH
+                branching_label = "FIXED_SEARCH"
+                logger.warning(
+                    "IDRS_FIXED_SEARCH is enabled: the decision strategies are "
+                    "now a mandate, not a hint. Expect materially worse "
+                    "objective values on large models. This belongs in the "
+                    "solver fingerprint — schedules produced under it are not "
+                    "comparable to schedules produced without it."
+                )
+            else:
+                target.parameters.search_branching = cp_model.AUTOMATIC_SEARCH
+                branching_label = "AUTO_SEARCH"
+
+            # Symmetry breaking and LNS are deterministic under this
+            # configuration, and both are worth real solution quality.
+            target.parameters.symmetry_level = 2
+            target.parameters.use_lns = True
+
+            # Interleaved search is CP-SAT's deterministic scheduling mode: it
+            # completes a batch of tasks, synchronises, then schedules the next
+            # batch. Batch boundaries are work boundaries, not clock boundaries.
+            target.parameters.interleave_search = True
+
+            # Pin the batch size instead of letting OR-Tools derive it from the
+            # worker count. 1 is the derived value today, so behaviour is
+            # unchanged; see DETERMINISTIC_INTERLEAVE_BATCH_SIZE.
+            target.parameters.interleave_batch_size = DETERMINISTIC_INTERLEAVE_BATCH_SIZE
+
             logger.info(
                 f"Solver configured: DETERMINISTIC mode "
-                f"(single-threaded, AUTO_SEARCH, seed=42, LNS=True, interleave=True), "
-                f"Time limit: {time_limit_seconds}s"
+                f"(single-threaded, {branching_label}, seed=42, LNS=True, interleave=True, "
+                f"batch={DETERMINISTIC_INTERLEAVE_BATCH_SIZE}), "
+                f"stage={budget.stage} share={budget.stage_share:.4f}, "
+                f"binding limit: max_deterministic_time={budget.deterministic_budget:.4f} "
+                f"units (ratio {budget.deterministic_time_ratio} x {time_limit_seconds}s "
+                f"x share {budget.stage_share:.4f}), "
+                f"wall-clock backstop: {budget.wall_backstop_seconds:.2f}s "
+                f"(factor {budget.wall_backstop_factor} x share {budget.stage_share:.4f})"
             )
         else:
+            # Performance mode: UNCHANGED behaviour, deliberately.
+            # The wall-clock limit used to be assigned before this branch, so
+            # this is the same expression that ran before, moved in here now the
+            # deterministic branch no longer wants it. int() truncates, and that
+            # truncation is part of the recorded pre-fix parameter block.
+            target.parameters.max_time_in_seconds = budget.wall_backstop_seconds
+
             # Performance mode: use all available workers
-            self.solver.parameters.num_search_workers = 0  # 0 = auto-detect
+            target.parameters.num_search_workers = 0  # 0 = auto-detect
             
             # Still use fixed seed for some reproducibility
-            self.solver.parameters.random_seed = 42
+            target.parameters.random_seed = 42
             
             # Portfolio search works well with multi-threading
-            self.solver.parameters.search_branching = cp_model.PORTFOLIO_SEARCH
+            target.parameters.search_branching = cp_model.PORTFOLIO_SEARCH
             
             # Enable symmetry breaking and LNS for better solutions in performance mode
-            self.solver.parameters.symmetry_level = 2
-            self.solver.parameters.use_lns = True
+            target.parameters.symmetry_level = 2
+            target.parameters.use_lns = True
             
             logger.info(
                 f"Solver configured: PERFORMANCE mode (multi-threaded), "
@@ -978,20 +1781,510 @@ class DrillingScheduler:
             )
         
         # Enable presolve (always beneficial)
-        self.solver.parameters.cp_model_presolve = True
+        target.parameters.cp_model_presolve = True
         
         # Disable solution enumeration
-        self.solver.parameters.enumerate_all_solutions = False
+        target.parameters.enumerate_all_solutions = False
+
+        return budget
+
+    def _classify_stop(self) -> StopClassification:
+        """Classify why the solver stopped, from the counters it just reported.
+
+        Reads ``deterministic_time`` and ``wall_time`` off the solver and
+        compares them against the budget that was configured for this solve.
+        Read-only: nothing here changes a parameter, so the classification
+        cannot influence the answer it describes.
+        """
+        assert self.solver is not None, "Solver must be initialized"
+        budget = self.solver_budget
+        return classify_stop_reason(
+            self.status,
+            self.solver.deterministic_time,
+            self.solver.wall_time,
+            budget.deterministic_budget if budget else None,
+            budget.wall_backstop_seconds if budget else None,
+        )
+
+    def _record_stop_classification(self, label: str) -> StopClassification:
+        """Classify the stop, retain it on the instance and log it."""
+        classification = self._classify_stop()
+        self.stop_classification = classification
+        logger.info(
+            f"Stop reason ({label}): {classification.stop_reason} "
+            f"(deterministic_stop={classification.deterministic_stop}, "
+            f"deterministic_time_used={classification.deterministic_time_used:.4f}, "
+            f"deterministic_budget={classification.deterministic_budget}, "
+            f"wall_backstop_seconds={classification.wall_backstop_seconds})"
+        )
+        if not classification.deterministic_stop:
+            logger.warning(
+                f"Stop was NOT deterministic ({classification.stop_reason}): this run "
+                "is not guaranteed to be reproducible. "
+                f"deterministic_time_used={classification.deterministic_time_used:.4f} "
+                f"of budget {classification.deterministic_budget}, "
+                f"wall_time={self.solver.wall_time:.2f}s of backstop "  # type: ignore[union-attr]
+                f"{classification.wall_backstop_seconds}s."
+            )
+        return classification
+
+    # --------------------------
+    # Two-stage lexicographic solve (design decision 3)
+    # --------------------------
+    def _reset_two_stage_state(self) -> None:
+        """Clear everything the previous solve recorded about its two stages.
+
+        ``solve()`` is documented as safe to call repeatedly, so stale stage-1
+        metrics from an earlier call must never survive into a later payload.
+        """
+        self.stage_one_metrics = None
+        self.canonicalization = None
+        self.model_fingerprint = None
+        self.model_fingerprint_stage_two = None
+        self.two_stage_budget = None
+
+    def _capture_variable_values(
+        self, solver: cp_model.CpSolver
+    ) -> Dict[int, int]:
+        """Snapshot the decision variables into a plain ``{index: value}`` dict.
+
+        Taken **before** stage 2 touches the model, because that is the only
+        moment stage 1's answer exists anywhere retrievable: the model is mutated
+        in place, and ``self.solver`` holds counters rather than an immutable
+        solution. Keyed by variable index rather than by the variable object
+        because ``IntVar.__eq__`` builds a linear constraint instead of
+        comparing, so the variables are not usable as dict keys.
+        """
+        values: Dict[int, int] = {}
+        for mapping in (self.assignments, self.start_times, self.end_times):
+            for var in mapping.values():
+                values[var.index] = int(solver.Value(var))
+        if self.project_end is not None:
+            values[self.project_end.index] = int(solver.Value(self.project_end))
+        return values
+
+    def _value_reader(self, values: Optional[Dict[int, int]] = None):
+        """A ``var -> int`` lookup, from a captured dict or from the solver.
+
+        This is the seam that lets ``_extract_solution`` read variable values
+        from either stage without knowing which one it is reading. ``None``
+        means "ask ``self.solver``", i.e. stage 1.
+        """
+        if values is None:
+            solver = self.solver
+            assert solver is not None, "Solver must be initialized"
+            return lambda var: int(solver.Value(var))
+        return lambda var: int(values[var.index])
+
+    def _capture_stage_one_metrics(self) -> Dict[str, Any]:
+        """Record the objective metrics **stage 1** reported.
+
+        These are the only metrics the business may see. Stage 2 minimises a
+        tie-break index whose value has no meaning outside the canonicalisation,
+        so letting it reach the payload would put nonsense on the detail page.
+        Captured here rather than read later so the provenance is a fact about
+        the code path, not a consequence of which solver object happens to still
+        be reachable.
+        """
+        assert self.solver is not None, "Solver must be initialized"
+        metrics: Dict[str, Any] = {
+            "solver_status_code": self.status,
+            "objective_value": None,
+            "best_bound": None,
+            "optimality_gap": None,
+        }
+        if self.status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            try:
+                objective_value = self.solver.ObjectiveValue()
+                best_bound = self.solver.BestObjectiveBound()
+                # Standard MIP gap, computed exactly as the single-stage code
+                # computed it: divide by |objective|, and clamp the bound at 0
+                # because every term of this pure-minimisation objective is >= 0.
+                clamped_bound = max(best_bound, 0.0)
+                denom = max(abs(objective_value), 1e-10)
+                metrics["objective_value"] = objective_value
+                metrics["best_bound"] = best_bound
+                metrics["optimality_gap"] = (
+                    abs(objective_value - clamped_bound) / denom
+                )
+            except Exception as e:
+                logger.warning(f"Could not extract stage-1 objective metrics: {e}")
+        self.stage_one_metrics = metrics
+        return metrics
+
+    def _tiebreak_objective_value(self, values: Dict[int, int]) -> int:
+        """Evaluate T-expr for a captured solution, without a solver.
+
+        Lets stage 1's tie-break value be compared against stage 2's, which is
+        how "stage 2 found nothing better" is detected.
+        """
+        assert self.tiebreak_weights is not None, "set_objective must have run"
+        start_weight, order_weight = self.tiebreak_weights
+        start_sum = sum(values[var.index] for var in self.start_times.values())
+        order_sum = sum(
+            values[self.assignments[key].index] * order_index
+            for key, order_index in self.rig_well_order_index.items()
+        )
+        return start_weight * start_sum + order_weight * order_sum
+
+    def _prepare_canonical_stage(
+        self, stage_one_objective_value: int, stage_one_values: Dict[int, int]
+    ) -> None:
+        """Lock stage 1's objective at ``V*`` and swap in the tie-break objective.
+
+        Stage 2 locks the full stage-1 objective as an equality
+        (``Add(P-expr == V*)``), then minimises only the tie-break expression, so
+        it cannot change economics and cannot touch a unique optimum.
+
+        Locking the **full** objective rather than tiers 1-3 is what makes that
+        true: stage 2's feasible set becomes exactly the set of solutions today's
+        solver is already free to return arbitrarily, so the only thing it can do
+        is replace an arbitrary choice with a canonical one. When that set has
+        one member — a unique proven optimum — stage 2 has nothing to choose
+        between and the output cannot move.
+
+        Stage 1's solution is hinted onto the assignment and start-time
+        variables, so stage 2 opens with a known feasible incumbent and its only
+        work is improving the tie-break rather than re-finding a solution.
+
+        A separate seam from the solve itself so a test can subclass and inject a
+        contradiction, which is how the stage-2 failure path is exercised.
+        """
+        model = self.model
+        assert model is not None, "Model must be initialized"
+        assert self.primary_objective_expr is not None
+        assert self.tiebreak_objective_expr is not None
+
+        model.Add(self.primary_objective_expr == stage_one_objective_value)
+
+        model.ClearHints()
+        # Iteration order is dict insertion order, which is the canonical
+        # (well, rig) order built in setup_variables. Load-bearing: the hint
+        # order is part of the model proto, so iterating a set here would make
+        # the proto — and with it the search — vary between runs.
+        for var in self.assignments.values():
+            model.AddHint(var, stage_one_values[var.index])
+        for var in self.start_times.values():
+            model.AddHint(var, stage_one_values[var.index])
+
+        # Minimize replaces the objective outright (CpModel._set_objective calls
+        # clear_objective first), so P-expr survives only as the equality above.
+        model.Minimize(self.tiebreak_objective_expr)
+
+    def _canonicalize_stage_one_solution(
+        self,
+        *,
+        time_limit_seconds: float,
+        stage_budget: SolverBudget,
+        stage_one_values: Dict[int, int],
+        stage_one_objective_value: float,
+        label: str,
+    ) -> CanonicalizationOutcome:
+        """Run stage 2 and decide whether to adopt its answer.
+
+        Never raises and never returns stage 1's result in a worse state than it
+        received it. Every failure — infeasible, no solution, no improvement, an
+        exception from the solver — comes back as an outcome with ``adopted``
+        false, and the caller then extracts from stage 1's captured values.
+        """
+        model = self.model
+        assert model is not None, "Model must be initialized"
+
+        v_star = int(round(stage_one_objective_value))
+        tiebreak_before = self._tiebreak_objective_value(stage_one_values)
+
+        try:
+            self._prepare_canonical_stage(v_star, stage_one_values)
+
+            # Stage 2 gets its own CpSolver so that self.solver keeps holding
+            # stage 1's parameters and counters: the reported metrics and the
+            # stop classification are read from there.
+            stage_two_solver = cp_model.CpSolver()
+            self._configure_solver_for_determinism(
+                time_limit_seconds,
+                deterministic=True,
+                budget=stage_budget,
+                solver=stage_two_solver,
+                record=False,
+            )
+
+            fingerprint = hashlib.sha256(str(model.Proto()).encode()).hexdigest()
+            self.model_fingerprint_stage_two = fingerprint
+            logger.info(f"MODEL FINGERPRINT ({label}, stage 2): {fingerprint}")
+
+            status = stage_two_solver.Solve(model)
+            status_name = stage_two_solver.StatusName(status)
+            deterministic_time = float(stage_two_solver.deterministic_time)
+            wall_time = float(stage_two_solver.wall_time)
+
+            if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+                failure = (
+                    CANONICALIZATION_FAILED_INFEASIBLE
+                    if status == cp_model.INFEASIBLE
+                    else CANONICALIZATION_FAILED_NO_SOLUTION
+                )
+                logger.warning(
+                    f"Canonicalization ({label}) found no solution: {status_name}. "
+                    "Returning the stage-1 schedule unchanged — stage 2 is only "
+                    "allowed to improve the tie-break, never to lose a result."
+                )
+                return CanonicalizationOutcome(
+                    status=failure,
+                    adopted=False,
+                    stage_two_solver_status=status_name,
+                    tiebreak_before=tiebreak_before,
+                    deterministic_time=deterministic_time,
+                    wall_time=wall_time,
+                    model_fingerprint=fingerprint,
+                    detail=f"stage 2 returned {status_name}",
+                )
+
+            stage_two_values = self._capture_variable_values(stage_two_solver)
+            tiebreak_after = self._tiebreak_objective_value(stage_two_values)
+
+            if tiebreak_after >= tiebreak_before:
+                # Stage 1 was already at or below the tie-break value stage 2
+                # reached, so there is nothing to gain and no reason to swap one
+                # member of the tied set for another.
+                logger.info(
+                    f"Canonicalization ({label}): stage 1 already canonical "
+                    f"(tie-break {tiebreak_before} <= {tiebreak_after})."
+                )
+                return CanonicalizationOutcome(
+                    status=CANONICALIZATION_ALREADY_CANONICAL,
+                    adopted=False,
+                    stage_two_solver_status=status_name,
+                    tiebreak_before=tiebreak_before,
+                    tiebreak_after=tiebreak_after,
+                    deterministic_time=deterministic_time,
+                    wall_time=wall_time,
+                    model_fingerprint=fingerprint,
+                )
+
+            adopted_status = (
+                CANONICALIZATION_CANONICAL_OPTIMAL
+                if status == cp_model.OPTIMAL
+                else CANONICALIZATION_CANONICAL_INCUMBENT
+            )
+            logger.info(
+                f"Canonicalization ({label}): {adopted_status}, tie-break "
+                f"{tiebreak_before} -> {tiebreak_after}, stage-2 status "
+                f"{status_name}, deterministic_time={deterministic_time:.4f} of "
+                f"budget {stage_budget.deterministic_budget:.4f}"
+            )
+            return CanonicalizationOutcome(
+                status=adopted_status,
+                adopted=True,
+                stage_two_solver_status=status_name,
+                tiebreak_before=tiebreak_before,
+                tiebreak_after=tiebreak_after,
+                deterministic_time=deterministic_time,
+                wall_time=wall_time,
+                model_fingerprint=fingerprint,
+                values=stage_two_values,
+            )
+        except Exception as e:  # pragma: no cover - defensive
+            logger.exception(
+                f"Canonicalization ({label}) raised; returning the stage-1 "
+                f"schedule unchanged: {e}"
+            )
+            return CanonicalizationOutcome(
+                status=CANONICALIZATION_FAILED_EXCEPTION,
+                adopted=False,
+                tiebreak_before=tiebreak_before,
+                detail=f"{type(e).__name__}: {e}",
+            )
+
+    def _run_two_stage_solve(
+        self, time_limit_seconds: float, deterministic: bool, label: str
+    ) -> Dict[str, Any]:
+        """Solve stage 1, canonicalise with stage 2, extract one payload.
+
+        Both entry points (``solve`` and ``solve_with_actuals``) funnel through
+        here after building their model, so the canonicalisation guarantee cannot
+        be present on one path and missing on the other.
+
+        Reported metrics come from stage 1. Variable *values* come from stage 2
+        only when stage 2 succeeded and actually improved the tie-break.
+        """
+        assert self.model is not None, "Model must be initialized"
+        assert self.solver is not None, "Solver must be initialized"
+
+        self._reset_two_stage_state()
+        budgets = calibrate_two_stage_budgets(
+            time_limit_seconds, deterministic=deterministic
+        )
+        self.two_stage_budget = budgets
+
+        self._configure_solver_for_determinism(
+            time_limit_seconds, deterministic=deterministic, budget=budgets.stage_one
+        )
+
+        # Model fingerprint: SHA-256 of the serialised stage-1 model proto.
+        # Taken before stage 2 mutates the model, so this stays the fingerprint
+        # of the model whose objective value is reported. If two runs produce the
+        # same fingerprint the solver MUST return the same solution (given
+        # deterministic settings).
+        self.model_fingerprint = hashlib.sha256(
+            str(self.model.Proto()).encode()
+        ).hexdigest()
+        logger.info(f"MODEL FINGERPRINT ({label}): {self.model_fingerprint}")
+
+        import time
+        stage_one_started = time.time()
+        self.status = self.solver.Solve(self.model)
+        stage_one_seconds = time.time() - stage_one_started
+        self.solve_time_seconds = stage_one_seconds
+
+        self._record_stop_classification(label)
+        stage_one_metrics = self._capture_stage_one_metrics()
+
+        stage_one_values: Optional[Dict[int, int]] = None
+        if self.status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            stage_one_values = self._capture_variable_values(self.solver)
+
+        outcome = self._resolve_canonicalization(
+            time_limit_seconds=time_limit_seconds,
+            budgets=budgets,
+            deterministic=deterministic,
+            stage_one_values=stage_one_values,
+            stage_one_objective_value=stage_one_metrics.get("objective_value"),
+            label=label,
+        )
+        self.canonicalization = outcome
+        if outcome.wall_time:
+            self.solve_time_seconds = stage_one_seconds + outcome.wall_time
+
+        value_lookup = outcome.values if outcome.adopted else stage_one_values
+        return self._extract_solution(time_limit_seconds, value_lookup=value_lookup)
+
+    def _resolve_canonicalization(
+        self,
+        *,
+        time_limit_seconds: float,
+        budgets: TwoStageBudget,
+        deterministic: bool,
+        stage_one_values: Optional[Dict[int, int]],
+        stage_one_objective_value: Optional[float],
+        label: str,
+    ) -> CanonicalizationOutcome:
+        """Decide whether stage 2 runs at all, and run it if so.
+
+        Stage 2 is skipped when ``deterministic=False`` — performance mode makes
+        no determinism promise (clause 3.12) and its recorded parameter block is
+        asserted unchanged — and when stage 1 returned neither ``OPTIMAL`` nor
+        ``FEASIBLE``, because there is then no solution to canonicalise and no
+        ``V*`` to lock.
+        """
+        if not deterministic or budgets.stage_two is None:
+            return CanonicalizationOutcome(
+                status=CANONICALIZATION_SKIPPED_PERFORMANCE_MODE,
+                adopted=False,
+                detail="deterministic=False makes no determinism promise",
+            )
+        if stage_one_values is None or stage_one_objective_value is None:
+            return CanonicalizationOutcome(
+                status=CANONICALIZATION_SKIPPED_NO_STAGE_1_SOLUTION,
+                adopted=False,
+                detail="stage 1 returned neither OPTIMAL nor FEASIBLE",
+            )
+        if self.primary_objective_expr is None or self.tiebreak_objective_expr is None:
+            return CanonicalizationOutcome(
+                status=CANONICALIZATION_SKIPPED_NO_EXPRESSIONS,
+                adopted=False,
+                detail="set_objective did not publish P-expr / T-expr",
+            )
+        return self._canonicalize_stage_one_solution(
+            time_limit_seconds=time_limit_seconds,
+            stage_budget=budgets.stage_two,
+            stage_one_values=stage_one_values,
+            stage_one_objective_value=stage_one_objective_value,
+            label=label,
+        )
 
     def _add_decision_strategy(self, deterministic: bool = True) -> None:
-        """Add explicit decision strategy.
-        
-        Note: Removed the explicit search strategy because it forces a rigid
-        CHOOSE_FIRST order which cripples OR-Tools performance on large problems.
-        Single-threaded execution with a fixed seed is already deterministic
-        without needing to force the search tree path.
+        """Prefer a canonical first branch. A hint, not a mandate.
+
+        Two strategies, both in canonical ``(well, rig)`` order:
+
+        * the assignment ``BoolVar``s — ``CHOOSE_FIRST`` / ``SELECT_MAX_VALUE``:
+          branch on the variables in order and try **1** (assign the well)
+          before **0** (drop it);
+        * the start-time ``IntVar``s — ``CHOOSE_FIRST`` / ``SELECT_MIN_VALUE``:
+          branch in order and try the **earlier** start before the later one.
+
+        **What this buys.** ``search_branching`` stays ``AUTOMATIC_SEARCH``
+        (see ``_configure_solver_for_determinism``), so CP-SAT consults these
+        strategies for the first descent and is then free to diverge. That makes
+        the addition cheap, and it is deliberately *not* a correctness
+        mechanism: the schedule was already reproducible run-to-run after tasks
+        3-5. What it improves is the *incumbent a truncated run happens to be
+        holding* when the deterministic budget expires — first branch biased
+        towards "assigned, as early as possible" rather than towards whatever
+        the automatic heuristic reached first. Clause 2.7 requires this be
+        measured rather than assumed; the measurement lives in the task 7 notes.
+
+        **Why the order is already canonical.** No sorting happens here.
+        ``preprocess_data`` sorts ``wells_df`` and ``rigs_df`` on
+        ``["name", "id"]`` with ``kind="stable"`` (task 5.2), and
+        ``setup_variables`` then populates ``self.assignments`` and
+        ``self.start_times`` with wells in the outer loop and rigs in the inner
+        one. Python dicts preserve insertion order, so iterating them *is* the
+        canonical (well, rig) order. This is the same load-bearing property the
+        extraction loop relies on — do not re-sort either dict here, or the two
+        orders can drift apart.
+
+        **Stage 2 needs no second call.** ``_canonicalize_stage_one_solution``
+        solves the *same* ``self.model`` object with a second ``CpSolver``; it
+        adds the ``P-expr == V*`` equality and swaps the objective but never
+        rebuilds the model. Search strategies live on the model proto, so both
+        stages inherit these two automatically. Calling this again for stage 2
+        would append duplicate strategies rather than replace them.
+
+        **Performance mode gets nothing.** Clause 3.12 promises the performance
+        block does not move, and its preservation golden carries no exemption —
+        a strategy there would change both the model proto and, under
+        ``PORTFOLIO_SEARCH``, plausibly the schedule. The canonical-incumbent
+        goal is a determinism goal, so the strategies are scoped to the
+        deterministic path.
         """
-        pass
+        if not deterministic:
+            logger.debug(
+                "Decision strategy not added: performance mode keeps its "
+                "pre-fix model proto (clause 3.12)."
+            )
+            return
+
+        assert self.model is not None, "Model must be initialized"
+
+        # Iteration order == insertion order == canonical (well, rig). See the
+        # docstring: this is inherited from preprocess_data's sort, not redone.
+        assignment_vars = list(self.assignments.values())
+        start_time_vars = list(self.start_times.values())
+
+        if not assignment_vars:
+            logger.warning(
+                "Decision strategy not added: no assignment variables exist, "
+                "so there is nothing to order."
+            )
+            return
+
+        # Try to assign before dropping.
+        self.model.AddDecisionStrategy(
+            assignment_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MAX_VALUE
+        )
+        # Try earlier before later.
+        self.model.AddDecisionStrategy(
+            start_time_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE
+        )
+
+        logger.info(
+            "Decision strategy added: 2 strategies in canonical (well, rig) "
+            f"order — {len(assignment_vars)} assignment BoolVars "
+            f"(CHOOSE_FIRST/SELECT_MAX_VALUE), {len(start_time_vars)} start-time "
+            "IntVars (CHOOSE_FIRST/SELECT_MIN_VALUE). Advisory under "
+            "AUTOMATIC_SEARCH; inherited by stage 2 via the shared model."
+        )
 
     # --------------------------
     # Constraints
@@ -1359,6 +2652,17 @@ class DrillingScheduler:
         START_TIME_WEIGHT = 1
         
         max_start_tiebreak = START_TIME_WEIGHT * self.horizon * num_pairs
+        # Loose by a factor of num_rigs — the tight bound is num_wells x
+        # num_pairs, since each well contributes at most one active assignment.
+        # Deliberately NOT tightened here: this expression is a coefficient of
+        # BIG_M_WELLS and therefore of the stage-1 objective, which has to stay
+        # byte-identical to today's or requests that are already correct return a
+        # different objective_value. Measured on the preservation scenario:
+        # tightening it moved objective_value 698,525,729 -> 698,525,679 and
+        # changed the model fingerprint, with the schedule itself unchanged. The
+        # tight bound *is* used where it matters — deriving W1 for stage 2, via
+        # max_rig_well_order() — and padding Big-M costs only solve speed, which
+        # design decision 3 lists as separate work.
         max_order_tiebreak = RIG_WELL_ORDER_WEIGHT * num_pairs * num_pairs
         max_tiebreak = max_start_tiebreak + max_order_tiebreak
         
@@ -1399,17 +2703,24 @@ class DrillingScheduler:
         # solver consistently prefers lower well-index and lower rig-index
         # assignments when all higher-priority tiers are tied.
         rig_well_order_terms = []
+        self.rig_well_order_index = {}
         for w_idx, (_, w) in enumerate(self.wells_df.iterrows()):
             wid = w["name"]
             for r_idx, (_, r) in enumerate(self.rigs_df.iterrows()):
                 rid = r["name"]
                 order_index = w_idx * num_rigs + r_idx
+                self.rig_well_order_index[(wid, rid)] = order_index
                 rig_well_order_terms.append(
                     self.assignments[(wid, rid)] * order_index
                 )
         rig_well_order = sum(rig_well_order_terms)
 
-        self.model.Minimize(
+        # ── P-expr: exactly the expression this model has always minimised ──
+        # Bound to a name only so stage 2 can lock it as an equality. The terms,
+        # their order and their weights are unchanged, so the proto CP-SAT sees
+        # is byte-identical to the single-stage code's and stage 1's Big-M, LP
+        # relaxation and proof difficulty are untouched.
+        primary_objective = (
             # ── Tier 1: maximise well assignments ─────────────────
             BIG_M_WELLS   * num_unassigned
             + BIG_M_HP_EXTRA * num_high_unassigned
@@ -1426,6 +2737,32 @@ class DrillingScheduler:
             # ── Tier 4b: tie-break — prefer canonical rig-well order
             + RIG_WELL_ORDER_WEIGHT * rig_well_order
         )
+
+        # ── T-expr: the stage-2 tie-break objective ────────────────────────
+        # W1 dominates max(rig_well_order) so the two tiers form a hierarchy
+        # instead of trading off. This expression is never minimised in stage 1
+        # and contributes nothing to stage 1's proto — the weights exist only
+        # inside the canonicalising solve, which has no Big-M in its objective.
+        stage_two_start_weight, stage_two_order_weight = tiebreak_weights(
+            num_wells, num_rigs
+        )
+        tiebreak_objective = (
+            stage_two_start_weight * start_time_sum
+            + stage_two_order_weight * rig_well_order
+        )
+
+        self.primary_objective_expr = primary_objective
+        self.tiebreak_objective_expr = tiebreak_objective
+        self.tiebreak_weights = (stage_two_start_weight, stage_two_order_weight)
+
+        logger.info(
+            f"Stage-2 tie-break weights: W1={stage_two_start_weight:,} "
+            f"(> max(rig_well_order)={max_rig_well_order(num_wells, num_rigs):,}), "
+            f"W2={stage_two_order_weight}, stage-2 objective max ~"
+            f"{stage_two_start_weight * self.horizon * num_pairs:,}"
+        )
+
+        self.model.Minimize(primary_objective)
         
         logger.info("Lexicographic objective set (with deterministic tie-breakers).")
 
@@ -1553,22 +2890,19 @@ class DrillingScheduler:
         # Add explicit decision strategy for deterministic variable ordering
         self._add_decision_strategy(deterministic=deterministic)
 
-        # Configure solver parameters
-        self._configure_solver_for_determinism(time_limit_seconds, deterministic=deterministic)
-
-        # Model fingerprint: SHA-256 of serialised model proto.
-        model_fingerprint = hashlib.sha256(
-            str(self.model.Proto()).encode()
-        ).hexdigest()
-        logger.info(f"MODEL FINGERPRINT (solve_with_actuals): {model_fingerprint}")
-
-        import time
-        solve_start_time = time.time()
-        self.status = self.solver.Solve(self.model)
-        solve_end_time = time.time()
-        self.solve_time_seconds = solve_end_time - solve_start_time
-
-        return self._extract_solution(time_limit_seconds)
+        # Same two stages as solve(), so SEM re-optimization
+        # (sem_views.py:1125-1131) and the locked-actuals endpoint inherit the
+        # canonical selection (clauses 3.10, 3.11).
+        #
+        # Stage 2 cannot move a pinned actual: apply_actual_constraints has
+        # already added the start/end equalities to this model, stage 2 runs on
+        # the same model, and it only ever *adds* the P-expr == V* equality and
+        # replaces the objective. A pin is a hard constraint in both stages, so
+        # it constrains stage 2's feasible set exactly as it constrained
+        # stage 1's.
+        return self._run_two_stage_solve(
+            time_limit_seconds, deterministic, "solve_with_actuals"
+        )
 
     def analyze_infeasible_solution(self, fixed_actuals: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze why the solution is infeasible and provide detailed reasons."""
@@ -1726,25 +3060,9 @@ class DrillingScheduler:
         # Add explicit decision strategy for deterministic variable ordering
         self._add_decision_strategy(deterministic=deterministic)
 
-        # Configure solver parameters
-        self._configure_solver_for_determinism(time_limit_seconds, deterministic=deterministic)
-
-        # Model fingerprint: SHA-256 of serialised model proto.
-        # If two runs produce the same fingerprint the solver MUST return
-        # the same solution (given deterministic settings).
-        model_fingerprint = hashlib.sha256(
-            str(self.model.Proto()).encode()
-        ).hexdigest()
-        logger.info(f"MODEL FINGERPRINT (solve): {model_fingerprint}")
-
-        # Track solve time
-        import time
-        solve_start_time = time.time()
-        self.status = self.solver.Solve(self.model)
-        solve_end_time = time.time()
-        self.solve_time_seconds = solve_end_time - solve_start_time
-        
-        result = self._extract_solution(time_limit_seconds)
+        # Stage 1 (today's objective, today's V*) then stage 2 (canonicalising
+        # tie-break). See _run_two_stage_solve.
+        result = self._run_two_stage_solve(time_limit_seconds, deterministic, "solve")
         
         # Log optimality warning if not proven optimal
         if self.status == cp_model.FEASIBLE:
@@ -1761,10 +3079,124 @@ class DrillingScheduler:
         
         return result
 
-    def _extract_solution(self, time_limit_seconds: float = 60) -> Dict[str, Any]:
-        """Extract solution from solver with comprehensive metrics for validation."""
+    def _provenance_payload(self) -> Dict[str, Any]:
+        """The determinism provenance block, identical in both result branches.
+
+        Built in one place and splatted into both ``self.results`` dicts rather
+        than written out twice. The two branches (solved / not solved) have
+        drifted apart before — the failure branch is the one nobody looks at —
+        and provenance that is present only when a run succeeded is useless for
+        diagnosing the runs that did not.
+
+        Every value is read off the instance; nothing is recomputed here. A
+        helper that re-derived, say, the stop classification could agree with
+        itself while production's own classification was wrong.
+
+        Nulls are meaningful and are preserved rather than defaulted:
+
+        * ``model_fingerprint_canonical`` is ``None`` when stage 2 was skipped
+          (performance mode, or stage 1 not OPTIMAL/FEASIBLE) — distinct from
+          stage 2 having run and produced the same proto, which cannot happen.
+        * ``deterministic_budget`` and ``wall_backstop_seconds`` are ``None`` on
+          the performance path, which is granted no work budget at all.
+        * ``canonicalization_status`` is ``None`` when stage 2 never ran, as
+          opposed to one of the ``CANONICALIZATION_*`` outcomes.
+        """
+        classification = self.stop_classification
+        stop_fields: Dict[str, Any] = (
+            classification.as_dict()
+            if classification is not None
+            else {
+                "stop_reason": None,
+                "deterministic_stop": None,
+                "deterministic_time_used": None,
+                "deterministic_budget": None,
+                "wall_backstop_seconds": None,
+            }
+        )
+
+        solver_fingerprint = (
+            compute_solver_fingerprint(self.solver.parameters)
+            if self.solver is not None
+            else None
+        )
+
+        return {
+            # Identifies the question. Recorded before stage 2 mutates the model,
+            # so this is the fingerprint of the request as posed.
+            "model_fingerprint": self.model_fingerprint,
+            # Identifies the stage-2 question. None when stage 2 was skipped.
+            "model_fingerprint_canonical": self.model_fingerprint_stage_two,
+            # Identifies the machinery. See compute_solver_fingerprint.
+            "solver_fingerprint": solver_fingerprint,
+            **stop_fields,
+            # Which of the two stages decided the schedule. Stage 2's objective
+            # VALUE is deliberately absent: it is a tie-break index and means
+            # nothing to the business.
+            "canonicalization_status": (
+                self.canonicalization.status if self.canonicalization else None
+            ),
+        }
+
+    def _log_provenance(self, provenance: Dict[str, Any]) -> None:
+        """One line tying the stop reason to the work actually done.
+
+        Additive: every pre-existing log line is untouched (clause 3.5). What
+        this adds over ``_record_stop_classification``'s line is the *payload*
+        view — the two fingerprints alongside the stop reason — so a support log
+        contains everything needed to decide whether two runs are comparable
+        before anyone opens the database.
+        """
+        budget = provenance.get("deterministic_budget")
+        used = provenance.get("deterministic_time_used")
+        if budget:
+            consumed = f"{used:.4f} of {budget:.4f} units ({used / budget:.1%})"
+        elif used is not None:
+            consumed = f"{used:.4f} units (no work budget — performance path)"
+        else:
+            consumed = "not recorded"
+
+        logger.info(
+            "Determinism provenance: stop_reason=%s deterministic_stop=%s, "
+            "deterministic_time %s, wall backstop=%s, canonicalization=%s, "
+            "model_fingerprint=%s, model_fingerprint_canonical=%s, "
+            "solver_fingerprint=%s",
+            provenance.get("stop_reason"),
+            provenance.get("deterministic_stop"),
+            consumed,
+            provenance.get("wall_backstop_seconds"),
+            provenance.get("canonicalization_status"),
+            provenance.get("model_fingerprint"),
+            provenance.get("model_fingerprint_canonical"),
+            provenance.get("solver_fingerprint"),
+        )
+
+    def _extract_solution(
+        self,
+        time_limit_seconds: float = 60,
+        value_lookup: Optional[Dict[int, int]] = None,
+    ) -> Dict[str, Any]:
+        """Extract solution from solver with comprehensive metrics for validation.
+
+        ``value_lookup`` is an optional ``{variable index: value}`` snapshot to
+        read the schedule out of, instead of asking ``self.solver``. That is how
+        the two-stage solve keeps its two sources straight:
+
+        * **Metrics** — ``objective_value``, ``best_bound``, ``optimality_gap``,
+          ``solver_status``, ``is_optimal`` — always describe **stage 1**. They
+          come from ``self.stage_one_metrics`` and ``self.status``, both captured
+          from stage 1. Stage 2's objective is a tie-break index with no business
+          meaning, so it must never appear here.
+        * **Variable values** — the assignments, start days and end days — come
+          from **stage 2** when stage 2 succeeded, otherwise from stage 1.
+
+        ``None`` means "read ``self.solver``", which is the single-stage
+        behaviour and is also stage 1's, since stage 2 runs on its own solver.
+        """
         # Type narrowing for Pylance
         assert self.solver is not None, "Solver must be initialized"
+
+        value_of = self._value_reader(value_lookup)
         
         status_name = self.solver.StatusName(self.status) if hasattr(self.solver, "StatusName") else str(self.status)
         logger.info(f"Solver status: {status_name}")
@@ -1789,27 +3221,43 @@ class DrillingScheduler:
         optimality_gap = None
         
         if self.status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-            try:
-                objective_value = self.solver.ObjectiveValue()
-                best_bound = self.solver.BestObjectiveBound()
-                # Standard MIP gap: divide by |objective|, not |bound|.
-                # Clamp best_bound to 0 because this is a pure-minimisation
-                # model where every objective term >= 0 (the true optimum is
-                # always >= 0).  CP-SAT's LP relaxation of Big-M models can
-                # produce deeply negative bounds before convergence, which
-                # inflates the gap to millions of percent.
-                clamped_bound = max(best_bound, 0.0)
-                denom = max(abs(objective_value), 1e-10)
-                optimality_gap = abs(objective_value - clamped_bound) / denom
-            except Exception as e:
-                logger.warning(f"Could not extract objective metrics: {e}")
+            # Metrics come from STAGE 1, captured before stage 2 existed. The
+            # fallback path (no captured metrics) is the single-stage behaviour
+            # and reads the same numbers off self.solver, which is stage 1's
+            # solver; the capture is preferred so provenance is explicit rather
+            # than incidental.
+            if self.stage_one_metrics is not None:
+                objective_value = self.stage_one_metrics.get("objective_value")
+                best_bound = self.stage_one_metrics.get("best_bound")
+                optimality_gap = self.stage_one_metrics.get("optimality_gap")
+            else:
+                try:
+                    objective_value = self.solver.ObjectiveValue()
+                    best_bound = self.solver.BestObjectiveBound()
+                    # Standard MIP gap: divide by |objective|, not |bound|.
+                    # Clamp best_bound to 0 because this is a pure-minimisation
+                    # model where every objective term >= 0 (the true optimum is
+                    # always >= 0).  CP-SAT's LP relaxation of Big-M models can
+                    # produce deeply negative bounds before convergence, which
+                    # inflates the gap to millions of percent.
+                    clamped_bound = max(best_bound, 0.0)
+                    denom = max(abs(objective_value), 1e-10)
+                    optimality_gap = abs(objective_value - clamped_bound) / denom
+                except Exception as e:
+                    logger.warning(f"Could not extract objective metrics: {e}")
             
+            # Do NOT replace this with a set or a re-sort. Dict insertion order
+            # here IS the canonical (well, rig) order — setup_variables inserts
+            # in sorted well-then-rig order — and it decides the order rows are
+            # emitted in, which feeds sequence_order derivation downstream. A
+            # refactor to an unordered container would silently reintroduce the
+            # non-determinism this whole spec removes.
             for (wid, rid), a in self.assignments.items():
-                if self.solver.Value(a) == 1:
+                if value_of(a) == 1:
                     w = self.wells_df.loc[self.wells_df["name"] == wid].iloc[0]
                     r = self.rigs_df.loc[self.rigs_df["name"] == rid].iloc[0]
-                    s_day = int(self.solver.Value(self.start_times[(wid, rid)]))
-                    e_day = int(self.solver.Value(self.end_times[(wid, rid)]))
+                    s_day = value_of(self.start_times[(wid, rid)])
+                    e_day = value_of(self.end_times[(wid, rid)])
                     start_date = self.base_start_date + timedelta(days=s_day)
                     end_date = self.base_start_date + timedelta(days=e_day - 1)
 
@@ -1831,7 +3279,7 @@ class DrillingScheduler:
 
             assignments = self._calculate_ilm_costs(assignments)
 
-            project_end_day = int(self.solver.Value(self.project_end)) if self.project_end is not None else 0
+            project_end_day = value_of(self.project_end) if self.project_end is not None else 0
             project_end_date = self.base_start_date + timedelta(days=project_end_day)
 
             assigned_wells = {a["well"] for a in assignments}
@@ -1884,6 +3332,8 @@ class DrillingScheduler:
                 "fy_start_date": self.fy_start_date,
                 "fy_end_date": self.fy_end_date,
                 "fy_constrained": self.fy_start_date is not None or self.fy_end_date is not None,
+                # Determinism provenance (task 8.1). Same block in both branches.
+                **self._provenance_payload(),
             }
         else:
             self.results = {
@@ -1914,8 +3364,13 @@ class DrillingScheduler:
                 "fy_start_date": self.fy_start_date,
                 "fy_end_date": self.fy_end_date,
                 "fy_constrained": self.fy_start_date is not None or self.fy_end_date is not None,
+                # Determinism provenance (task 8.1). Same block in both branches:
+                # a run that failed to produce a schedule is exactly when the
+                # stop reason and the fingerprints matter most.
+                **self._provenance_payload(),
             }
 
+        self._log_provenance(self.results)
         return self.results
 
     # ==============================================================================
@@ -2240,7 +3695,10 @@ class DrillingScheduler:
         total_ilm_days = 0.0
         for rid in sorted(by_rig.keys()):
             arr = by_rig[rid]
-            arr.sort(key=lambda x: x["well_start_date"])
+            # Total sort key: start date alone can tie, and the tie would then be
+            # resolved by list order.  Per-rig AddNoOverlap makes same-rig
+            # start-date ties impossible today, so this is latent-hazard removal.
+            arr.sort(key=lambda x: (x["well_start_date"], x["well"]))
             rig_row = self.rigs_df.loc[self.rigs_df["name"] == rid].iloc[0]
             
             # Get ILM matrix for this rig (from Data Management norms)

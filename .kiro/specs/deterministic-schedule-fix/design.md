@@ -59,7 +59,9 @@ Nothing in this document changes code. It specifies what the implementation phas
   performed, not time elapsed, so it does not move when the machine is busy. Units are "as close as
   possible to a second" per the OR-Tools parameter documentation but are a count of work, not
   elapsed time. `max_deterministic_time` bounds it.
-- **Wall-clock backstop**: `max_time_in_seconds`, retained only to stop a request hanging. If it
+- **Wall-clock backstop**: `max_time_in_seconds`, retained only to stop a request hanging and sized
+  from measured contention as `WALL_BACKSTOP_FACTOR × T` (currently 1.5 × T). It does not decide the
+  answer — the deterministic budget does — it bounds damage when the work cannot be completed. If it
   binds, the run is not reproducible and must be flagged.
 - **Deterministic budget (D)**: The `max_deterministic_time` value derived from the user's
   wall-clock selection on the Time Limit dropdown (`templates/scheduler/scheduling.html:447-459`).
@@ -128,7 +130,9 @@ END FUNCTION
 - Same model with `max_deterministic_time = 7.0`: deterministic time `7.0001` every run, one
   schedule fingerprint, wall time varying 8.85–8.97 s. This is the target behaviour.
 - 5 wells, 2 identical rigs, current weights: 10 distinct schedules at optimal objective 3244.
-  Expected: exactly one schedule is selectable.
+  Expected: the selectable set is narrowed to the tie-break minimum `T*` and its size is measured
+  (4 on this model, all four interchangeable permutations — amended clause 2.5.2), with the choice
+  within it reproducible on this machine.
 - Two selected wells with the same `Well.name` (no `unique=True` at `scheduler/models.py:394`):
   `self.assignments[(wid, rid)]` (`scheduler/optimization.py:891`) creates one variable pair for
   two wells, the distance and ILM matrices get duplicate index labels
@@ -211,9 +215,11 @@ Also unaffected:
    count, cost, project end, `start_time_sum` *and* `rig_well_order`. Clause 2.5's literal goal
    ("no two distinct schedules share an objective value") is not reachable with
    polynomially-bounded integer weights, because the solution space is exponential and an injective
-   linear objective over it would need exponential coefficients. The design therefore treats 2.5 as
-   "select a single canonical one" (its opening words) and secures the residual by the deterministic
-   stop.
+   linear objective over it would need exponential coefficients. Clause 2.5 has since been reworded
+   to the delivered goal — select a **reproducible** member, secure the residual by the deterministic
+   stop, and **measure** rather than eliminate it (2.5.1-2.5.3). This root cause is exactly what the
+   measurement confirmed: 4 survivors at `(V*, T*)`, all sharing `start_time_sum = 160` and
+   `rig_well_order = 22`.
 
 5. **Well name is used as a primary key without being one.** `Well.name` has no `unique=True`
    (`scheduler/models.py:394`) while every optimizer structure keys on it. `Rig.name` *is* unique
@@ -242,7 +248,14 @@ every run *on the same machine*: one distinct `schedule_hash`, one distinct `mod
 distinct `objective_value`, and identical `(well → rig, start day, end day, sequence order)`
 assignments, including runs executed while that machine is under CPU load (clause 2.3).
 
-**Validates: Requirements 2.1, 2.2, 2.3, 2.5, 2.6**
+This is a statement about **repeatability**, and it remains exactly as strong under amended clause
+2.5: byte-identical output on repeated runs on the same machine is guaranteed. It is *not* a claim
+that the returned member of a tied optimal set is pinned by the objective — where a tie contains
+interchangeable permutations that choice is decided by the search path (clause 2.5.1), which is
+stable on this machine and is therefore sufficient for every assertion above. The residual is
+measured by the tie-enumeration test (clause 2.5.2, decision 8), not by this property.
+
+**Validates: Requirements 2.1, 2.2, 2.3, 2.5, 2.5.1, 2.5.2, 2.6**
 
 Property 2: Preservation - Unique proven optima are untouched
 
@@ -261,12 +274,23 @@ no more than the current code when the number of wells assigned is equal.
 
 **Validates: Requirements 3.6, 3.7**
 
-Property 4: Performance Bound - the page stays usable
+Property 4: Bounded Wall Time and Preserved Quality - the answer is decided by work, not by the clock
 
-_For any_ scheduling request, total wall time across both solve stages SHALL NOT exceed the
-selected `time_limit_seconds × 1.2`, enforced by the wall-clock backstop, and the binding stop
-reason SHALL be reported so that a run stopped by the backstop is distinguishable from a run
-stopped by the deterministic budget.
+_For any_ scheduling request, the **deterministic work budget is the limit that determines the
+answer**; the wall-clock ceiling only bounds damage when that work cannot be completed. Concretely:
+total wall time across both solve stages SHALL NOT exceed
+`time_limit_seconds × WALL_BACKSTOP_FACTOR` — configured, currently **1.5**, sized from measured
+contention on the deployment machine (decision 1) — and the binding stop reason SHALL be reported so
+that a run stopped by the backstop (`deterministic_stop = False`,
+`stop_reason = WALL_CLOCK_BACKSTOP`) is distinguishable from a run stopped by the deterministic
+budget. _For any_ scheduling request the fixed code SHALL also assign no fewer wells than the current
+code and cost no more at equal wells assigned.
+
+That quality half is the **binding** half. The work budget SHALL NOT be reduced in order to bring
+wall time down: a `DETERMINISTIC_TIME_RATIO = 0.15` experiment did exactly that, and while it was
+reproducible even under torture load it collapsed the schedule from 23 assigned wells to 1
+(see decision 1's calibration). Reproducibly returning a near-useless schedule is not the
+requirement.
 
 **Validates: Requirements 2.4, 2.7, 3.9**
 
@@ -294,8 +318,8 @@ SHALL be present in the API response and on the schedule detail page.
 Replace the wall-clock-only block (`:927`, `:954`) with:
 
 ```
-max_deterministic_time = D            # binding limit
-max_time_in_seconds    = 1.15 × T     # backstop only, never expected to bind
+max_deterministic_time = D            # binding limit — this decides the answer
+max_time_in_seconds    = WALL_BACKSTOP_FACTOR × T   # backstop only (1.5 × T); bounds damage, not the answer
 num_search_workers     = 1            # unchanged (3.4)
 random_seed            = 42           # unchanged (3.4)
 search_branching       = AUTOMATIC_SEARCH   # unchanged (see decision 4)
@@ -327,19 +351,61 @@ empirical ratio, not a conversion:
 D = RATIO × T
 ```
 
-`RATIO` default **0.60**. Derivation from the measurements in the requirements: an 11 s wall-clock run
-consumed 7.1–7.4 deterministic units, and a 7.0-unit budget consumed 8.85–8.97 s of wall time — about
-1.27 s of wall time per unit of work on this machine while idle. At `RATIO = 0.60`, a 300 s selection
-yields `D = 180`, which costs ≈ 229 s of wall time when the machine is idle — 76 % of T, leaving
-~1.5× headroom before the `1.15 × T = 345 s` backstop.
+`RATIO` default **0.60**, and the justification is **search quality, not wall time**. Measured on the
+deployment machine during implementation (12 cores, ortools 9.15.6755, the 6-rig / 40-well model, 2
+solves per level, work held at a fixed 3.6 deterministic units so the wall time recorded is the
+honest cost of finishing that fixed work):
 
-**What the headroom is for.** `D` fixes the amount of work; how long that work takes depends on what
-else this machine is doing at the time. The headroom is a **contention allowance** — it exists so the
-fixed work budget still finishes inside the backstop when the machine is busy, which is exactly the
-case clause 2.3 is about. Tune `RATIO` so the work budget comfortably fits this machine even when the
-machine is under load: lower it if real runs on this host hit the backstop while busy, raise it to use
-more of the user's budget if they never do. If the backstop does bind, the run is flagged rather than
-silently non-reproducible (clause 2.4).
+| background burners | wall_s | deterministic_time | wall per unit | wells assigned |
+|---|---|---|---|---|
+| 0 (idle) | 5.77 / 5.81 | 3.6000 | 1.602 / 1.613 | 23 |
+| 2 | 5.77 / 5.80 | 3.6000 | 1.604 / 1.611 | 23 |
+| 4 | 6.03 / 5.93 | 3.6000 | 1.674 / 1.647 | 23 |
+| 8 | 6.60 / 6.49 | 3.6000 | 1.832 / 1.804 | 23 |
+
+The work performed is identical to four decimal places from idle to 8 background burners, the
+schedule hash and the 23 assigned wells never move, and the only thing load changes is elapsed time
+(+14 % at 8 burners). At `RATIO = 0.60` the page's default 300 s selection yields `D = 180` units,
+which costs ≈ 288 s of wall time idle (1.60 s/unit) and ≈ 330 s at representative load
+(1.83 s/unit) — that is 0.96 × T and 1.10 × T, which is why the backstop has to sit above `1.0 × T`.
+
+**Rejected option, recorded so it is not re-tried: `RATIO = 0.15`.** Cutting the work budget to 0.9
+units does hold `deterministic_time` identical to 4 dp even under 3-burners-per-core torture load —
+and it collapses the answer from **23 wells assigned to 1**, objective
+97,768,602,348 → 223,981,623,957. That violates clause 3.9's own "no material regression in wells
+assigned or total cost" and Property 3. Determinism *and* full schedule quality are the binding
+guarantees; wall time is what gives. Tune `RATIO` on quality grounds only — raise it to buy more
+search, and lower it only if you are willing to pay the quality price this experiment measured.
+
+**Deriving `WALL_BACKSTOP_FACTOR = 1.5`** from the same table:
+
+```
+worst representative cost      = 1.832 s per deterministic unit    (8 burners)
+wall needed for the fixed work = 1.832 × D
+                               = 1.832 × RATIO × T
+                               = 1.832 × 0.60 × T  = 1.0992 × T
+chosen factor                  = 1.5 × T           (~36 % headroom, clean round number)
+covered cost per unit          = 1.5 / 0.60        = 2.50 s per unit
+                               = 1.56 × this host's idle cost of 1.60 s
+```
+
+At the page's default T = 300 s the worst-case wall time is therefore **450 s (7.5 min)**, with the
+expected finish nearer 330 s. Re-derive the factor if the host changes: measure the worst
+representative wall-per-unit cost and keep `FACTOR > worst_cost × RATIO` with headroom.
+
+**Explicitly out of scope:** ~3 background burners per core (≈ 7.3 s per deterministic unit) would
+need a `4.4 × T` backstop — 22 minutes on the default selection. At that level the backstop fires and
+the run is reported non-deterministic. That is the documented boundary of the guarantee, not a silent
+failure.
+
+**What the backstop is and is not.** `D` fixes the amount of work; how long that work takes depends
+on what else this machine is doing at the time, so `WALL_BACKSTOP_FACTOR` is a **contention
+allowance** — sized so the fixed work budget still finishes inside the backstop when the machine is
+busy at a representative level, which is exactly the case clause 2.3 is about. It is **not** the limit
+that decides the answer: the work budget is. The backstop only bounds damage when the work cannot be
+completed, and when it binds the run is flagged (`stop_reason = WALL_CLOCK_BACKSTOP`,
+`deterministic_stop = False`) rather than silently returned (clause 2.4). That amber path is the
+safety net, and it is tested (decision 8) rather than assumed.
 
 `RATIO` is **configurable**, because it is the one number in this design that is a property of the
 machine the app runs on rather than of the problem. Add to `drilling_scheduler/settings.py` alongside
@@ -348,11 +414,18 @@ the existing `VIDEO_PROCESSING` dict precedent (`:227-243`):
 ```python
 IDRS_SOLVER_DETERMINISM = {
     # Deterministic-time units granted per wall-clock second the user selected.
-    # Headroom knob against CPU contention on this machine. Schedule-affecting: changing it
-    # changes how much search is done, so it is part of the solver fingerprint.
+    # This is a SEARCH QUALITY knob, not a wall-time knob: it sets how much search is bought.
+    # 0.60 is the measured full-quality value (23 wells assigned); 0.15 was reproducible but
+    # collapsed the schedule to 1 well and is rejected. Contention is absorbed by
+    # WALL_BACKSTOP_FACTOR below, not by shrinking this. Schedule-affecting: changing it changes
+    # how much search is done, so it is part of the solver fingerprint.
     'DETERMINISTIC_TIME_RATIO': float(os.getenv('IDRS_DETERMINISTIC_TIME_RATIO', '0.60')),
-    # Wall-clock backstop as a multiple of the selected limit. Must stay <= 1.2 (Property 4).
-    'WALL_BACKSTOP_FACTOR': float(os.getenv('IDRS_WALL_BACKSTOP_FACTOR', '1.15')),
+    # Wall-clock backstop as a multiple of the selected limit. Sized from measured contention on
+    # the deployment machine: it MUST exceed (worst observed wall-seconds per deterministic unit
+    # x DETERMINISTIC_TIME_RATIO) with headroom. 1.5 covers 2.50 s/unit against the 1.83 s/unit
+    # measured at representative load. This is not the limit that decides the answer -- the work
+    # budget is; the backstop only bounds damage, and a run it stops is flagged non-reproducible.
+    'WALL_BACKSTOP_FACTOR': float(os.getenv('IDRS_WALL_BACKSTOP_FACTOR', '1.5')),
     # Share of the deterministic budget given to the canonicalising second stage.
     'CANONICALIZE_BUDGET_SHARE': float(os.getenv('IDRS_CANONICALIZE_BUDGET_SHARE', '0.15')),
     # Optional: pin the search tree as well (see decision 4). Off by default.
@@ -376,10 +449,16 @@ derived from a measured wall time. This rule matters *more* under a same-machine
 the only thing left that can vary between two runs of the same request is this machine's elapsed time,
 so any parameter computed from elapsed time is the one remaining channel through which the bug can
 return. In particular stage 2's backstop is
-`0.25 × WALL_BACKSTOP_FACTOR × T` computed from `T`, *not* "whatever wall time is left after stage
-1" — a remaining-time computation would feed elapsed time back into the parameter proto and
-reintroduce the bug through the back door. Stage 1's backstop is
-`0.90 × WALL_BACKSTOP_FACTOR × T`. The two shares sum to 1.15 × T, satisfying Property 4.
+`CANONICALIZE_BUDGET_SHARE × WALL_BACKSTOP_FACTOR × T` computed from `T`, *not* "whatever wall time is
+left after stage 1" — a remaining-time computation would feed elapsed time back into the parameter
+proto and reintroduce the bug through the back door. Stage 1's backstop is
+`(1 − CANONICALIZE_BUDGET_SHARE) × WALL_BACKSTOP_FACTOR × T`. At the default share of 0.15 that is
+`0.85 × WALL_BACKSTOP_FACTOR × T` for stage 1 and `0.15 × WALL_BACKSTOP_FACTOR × T` for stage 2, so
+**the two shares sum to exactly `1.0 × WALL_BACKSTOP_FACTOR × T`** (1.5 × T at the current factor) —
+the total wall ceiling for the two-stage solve is the factor itself, which is what Property 4 bounds.
+Mirroring the deterministic split keeps each stage's wall ceiling proportional to the work it was
+granted; the shares must never be allowed to sum above 1.0 of the factor, or the two-stage solve
+would silently exceed the ceiling Property 4 states.
 
 **Stop-reason detection and reporting.** After each `Solve()`, read `solver.deterministic_time` and
 `solver.wall_time` (both available on `CpSolver` in ortools 9.15) and classify:
@@ -444,6 +523,18 @@ Stage 2, on the same `CpModel`, adds `Add(P-expr == V*)` and replaces the object
 `Minimize(W₁·start_time_sum + W₂·rig_well_order)` where `W₂ = 1` and
 `W₁ = max(rig_well_order) + 1`.
 
+**What stage 2 delivers, stated precisely (amended clause 2.5).** Stage 2 narrows the set the solver
+may return from "every schedule at `V*`" to "every schedule at `(V*, T*)`", and the member it returns
+from that narrowed set is **reproducible** on this machine. It is *not* guaranteed to be the unique
+member: both tie-break tiers are sums, so a tied set whose members differ only by permuting
+interchangeable wells (equal durations, identical rigs) survives `T*` intact. Measured on the
+5-well / 2-identical-rig model, both the tied set and the canonical set are **4** — `V* =
+218,583,260`, `T* = 8,182`, both enumerations exhausted, `W₁ = 51 > max(rig_well_order) = 50` so the
+hierarchy is real and simply has nothing to bite on. That residual is accepted and measured by user
+decision, not eliminated; see *Clause 2.5 — resolved, reworded, and the residual measured* below. The
+third tier below (arc-order over `circuit_arcs`) remains the designated escalation and is out of
+scope now.
+
 Why the lock is on the *full* objective rather than on tiers 1–3 only: locking the full value means
 stage 2's feasible set is exactly the set of solutions today's solver is free to return
 arbitrarily. So stage 2 can only ever replace an arbitrary choice with a canonical one — it can
@@ -468,9 +559,10 @@ Why this does not re-create the optimality gap:
   assignment BoolVars and start-time IntVars, so stage 2 has an incumbent immediately and its only
   work is improving the tie-break. Its budget `D₂` is 15 % of `D`.
 - Stage 2 does not need to prove optimality for determinism. Its stop is deterministic, so its
-  incumbent is reproducible whether or not it closed. If it closes, the selection is canonical; if
-  it does not, the selection is still reproducible and no worse than today's. Report
-  `canonicalization_status` so the distinction is visible.
+  incumbent is reproducible whether or not it closed. If it closes, the selection sits at the proven
+  tie-break minimum `T*` — canonical up to interchangeable permutations, which two sums cannot
+  separate; if it does not close, the selection is still reproducible and no worse than today's.
+  Report `canonicalization_status` so the distinction is visible.
 
 Note while implementing: `max_order_tiebreak = num_pairs × num_pairs` at `:1362` is a loose bound —
 each well contributes at most one active assignment, so the true bound is
@@ -750,7 +842,13 @@ the fallback.
 - `test_wall_backstop_is_flagged`: `override_settings` with a tiny `WALL_BACKSTOP_FACTOR` so the
   backstop binds, assert `deterministic_stop is False` and `stop_reason == 'WALL_CLOCK_BACKSTOP'`
   (clause 2.4 — proves the flag actually fires rather than being dead code).
-- `test_wall_time_within_tolerance`: Property 4 — total wall time ≤ `time_limit_seconds × 1.2`.
+- `test_wall_time_stays_inside_the_configured_backstop`: Property 4 — total wall time ≤ the
+  configured backstop **and** that backstop equals `WALL_BACKSTOP_FACTOR × T` (1.5 × T at the current
+  factor). Asserting equality against the configured factor is stronger than asserting a fixed
+  numeric ceiling, because it also catches a mis-derived backstop.
+- Property 4's quality half rides on the preservation and economics assertions (`test_preservation`,
+  Property 3's generated checks): wells assigned must not fall and cost must not rise at equal wells.
+  That half is the binding one, so it is never relaxed to make a wall-time assertion pass.
 
 **`test_tie_enumeration.py`** — the 5-well / 2-identical-rig model from the requirements, the case
 that produced 10 tied schedules.
@@ -759,13 +857,23 @@ that produced 10 tied schedules.
 - Build a third model constrained to `P-expr == V*` *and* `T-expr == T*`, set
   `enumerate_all_solutions = True` with `num_search_workers = 1`, and collect distinct
   `schedule_hash` values through a `CpSolverSolutionCallback`.
-- Assert the count is exactly 1. Cap the callback at 50 solutions and fail on the cap, so a
-  regression fails fast instead of hanging.
-- Also log the distinct count at `P-expr == V*` alone (expected > 1, it is the tied set) so the
-  test documents what the canonicalisation is doing rather than just asserting a number.
-- If a future model shows a count > 1 here, that is the trigger to add the third tie-break tier
-  (arc-order index over `circuit_arcs`) described in decision 3 — the test tells you when it is
-  needed instead of paying for it speculatively.
+- Assert the count equals its **measured** value, pinned as a named module constant — **4** on this
+  model, the interchangeable-permutation residual amended clause 2.5.2 accepts. A count **above** the
+  constant is a regression; a count **below** it means canonicalisation improved, which is good news
+  but must be recorded by revisiting the constant deliberately rather than by loosening the
+  assertion. Asserting equality, not `<=`, is what makes both directions visible.
+- Assert **both** enumerations are exhausted. Cap the loop at 50 schedules and **fail on the cap**,
+  so a regression fails fast instead of hanging — and because a capped count is only a lower bound,
+  which would make the equality assertion above meaningless.
+- Assert the count at `P-expr == V*` alone stays **> 1**, and report it, so the test documents the
+  tied set the canonicalisation is choosing within rather than just asserting a number.
+- Assert the tie-break hierarchy is real on this model — `W₁ > max(rig_well_order)`, read through
+  the production `tiebreak_weights` / `max_rig_well_order` helpers. Without this, a passing canonical
+  count could be an artefact of a collapsed hierarchy rather than evidence the hierarchy worked.
+- If a future model shows a count > 1 that interchangeable permutations do **not** explain, that is
+  the trigger to add the third tie-break tier (arc-order index over `circuit_arcs`) described in
+  decision 3 — the test tells you when it is needed instead of paying for it speculatively. That tier
+  is the designated escalation and is out of scope now (amended clause 2.5.3).
 
 **`test_preservation.py`** — Property 2. A model small enough to prove `OPTIMAL` with a unique
 optimum. Assert the assignments and `objective_value` equal a golden JSON fixture. Capture the
@@ -810,15 +918,59 @@ tiers 1–3 only. Worth stating explicitly so the constraint is not relaxed late
 future move to lock only tiers 1–3 (which would produce cleaner canonical schedules) breaks 3.8
 and the Preservation property, and would need a requirements change first.
 
-One clause needs interpretation rather than a change. Clause 2.5 asks for "a strictly dominating
-weight hierarchy … so that no two distinct schedules share an objective value". Strict uniqueness
-of objective values across an exponential solution space is not achievable with
-polynomially-bounded integer weights (root cause 4), and the requirements' own measurement — 2
-schedules still tied under the previously-dominating weight — shows the previous attempt did not
-achieve it either. This design delivers 2.5's stated goal ("select a single canonical one") via the
-dominating hierarchy in stage 2 plus the deterministic stop, and makes the residual *measurable*
-through the tie-enumeration test. If you want clause 2.5 reworded to match that reading, say so and
-I will return to the requirements phase before implementation.
+#### Clause 2.5 — resolved, reworded, and the residual measured (decision taken)
+
+Clause 2.5 originally asked for "a strictly dominating weight hierarchy … so that no two distinct
+schedules share an objective value". Strict uniqueness of objective values across an exponential
+solution space is not achievable with polynomially-bounded integer weights (root cause 4), and the
+requirements' own pre-fix measurement — 2 schedules still tied under the previously-dominating
+weight — shows the earlier attempt did not achieve it either. **This is no longer an open
+interpretation question. Clause 2.5 has been reworded (2.5, plus 2.5.1-2.5.3) and the residual has
+been measured.**
+
+Measured after the two-stage solve was implemented, on the 5-well / 2-identical-rig model:
+
+| enumerated at | count | value | enumeration |
+|---|---|---|---|
+| `P-expr == V*` (the tied set) | **4** | `V* = 218,583,260` | exhausted (`INFEASIBLE`, 50-cap not reached) |
+| `P-expr == V*` **AND** `T-expr == T*` (the canonical set) | **4** | `T* = 8,182` | exhausted (`INFEASIBLE`, 50-cap not reached) |
+
+Both counts are exact, not lower bounds. The tied set staying at 4 is expected and correct — stage
+1's objective is byte-identical to before, so the tie is untouched by construction. The canonical set
+also being 4 is the residual, and its mechanism is measured rather than argued: all four survivors
+carry *identical* tie-break components, `start_time_sum = 160` and `rig_well_order = 22`. The
+hierarchy is real — `W₁ = 51 > max(rig_well_order) = 50` — it simply has nothing to bite on. Both
+tiers are **sums**, every well has duration 30 and both rigs are identical, so the four schedules
+differ only by permuting interchangeable wells, which leaves a sum invariant (swapping W3@0 with
+W5@80 on one rig leaves `0 + 80` unchanged). This is root cause 4 reproduced exactly, now with
+numbers.
+
+**Decision taken (user, Option B): accept the four interchangeable survivors and de-scope canonical
+path-independence.** The binding requirement is same rigs, wells, financial year and time limit, same
+machine, same schedule every run — met and measured by decision 1's reproducible stop plus the
+repeat-run harness (one hash, zero `deterministic_time` spread, idle and under representative load).
+Separating interchangeable permutations would buy path-independence of the *choice*, not
+reproducibility, and the model complexity is not worth paying for it.
+
+What that changes here, and what it deliberately does not:
+
+- Decision 3's stage 2 is described as selecting a **reproducible** member of the tied set, not a
+  provably unique one. Its guarantees are otherwise unchanged.
+- Decision 8's tie-enumeration test asserts the canonical count against its **measured** value and
+  reports the tied-set count, instead of asserting 1.
+- The third tie-break tier (arc-order index over `circuit_arcs`) remains the **designated
+  escalation** if a future non-symmetric model shows a canonical count > 1 that interchangeable
+  permutations do not explain. It is **out of scope now**.
+- Nothing about rigour is relaxed. `W₁ > max(rig_well_order)` must still hold and is asserted on the
+  model under test; the enumeration must still be **exhaustive**, so a cap hit is still a failure
+  because a capped count is only a lower bound; and stage 2 must still never worsen or lose a result.
+- The Big-M padding call from decision 3's implementation note stands: the `max_order_tiebreak`
+  correction was **not** applied to `BIG_M_WELLS`, because that coefficient sits in stage 1's
+  objective and tightening it moved the preservation golden's `objective_value` from 698,525,729 to
+  698,525,679 and changed the model fingerprint. The tight bound is used where it matters — deriving
+  `W₁` — and the padding is left alone with a comment recording the measurement. Tightening Big-M
+  stays available as the separate work this decision already flags it as. **User confirmed this
+  precedence call was correct.**
 
 ## Testing Strategy
 
@@ -934,7 +1086,8 @@ record it as golden fixtures. Then assert the fixed code reproduces them.
 
 - Budget calibration: `T → (D, backstop)` for every dropdown value at
   `templates/scheduler/scheduling.html:447-459`, including the `RATIO` and `WALL_BACKSTOP_FACTOR`
-  overrides and the stage split, asserting the backstop never exceeds `1.2 × T`.
+  overrides, asserting the backstop equals `WALL_BACKSTOP_FACTOR × T` (1.5 × T by default) and that
+  the stage-1 and stage-2 wall shares sum to no more than `1.0 × WALL_BACKSTOP_FACTOR × T`.
 - Stop-reason classification: table-driven over `(status, deterministic_time, wall_time, D,
   backstop)` covering all five outcomes and the boundary thresholds (`0.995`, `0.98`).
 - Tie-break weight derivation: `W₁ > max(rig_well_order)` for a range of well/rig counts, and the

@@ -54,6 +54,67 @@ Three independent causes therefore have to be closed. Closing only the timeout c
 proven-optimal runs free to return any of the tied schedules; closing only the tie-break causes
 still leaves timed-out runs varying.
 
+### Wall time versus determinism — measured, then decided
+
+A tight wall-time bound and same-machine determinism under load are **mutually exclusive**: holding
+the *work* fixed means the *elapsed time* has to absorb the contention. Measured during
+implementation on one host (12 cores, ortools 9.15.6755, the 6-rig / 40-well model, work held at a
+fixed 3.6 deterministic units, 2 solves per level):
+
+| background burners | wall_s | deterministic_time | wall per unit | wells assigned |
+|---|---|---|---|---|
+| 0 (idle) | 5.77 / 5.81 | 3.6000 | 1.602 / 1.613 | 23 |
+| 2 | 5.77 / 5.80 | 3.6000 | 1.604 / 1.611 | 23 |
+| 4 | 6.03 / 5.93 | 3.6000 | 1.674 / 1.647 | 23 |
+| 8 | 6.60 / 6.49 | 3.6000 | 1.832 / 1.804 | 23 |
+
+The work performed is identical to four decimal places at every level and so is the schedule; the
+only thing load moves is elapsed time (+14 % at 8 burners). Forcing wall time under a tight
+`1.2 × T` ceiling therefore requires cutting the work budget, and cutting it far enough to hold
+under load (`DETERMINISTIC_TIME_RATIO = 0.15`) was reproducible but collapsed the schedule from **23
+wells assigned to 1** (objective 97,768,602,348 → 223,981,623,957) — violating clause 3.9's own "no
+material regression in wells assigned or total cost".
+
+**Determinism plus full schedule quality are the binding guarantees; wall time is what gives.** The
+work-budget ratio stays at 0.60, and the wall-clock ceiling is a backstop sized from measured
+representative contention (`WALL_BACKSTOP_FACTOR`, currently 1.5 — at the page's default T = 300 s
+that is a 450 s / 7.5 min worst case). The backstop is not the limit that decides the answer; the
+work budget is. The backstop only bounds damage when the work cannot be completed, and when it fires
+the run is flagged (`stop_reason = WALL_CLOCK_BACKSTOP`, `deterministic_stop = False`) rather than
+silently returned — see clause 2.4. Contention beyond the representative level — around 3 background
+burners per core, ≈ 7.3 s per deterministic unit, which would need a `4.4 × T` backstop — is
+explicitly out of scope: there the backstop fires and the run is reported non-deterministic. That is
+the documented boundary of the guarantee, not a silent failure.
+
+### Reproducible versus canonical — measured, then decided
+
+The tie-break work was originally written to reach "no two distinct schedules share an objective
+value". Measured after the two-stage lexicographic solve was implemented, on the 5-well /
+2-identical-rig model this document reproduces:
+
+| enumerated at | count | value |
+|---|---|---|
+| `P-expr == V*` (the tied set) | **4** | `V* = 218,583,260` |
+| `P-expr == V*` **AND** `T-expr == T*` (the canonical set) | **4** | `T* = 8,182` |
+
+Both enumerations **exhausted** — they terminated `INFEASIBLE` with the 50-schedule cap not reached —
+so 4 is exact, not a lower bound. The hierarchy is real (`W₁ = 51 > max(rig_well_order) = 50`); it
+simply has nothing to bite on. All four survivors carry *identical* tie-break components
+(`start_time_sum = 160`, `rig_well_order = 22`) because both tiers are **sums** and the four
+schedules differ only by permuting interchangeable wells — every well duration 30, both rigs
+identical — which leaves a sum invariant. Swapping W3@0 with W5@80 on one rig leaves `0 + 80`
+unchanged. No linear objective built from those two sums can separate them.
+
+**Decision taken: accept the residual and de-scope canonical path-independence.** The requirement is
+same rigs, wells, financial year and time limit, same machine, same schedule every run — and that is
+met and measured (the reproducible stop of 2.2, plus the repeat-run harness of 2.12 passing idle and
+under representative load with one hash and zero `deterministic_time` spread). Separating four
+interchangeable permutations would buy path-independence of the *choice*, not reproducibility, and it
+is not worth the model complexity. Clause 2.5 states the delivered goal; 2.5.1-2.5.3 record what is
+promised, what is measured, and what the escalation would be. This de-scopes canonicality, not
+rigour: the hierarchy must still dominate, the enumeration must still be exhaustive, and stage 2 must
+still never worsen a result.
+
 ## Bug Analysis
 
 ### Current Behavior (Defect)
@@ -86,7 +147,13 @@ still leaves timed-out runs varying.
 
 2.4 WHEN a wall-clock ceiling is still needed to protect the request from hanging, THEN the system SHALL treat it as a safety backstop set generously above the deterministic budget, and SHALL record in the result whether that backstop was the binding stop reason, so a non-reproducible run is identifiable rather than silent
 
-2.5 WHEN several schedules tie at the same objective value, THEN the system SHALL select a single canonical one, by restoring a strictly dominating weight hierarchy across the tie-break tiers at `scheduler/optimization.py:1358-1359` so that no two distinct schedules share an objective value
+2.5 WHEN several schedules tie at the same objective value, THEN the system SHALL select a **reproducible** one — on this machine, the same rigs, wells, financial year and time limit SHALL yield the same schedule on every run — by minimising a strictly dominating tie-break hierarchy (`W₁ > max(rig_well_order)`) in a second, canonicalising solve constrained to the stage-1 optimal objective value, together with the reproducible stopping criterion of 2.2
+
+2.5.1 WHEN a tied optimum contains interchangeable permutations — equal-duration wells on identical rigs — THEN the selection SHALL be **reproducible but not canonical**: both tie-break tiers are *sums*, and permuting interchangeable wells leaves a sum invariant, so which member of that set is returned is decided by the search path — stable on this machine, but not pinned by the objective
+
+2.5.2 WHEN such a residual exists, THEN it SHALL be **measured, not eliminated** — the tie-enumeration test enumerates the tied set at `P-expr == V*` and the canonical set at `(P-expr == V*) AND (T-expr == T*)`, records both counts, and asserts the canonical count against its measured value (**4** on the 5-well / 2-identical-rig model, at `V* = 218,583,260` and `T* = 8,182`, both enumerations exhausted), so a regression that grows the residual fails loudly
+
+2.5.3 WHEN a future non-symmetric model shows a canonical count > 1 that interchangeable permutations do NOT explain, THEN the third tie-break tier — an arc-order index over `circuit_arcs`, design decision 3 — SHALL be the **designated escalation**; it is explicitly **out of scope** now by user decision, because path-independence of the canonical selection is not worth the model complexity when same-machine reproducibility is already met and measured (clauses 2.1-2.3, 2.12)
 
 2.6 WHEN the solver explores the search tree, THEN the system SHALL impose an explicit canonical branching order via `model.AddDecisionStrategy()` over the assignment BoolVars and the start-time IntVars in sorted well-then-rig order, restoring a real body to `_add_decision_strategy()` at `scheduler/optimization.py:986`, so that the returned solution does not depend on CP-SAT's internal heuristic choices
 
@@ -120,7 +187,7 @@ still leaves timed-out runs varying.
 
 3.8 WHEN a schedule already solves to proven `OPTIMAL` well inside its time limit today, THEN the system SHALL CONTINUE TO return that same optimal schedule and the same objective value after the fix
 
-3.9 WHEN the deterministic budget is applied, THEN the system SHALL CONTINUE TO complete a representative `/scheduling/` run inside the time limit the user selected on the page (`templates/scheduler/scheduling.html:447-450`), with no material regression in wells assigned or total cost
+3.9 WHEN the deterministic budget is applied, THEN the system SHALL CONTINUE TO return a representative `/scheduling/` run with **no material regression in wells assigned or total cost** — this quality clause is the **binding constraint**, it may not be traded against wall time, and it is precisely what a work budget shrunk to hold wall time down violates (`DETERMINISTIC_TIME_RATIO = 0.15` reproducibly collapsed 23 assigned wells to 1) — AND the wall time of that run SHALL be bounded by `WALL_BACKSTOP_FACTOR × T` (configured, currently 1.5 × the limit selected at `templates/scheduler/scheduling.html:447-450`) rather than by the selected limit itself
 
 3.10 WHEN re-optimization runs with locked actual dates, THEN `solve_with_actuals()` SHALL CONTINUE TO pin those actuals exactly (`scheduler/optimization.py:1458-1513`) and SHALL CONTINUE TO sort `fixed_actuals` by `(well, rig)` before applying them (`:1527-1528`)
 
@@ -196,9 +263,21 @@ FOR ALL X DO
     AND  totalCost(s)      ≤ totalCost(F(X)) WHEN wellsAssigned equal
 END FOR
 
-// Property: Performance Bound — the page stays usable
+// Property: Bounded Wall Time and Preserved Quality
+// The work budget is what determines the answer. The wall-clock backstop only bounds damage
+// when that work cannot be completed, and a run it stops is flagged, not silently returned.
 FOR ALL X DO
-  ASSERT wallTime(F'(X)) ≤ X.time_limit_seconds × TOLERANCE   // TOLERANCE ≈ 1.2
+  s ← F'(X)
+
+  // wall time is bounded by the configured backstop, NOT by the selected limit
+  ASSERT wallTime(s) ≤ X.time_limit_seconds × WALL_BACKSTOP_FACTOR   // configured; currently 1.5
+
+  // the binding half: the work budget must not be shrunk to buy wall time
+  AND    wellsAssigned(s) ≥ wellsAssigned(F(X))
+  AND    totalCost(s)     ≤ totalCost(F(X)) WHEN wellsAssigned equal
+
+  // a backstop-bound run is identifiable rather than silent
+  AND    (stopReason(s) = WALL_CLOCK_BACKSTOP) → (deterministicStop(s) = FALSE)
 END FOR
 ```
 
@@ -223,9 +302,21 @@ END FOR
   `schedule_hash`, including runs that report `FEASIBLE` rather than `OPTIMAL`.
 - The same selection run under heavy CPU load yields the same `schedule_hash` as the idle runs.
 - An automated repeat-run test exists (per 2.12) and fails if a second distinct hash appears.
-- A tie-enumeration check on a small symmetric rig/well set confirms exactly one schedule attains
-  the optimal objective value.
-- A representative `/scheduling/` run still finishes inside the selected time limit and assigns no
-  fewer wells at no greater cost than the current code.
+- A tie-enumeration check on a small symmetric rig/well set **measures** the canonical count at
+  `(P-expr == V*) AND (T-expr == T*)` and asserts it against its known value (4 on that model), with
+  **both** enumerations exhausted — a cap hit is a failure, because a capped count is only a lower
+  bound. Per clause 2.5.2 the residual is measured, not eliminated: a count **above** the pinned
+  value is a regression, a count **below** it means canonicalisation improved and the pinned value
+  must be revisited deliberately.
+- The same check confirms the count at `P-expr == V*` alone stays **> 1**, so the test still
+  documents the tied set that stage 2 is choosing within rather than only asserting a number.
+- The tie-break hierarchy is real on the model under test — `W₁ > max(rig_well_order)` — so a
+  passing canonical count is never an artefact of a collapsed hierarchy.
+- **Hard criterion** — a representative `/scheduling/` run assigns no fewer wells at no greater cost
+  than the current code. Nothing may be traded against this, wall time included.
+- A representative `/scheduling/` run's wall time stays inside `WALL_BACKSTOP_FACTOR × T` (currently
+  1.5 × the selected limit), not inside the selected limit itself.
 - Any run whose stop reason was the wall-clock backstop rather than the deterministic budget is
-  flagged in the result rather than reported as a normal completion.
+  flagged non-reproducible in the result — `deterministic_stop = False`,
+  `stop_reason = WALL_CLOCK_BACKSTOP` — rather than reported as a normal completion, and a test
+  forces the backstop to bind so that path is proven live rather than assumed.

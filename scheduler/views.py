@@ -34,7 +34,7 @@ from .serializers import (
     UnassignedWellSerializer, ScheduleCreateSerializer, GanttDataSerializer,
     AssignmentUpdateSerializer, BulkDataUploadSerializer, ScheduleStatsSerializer
 )
-from .optimization import DrillingScheduler
+from .optimization import DrillingScheduler, DuplicateNameError, find_duplicate_names
 from .well_rejection_analyzer import WellRejectionAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -209,6 +209,49 @@ def get_user_assigned_location(user):
         return authorized_user.assigned_location
     
     return None
+
+
+#: Result keys copied verbatim onto the matching ``Schedule`` columns by
+#: :func:`apply_determinism_provenance`. Name-for-name in both places on purpose:
+#: the mapping is the identity function, so there is nothing to get out of step.
+DETERMINISM_PROVENANCE_FIELDS = (
+    "model_fingerprint",
+    "solver_fingerprint",
+    "deterministic_stop",
+    "stop_reason",
+    "deterministic_time_used",
+    "deterministic_budget",
+)
+
+
+def apply_determinism_provenance(schedule, results):
+    """Copy the determinism provenance from a solver result onto a Schedule.
+
+    Called by all four save paths (design decision 7) instead of each repeating
+    six assignments. The four paths had already drifted — only
+    ``create_schedule`` persisted ``optimality_gap_percent`` and
+    ``schedule_hash``, so a rescheduled child silently lost both — and six more
+    fields copied by hand in four places would drift the same way.
+
+    Does **not** save. The caller is mid-way through building its own field set
+    and owns the ``save()``, so writing here would mean two round trips and, on
+    the ``create_schedule`` path, a write inside ``transaction.atomic()`` that
+    the caller did not ask for.
+
+    Missing keys are written as ``None`` rather than skipped. A result dict from
+    an older code path that predates task 8.1 should leave the columns null, not
+    leave whatever happened to be on the row already.
+    """
+    for field in DETERMINISM_PROVENANCE_FIELDS:
+        setattr(schedule, field, results.get(field))
+
+    # model_fingerprint_canonical and canonicalization_status are deliberately
+    # NOT persisted. They describe the internal two-stage mechanism rather than
+    # the reproducibility of the answer, they are already in the result payload
+    # and the logs for diagnosis, and adding columns for them would widen the
+    # migration for data no screen or command reads. Revisit only if
+    # check_determinism grows a need for them.
+    return schedule
 
 
 def create_child_schedule(parent_schedule, branch_type="reschedule", custom_suffix=None,
@@ -1714,8 +1757,10 @@ def run_full_optimization(rig_queryset=None, well_queryset=None, base_start_date
     """
     from .models import parse_financial_year
     
-    rigs = rig_queryset.order_by('name') if rig_queryset is not None else Rig.objects.all().order_by('name')
-    wells = well_queryset.order_by('name') if well_queryset is not None else Well.objects.all().order_by('name')
+    # Total ordering: Well.name is NOT unique (scheduler/models.py), so ('name',)
+    # alone leaves tied rows to the database. ('name', 'id') makes the key total.
+    rigs = rig_queryset.order_by('name', 'id') if rig_queryset is not None else Rig.objects.all().order_by('name', 'id')
+    wells = well_queryset.order_by('name', 'id') if well_queryset is not None else Well.objects.all().order_by('name', 'id')
     rigs_data = [rig.to_dict() for rig in rigs]
     wells_data = [well.to_dict() for well in wells]
     
@@ -1887,6 +1932,40 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         
         validated_data = serializer.validated_data
         
+        # --- Phase 0: reject duplicate well names BEFORE any Schedule row exists ---
+        #
+        # Design decision 5.  The optimizer identifies every well by its name, and
+        # Well.name has no unique=True, so two selected wells can share one.  When
+        # they do the two collapse onto a single set of model variables and the run
+        # dies deep in the pipeline naming no well.  The invariant that guarantees
+        # this can never reach the model lives in
+        # DrillingScheduler._reject_duplicate_names(); this check is the user
+        # experience half — it fires before Schedule.objects.create(), so the user
+        # gets an actionable 400 and no FAILED schedule row is left behind.
+        duplicate_well_names = find_duplicate_names(
+            Well.objects.filter(id__in=validated_data['well_ids'])
+            .order_by('name', 'id')
+            .values_list('name', flat=True)
+        )
+        if duplicate_well_names:
+            logger.warning(
+                "Rejecting create_schedule: duplicate well name(s) %s",
+                duplicate_well_names,
+            )
+            return Response(
+                {
+                    'error': (
+                        'Duplicate well name(s) in the selection: '
+                        f"{', '.join(duplicate_well_names)}. "
+                        'The scheduler identifies each well by its name, so two '
+                        'wells sharing a name cannot be scheduled separately. '
+                        'Rename or deselect the duplicate well(s) and try again.'
+                    ),
+                    'duplicate_well_names': duplicate_well_names,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         schedule = None
         try:
             # --- Phase 1: Create schedule record (committed immediately so it's visible) ---
@@ -1907,9 +1986,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 time_limit_seconds=validated_data.get('time_limit_seconds', 600),
             )
             
-            # Get rigs and wells (ordered for deterministic scheduling)
-            rigs = Rig.objects.filter(id__in=validated_data['rig_ids']).order_by('name')
-            wells = Well.objects.filter(id__in=validated_data['well_ids']).order_by('name')
+            # Get rigs and wells (ordered for deterministic scheduling).
+            # ('name', 'id') is a TOTAL ordering: Well.name has no unique=True, so
+            # ordering by name alone leaves duplicate-named rows to the database.
+            rigs = Rig.objects.filter(id__in=validated_data['rig_ids']).order_by('name', 'id')
+            wells = Well.objects.filter(id__in=validated_data['well_ids']).order_by('name', 'id')
             
             # If no location set yet, try to get from first well
             if not schedule_location and wells.exists():
@@ -1971,6 +2052,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                         schedule.solve_time_seconds = results.get('solve_time_seconds')
                         schedule.optimality_gap_percent = results.get('optimality_gap_percent')
                         schedule.schedule_hash = results.get('schedule_hash')
+                        apply_determinism_provenance(schedule, results)
                         schedule.save()
                         
                         from .models import ScheduleRig, ScheduleWell
@@ -1994,7 +2076,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                             assignments_by_rig[rig_name].append(assignment_data)
                         
                         for rig_name, rig_assignments in assignments_by_rig.items():
-                            rig_assignments.sort(key=lambda x: x['well_start_date'])
+                            # Total sort key: start date alone can tie, and the tie
+                            # would then be resolved by list order (design
+                            # decision 6). Per-rig AddNoOverlap makes same-rig
+                            # start-date ties impossible today.
+                            rig_assignments.sort(key=lambda x: (x['well_start_date'], x['well']))
                             for i, assignment_data in enumerate(rig_assignments, 1):
                                 assignment_data['calculated_sequence_order'] = i
                         
@@ -2104,7 +2190,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                     schedule.solver_status = str(e)[:20]
                     schedule.save()
                 logger.error(f"Optimization failed: {str(e)}", exc_info=True)
-                user_msg = self._friendly_error_message(str(e))
+                user_msg = self._friendly_error_message(str(e), e)
                 return Response(
                     {'error': user_msg}, 
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -2115,16 +2201,31 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 schedule.status = 'FAILED'
                 schedule.save()
             logger.error(f"Schedule creation failed: {str(e)}", exc_info=True)
-            user_msg = self._friendly_error_message(str(e))
+            user_msg = self._friendly_error_message(str(e), e)
             return Response(
                 {'error': user_msg}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @staticmethod
-    def _friendly_error_message(raw: str) -> str:
-        """Translate raw Python exception text into a user-readable message."""
+    def _friendly_error_message(raw: str, exc: Exception = None) -> str:
+        """Translate raw Python exception text into a user-readable message.
+
+        ``exc`` is optional and used only for typed recognition; callers that
+        have the exception in hand should pass it so conditions with a message
+        already written for the user survive translation intact.
+        """
+        # Duplicate names (design decision 5).  DuplicateNameError's own message
+        # already names the offending wells/rigs and tells the user what to do,
+        # so it passes through untouched rather than being flattened into the
+        # generic fallback.  create_schedule rejects this at the API boundary
+        # before any Schedule row exists; this branch covers the other call
+        # paths, which reach preprocess_data through this handler.
+        if isinstance(exc, DuplicateNameError):
+            return str(exc)
         lowered = raw.lower()
+        if lowered.startswith('duplicate well name') or lowered.startswith('duplicate rig name'):
+            return raw
         if 'nattype' in lowered or 'nat' in lowered and 'date' in lowered:
             return ('One or more rigs/wells have missing or invalid dates. '
                     'Please check that all Rig start/end dates and Well RTD '
@@ -2393,6 +2494,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         new_schedule.unassigned_wells_count = len(results.get('unassigned_wells', []))
         new_schedule.solver_status = results.get('solver_status')
         new_schedule.solve_time_seconds = results.get('solve_time_seconds')
+        # Previously absent here, so a rescheduled child lost both. They are as
+        # meaningful on a child as on the original run.
+        new_schedule.optimality_gap_percent = results.get('optimality_gap_percent')
+        new_schedule.schedule_hash = results.get('schedule_hash')
+        apply_determinism_provenance(new_schedule, results)
         new_schedule.save()
         
         # Copy the scope tracking from the original schedule
@@ -2419,8 +2525,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
 
         # Persist assignments
         # Build quick lookup
-        rigs_by_name = {r.name: r for r in Rig.objects.filter(name__in=rigs_seen).order_by('name')}
-        wells_by_name = {w.name: w for w in Well.objects.filter(name__in=wells_seen).order_by('name')}
+        # ('name', 'id') is total; ordering by name alone would let the database
+        # decide which of two same-named rows wins the dict slot.
+        rigs_by_name = {r.name: r for r in Rig.objects.filter(name__in=rigs_seen).order_by('name', 'id')}
+        wells_by_name = {w.name: w for w in Well.objects.filter(name__in=wells_seen).order_by('name', 'id')}
         
         # Create a lookup for actual dates from the provided actuals list AND existing assignments
         actuals_lookup = {}
@@ -2503,7 +2611,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'latitude': float(w.latitude),
             'longitude': float(w.longitude),
             'footprint': w.footprint,
-        } for w in Well.objects.filter(name__in=wells_seen).order_by('name')])
+        } for w in Well.objects.filter(name__in=wells_seen).order_by('name', 'id')])
         rigs_df = pd.DataFrame([{
             'name': r.name,
             'start_date': r.start_date,
@@ -2517,7 +2625,7 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             'ilm_cost_per_km': float(r.ilm_cost_per_km),
             'ilm_cost_cluster': float(r.ilm_cost_cluster),
             'rig_type': r.rig_type,
-        } for r in Rig.objects.filter(name__in=rigs_seen).order_by('name')])
+        } for r in Rig.objects.filter(name__in=rigs_seen).order_by('name', 'id')])
 
         analyzer = WellRejectionAnalyzer(wells_df, rigs_df, timezone.now().date())
         for well_name in results.get('unassigned_wells', []):
@@ -2774,6 +2882,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 new_schedule.unassigned_wells_count = len(results.get('unassigned_wells', []))
                 new_schedule.solver_status = results.get('solver_status')
                 new_schedule.solve_time_seconds = results.get('solve_time_seconds')
+                # Previously absent here too — same reasoning as
+                # reschedule_with_actuals.
+                new_schedule.optimality_gap_percent = results.get('optimality_gap_percent')
+                new_schedule.schedule_hash = results.get('schedule_hash')
+                apply_determinism_provenance(new_schedule, results)
                 new_schedule.save()
                 
                 # Copy scope tracking from original schedule
@@ -2973,8 +3086,8 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             well_ids = [w.id for w in all_wells_in_scope]
             rig_ids = [r.id for r in rigs_in_schedule]
             
-            all_wells_except_deleted = Well.objects.filter(id__in=well_ids).order_by('name')
-            all_rigs = Rig.objects.filter(id__in=rig_ids).order_by('name')
+            all_wells_except_deleted = Well.objects.filter(id__in=well_ids).order_by('name', 'id')
+            all_rigs = Rig.objects.filter(id__in=rig_ids).order_by('name', 'id')
             
             logger.info(f"Re-optimizing with {all_wells_except_deleted.count()} wells (from original scope minus deleted) and {all_rigs.count()} rigs (from original scope)")
             
@@ -3108,9 +3221,10 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             well_ids_current.append(well_to_add.id)
             rig_ids_in_schedule = list(set([a.rig.id for a in original_assignments]))
             
-            # Create QuerySets for all wells (current + new) and rigs (ordered for determinism)
-            wells_in_schedule = Well.objects.filter(id__in=well_ids_current).order_by('name')
-            rigs_in_schedule = Rig.objects.filter(id__in=rig_ids_in_schedule).order_by('name')
+            # Create QuerySets for all wells (current + new) and rigs
+            # (('name', 'id') is total — see create_schedule)
+            wells_in_schedule = Well.objects.filter(id__in=well_ids_current).order_by('name', 'id')
+            rigs_in_schedule = Rig.objects.filter(id__in=rig_ids_in_schedule).order_by('name', 'id')
             
             logger.info(f"Re-optimizing with {wells_in_schedule.count()} wells (added {well_to_add.name}) and {rigs_in_schedule.count()} rigs")
             
@@ -3172,8 +3286,8 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 logger.info(f"Using automatic base start date determination from rig availability")
             
             # Convert QuerySets to dictionaries for the optimizer (ordered for determinism)
-            rigs_data = list(rigs.order_by('name').values()) if hasattr(rigs, 'order_by') else rigs
-            wells_data = list(wells.order_by('name').values()) if hasattr(wells, 'order_by') else wells
+            rigs_data = list(rigs.order_by('name', 'id').values()) if hasattr(rigs, 'order_by') else rigs
+            wells_data = list(wells.order_by('name', 'id').values()) if hasattr(wells, 'order_by') else wells
             
             # DEBUGGING: Log exact wells being optimized
             well_names = [w['name'] for w in wells_data]
@@ -3264,8 +3378,9 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 
                 # Sort each rig's assignments by start date and assign sequence numbers
                 for rig_name, rig_assignments in assignments_by_rig.items():
-                    # Sort by start date
-                    rig_assignments.sort(key=lambda x: x['well_start_date'])
+                    # Sort by start date, then well name — a TOTAL key, so a tie
+                    # on start date is not resolved by list order (decision 6).
+                    rig_assignments.sort(key=lambda x: (x['well_start_date'], x['well']))
                     # Assign sequence numbers starting from 1
                     for i, assignment_data in enumerate(rig_assignments, 1):
                         assignment_data['calculated_sequence_order'] = i
@@ -3404,6 +3519,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
                 schedule.unassigned_wells_count = results.get('unassigned_wells_count', 0)
                 schedule.solver_status = results.get('solver_status', 'UNKNOWN')
                 schedule.solve_time_seconds = results.get('solve_time_seconds', 0)
+                # Previously absent here too — same reasoning as the two
+                # reschedule paths.
+                schedule.optimality_gap_percent = results.get('optimality_gap_percent')
+                schedule.schedule_hash = results.get('schedule_hash')
+                apply_determinism_provenance(schedule, results)
                 schedule.completed_at = datetime.now()
                 schedule.save()
                 
@@ -10784,11 +10904,15 @@ def calculate_ilm_days(rig, distance_m, location, norm_days, prefetched_adjustme
         if prefetched_adjustments is not None:
             adjustments = prefetched_adjustments
         else:
-            # Get all active adjustment rules for this location
+            # Get all active adjustment rules for this location.
+            # ('-priority', 'category', 'id') is a TOTAL ordering. Two rules that
+            # tie on priority AND category are otherwise handed back in database
+            # order, and the loop below applies the FIRST matching 'replace' rule
+            # and then latches base_replaced — so row order decides the ILM value.
             adjustments = list(RigBuildingAdjustment.objects.filter(
                 location=location,
                 is_active=True
-            ).order_by('-priority', 'category'))
+            ).order_by('-priority', 'category', 'id'))
         
         if not adjustments:
             return {'ilm_days': norm_days, 'applied_rules': [], 'note': 'No adjustment rules'}
@@ -11080,11 +11204,12 @@ def refresh_ilm_cache_for_location(location, batch_size=500):
     """
     from .models import WellPairDistance, RigBuildingAdjustment
     
-    # Pre-fetch adjustment rules once for the entire location (avoid N+1 queries)
+    # Pre-fetch adjustment rules once for the entire location (avoid N+1 queries).
+    # ('-priority', 'category', 'id') is total — see calculate_ilm_days.
     prefetched_adjustments = list(RigBuildingAdjustment.objects.filter(
         location=location,
         is_active=True
-    ).order_by('-priority', 'category'))
+    ).order_by('-priority', 'category', 'id'))
     
     distances = WellPairDistance.objects.filter(location=location).select_related(
         'rig', 'rig__rig_building_norm'

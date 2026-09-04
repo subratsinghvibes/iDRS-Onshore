@@ -241,6 +241,117 @@ VIDEO_PROCESSING = {
     'TARGET_HEIGHT': 720,
 }
 
+# ==============================================================================
+# SOLVER DETERMINISM CONFIGURATION
+# ==============================================================================
+# The scheduling solver stops on a *deterministic time* (work) budget rather
+# than on the wall clock, so the same request performs the same amount of search
+# on this machine no matter how busy the machine is. See
+# .kiro/specs/deterministic-schedule-fix/design.md, design decision 1.
+#
+# EVERY VALUE HERE IS SCHEDULE-AFFECTING, NOT A PERFORMANCE KNOB.
+# Changing one changes how much search is performed, which can change the
+# schedule that is returned. Treat an edit here like a change to the objective:
+# it belongs in the solver fingerprint that is recorded with each schedule, and
+# schedules produced before and after an edit are not comparable.
+IDRS_SOLVER_DETERMINISM = {
+    # Deterministic-time units granted per wall-clock second the user selected,
+    # i.e. D = DETERMINISTIC_TIME_RATIO x time_limit_seconds.
+    #
+    # This is a HEADROOM knob. Deterministic time is a work counter whose unit
+    # is only roughly a second, so the ratio exists to make the fixed work
+    # budget comfortably fit *this* machine even when the machine is busy —
+    # the work still has to finish inside WALL_BACKSTOP_FACTOR x the selected
+    # limit, and contended cores complete less work per second. Lower it if
+    # real runs on this host hit the wall-clock backstop while the box is busy;
+    # raise it to spend more of the user's selected budget on search if they
+    # never do.
+    #
+    # It is NOT a slow-machine-versus-fast-machine knob, and it is NOT a
+    # performance setting: it changes how much search is done and therefore can
+    # change the answer.
+    #
+    # 0.60 is the SEARCH-QUALITY choice and it is deliberate. A
+    # deterministic-time unit is not a second: measured on this host (macOS,
+    # 12 cores, ortools 9.15.6755, the 6-rig/40-well model in
+    # scheduler/tests/factories.py) one unit costs ~1.65 s idle, so 0.60 x T
+    # asks for slightly more work than this box completes in T idle seconds.
+    # That is why WALL_BACKSTOP_FACTOR is sized from measured contention rather
+    # than left near 1.0 — the work budget is what fixes the answer, and the
+    # clock is only there to bound the damage when the work cannot be finished.
+    #
+    # Lowering the ratio does NOT buy reproducibility for free; it buys it with
+    # solution quality, and the exchange rate is brutal on this model. Measured:
+    # at 0.60 the scenario assigns 23 of 40 wells (objective 97,768,602,348); at
+    # 0.15 the same request assigns 1 well (objective 223,981,623,957). The 0.15
+    # experiment is recorded in "Task 3 results" in
+    # .kiro/specs/deterministic-schedule-fix/tasks.md as a rejected option, not
+    # as a fallback to reach for.
+    #
+    # If a host cannot complete 0.60 x T units inside its backstop window, raise
+    # WALL_BACKSTOP_FACTOR — re-derived from the same measurement, see its
+    # comment below — before touching this ratio.
+    'DETERMINISTIC_TIME_RATIO': float(os.getenv('IDRS_DETERMINISTIC_TIME_RATIO', '0.60')),
+    # Wall-clock backstop as a multiple of the selected time limit. It is NOT
+    # the limit that decides the answer — the work budget above is. This one
+    # only bounds the damage when the work budget cannot be completed in time;
+    # when it fires, the run is flagged as a non-deterministic stop
+    # (stop_reason WALL_CLOCK_BACKSTOP) instead of being silently
+    # non-reproducible.
+    #
+    # 1.5 is SIZED FROM MEASURED CONTENTION ON THIS HOST, not from a wall-time
+    # target. Same model and same fixed 3.6-unit budget at four absolute
+    # background-load levels on 12 cores, backstop opened wide so the work
+    # budget always fired:
+    #
+    #     burners   wall_s   det_time   wall/unit
+    #           0     5.77     3.6000       1.602 / 1.613
+    #           2     5.78     3.6000       1.604 / 1.611
+    #           4     5.98     3.6000       1.674 / 1.647
+    #           8     6.55     3.6000       1.832 / 1.804
+    #
+    # Worst representative cost 1.832 s per unit, so the wall time needed for
+    # the fixed work is 1.832 x RATIO x T = 1.832 x 0.60 = 1.10 x T. Rounding
+    # up to 1.5 x T adds ~36 % headroom, which covers up to 2.5 s per unit
+    # (1.56x this host's idle cost) before the backstop can bind at all.
+    #
+    # This DELIBERATELY supersedes the design's Property 4 bound of 1.2 x T. A
+    # tight wall bound and same-machine determinism under load are mutually
+    # exclusive: holding the work fixed means the elapsed time has to absorb the
+    # contention. Determinism wins. What is NOT covered is the 3x-per-core
+    # torture level the test harness defaults to (~7.3 s per unit, needing
+    # ~4.4 x T); at that load the backstop fires and the run is reported as
+    # non-deterministic, which is the documented boundary of the guarantee
+    # rather than a silent failure.
+    'WALL_BACKSTOP_FACTOR': float(os.getenv('IDRS_WALL_BACKSTOP_FACTOR', '1.5')),
+    # Share of the deterministic budget reserved for the canonicalising second
+    # solve stage that selects one schedule out of a tied optimal set.
+    'CANONICALIZE_BUDGET_SHARE': float(os.getenv('IDRS_CANONICALIZE_BUDGET_SHARE', '0.15')),
+    # Optional: promote the decision strategies to a mandate (FIXED_SEARCH
+    # branching) instead of the first-branch hint they are by default.
+    #
+    # By default the deterministic path runs AUTOMATIC_SEARCH with two explicit
+    # decision strategies attached to the model (assignment BoolVars
+    # CHOOSE_FIRST/SELECT_MAX_VALUE, then start-time IntVars
+    # CHOOSE_FIRST/SELECT_MIN_VALUE, both in canonical (well, rig) order). CP-SAT
+    # consults them for the first descent and then branches freely, which biases
+    # a truncated run's incumbent towards "assigned, as early as possible" at
+    # near-zero cost.
+    #
+    # Turning this on makes CP-SAT follow those strategies exactly and explore
+    # nothing else. Use it for an audit run where a stable search *path* matters
+    # more than the quality of the answer.
+    #
+    # Off by default because it costs a great deal of solution quality on large
+    # models — it is the knob that was removed once already for that reason, and
+    # its cost is only bounded now because the solve stops on completed work
+    # rather than on the clock.
+    #
+    # It changes the answer, so it is part of the solver fingerprint: a schedule
+    # produced with this on is not comparable to one produced with it off.
+    'FIXED_SEARCH': os.getenv('IDRS_FIXED_SEARCH', 'False').lower() == 'true',
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

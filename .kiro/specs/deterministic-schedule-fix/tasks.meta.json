@@ -1,0 +1,18 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration harness": {
+      "status": "passed",
+      "failingExample": "Exploration harness correctly detected the bug — the assertions fail on unfixed code, which is the\nsuccess case for this task.\n\ntest_repeat_runs_under_cpu_load: 6 rigs / 40 wells, 6s limit, 3 idle + 2 loaded (36 burners = 3x\ncores), all FEASIBLE:\n\nrun load  schedule_hash        objective      det_time  wall_s  assigned  total_cost\n 1   N    1a6136917eac05eb     97768602348     3.4378    5.92     23      1,279,834,676\n 2   N    1a6136917eac05eb     97768602348     3.4378    5.88     23      1,279,834,676\n 3   N    1a6136917eac05eb     97768602348     3.4378    5.85     23      1,279,834,676\n 4   Y    92f12d9691802821    223981623957     0.7595    6.02      1         42,900,000\n 5   Y    92f12d9691802821    223981623957     0.8579    6.00      1         42,900,000\n\ndistinct schedule_hash=2, distinct objective_value=2, distinct model_fingerprint=1,\ndeterministic_time spread=2.6783 (0.7595 -> 3.4378).\n\nMechanism confirmed: schedule_hash varies AND deterministic_time varies at an identical model\nfingerprint, so the wall-clock stop (optimization.py:927, :954) is taking the stop at different\namounts of completed search work. Design root cause 1, not the ordering hazards.\n\nAdditional counterexamples:\n- Tie enumeration (5 wells / 2 identical rigs): 4 distinct schedules attain the optimal objective\n  218583260, exhaustively enumerated (cap of 50 not reached). Hashes 0b236ee41210272d,\n  21eab6f2022716e3, 2659d0ba8a8fc116, 8fa867e67fbbd0bd. Expected 1.\n- Duplicate well names: 3 wells / 2 distinct names collapse to 2 assignment variables, then the\n  pipeline dies with TypeError: float() argument must be a string or a real number, not 'DataFrame'\n  (optimization.py:1173). No rejection and no well named.\n- Tied RigBuildingAdjustment rows (equal priority + category, same rule set): inserted X,Y gives\n  ILM 2.0 days; inserted Y,X gives 7.0 days.\n\ntest_repeat_runs_yield_one_schedule_hash (idle only) PASSES: 1 distinct hash, deterministic_time\nspread 0.0000. Consistent with bugfix.md's own measurement of 1 distinct schedule on an idle\nmachine; the load test is the reproduction, the idle test is the clause-2.12 regression guard.",
+      "lastRunTimestamp": 1788430786191
+    }
+  },
+  "executionHistory": {
+    "3. Fix — stopping criterion: deterministic time becomes the binding limit (design decision 1 + 2)": [
+      {
+        "executionId": "f4cdc0e3-cb84-475f-97bc-62f1e6be24f5",
+        "chatSessionId": "sess_8f88fb0a-7e28-4ffd-a8f8-646c2eb5ff58",
+        "timestamp": 1788480162702
+      }
+    ]
+  }
+}

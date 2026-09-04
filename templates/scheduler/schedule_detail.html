@@ -419,6 +419,65 @@
                     {% endif %}
                 </div>
             </div>
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <strong>Reproducibility:</strong><br>
+                    {# The badge never relies on colour alone: the state is spelled out in
+                       the visible text, repeated in aria-label for screen readers, and the
+                       icon carries aria-hidden so it is not announced twice. Every branch
+                       says the flag is ADVISORY and names check_determinism as the
+                       authoritative check — a single solve cannot prove reproducibility,
+                       because proving it requires comparing more than one run. #}
+                    {% if schedule.stop_reason == "OPTIMAL_PROVEN" %}
+                        <span class="badge bg-success"
+                              role="status"
+                              aria-label="Reproducible: proven optimal. This is an advisory indicator; run the check_determinism management command for the authoritative cross-run verification."
+                              title="Stopped because the optimum was proven, so there is nothing left to search and the result cannot vary. ADVISORY — the authoritative check is the check_determinism management command, which compares schedule hashes across repeated runs.">
+                            <i class="bi bi-check-circle" aria-hidden="true"></i> Reproducible &mdash; optimal proven
+                        </span>
+                    {% elif schedule.stop_reason == "DETERMINISTIC_BUDGET" %}
+                        <span class="badge bg-success"
+                              role="status"
+                              aria-label="Reproducible: stopped on the work budget. This is an advisory indicator; run the check_determinism management command for the authoritative cross-run verification."
+                              title="Stopped on its deterministic-time (work) budget rather than the wall clock, so machine load does not change where the search stops. ADVISORY — the authoritative check is the check_determinism management command, which compares schedule hashes across repeated runs.">
+                            <i class="bi bi-check-circle" aria-hidden="true"></i> Reproducible &mdash; work budget
+                        </span>
+                    {% elif schedule.stop_reason == "WALL_CLOCK_BACKSTOP" %}
+                        <span class="badge bg-warning text-dark"
+                              role="status"
+                              aria-label="Not guaranteed reproducible: the wall-clock backstop stopped this run before its work budget completed. This is an advisory indicator; run the check_determinism management command for the authoritative cross-run verification."
+                              title="The wall-clock backstop fired before the work budget completed, so the search stopped at an amount of work that depends on how busy the machine was. ADVISORY — the authoritative check is the check_determinism management command, which compares schedule hashes across repeated runs.">
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Not guaranteed reproducible
+                        </span>
+                        <br><small class="text-muted">This run was cut short by the wall-clock backstop, so re-running it may produce a different schedule. Re-run with a longer time limit for a reproducible result.</small>
+                    {% elif schedule.stop_reason %}
+                        <span class="badge bg-secondary"
+                              role="status"
+                              aria-label="Reproducibility not established: stop reason {{ schedule.stop_reason }}. This is an advisory indicator; run the check_determinism management command for the authoritative cross-run verification."
+                              title="Reproducibility was not established for this stop reason. ADVISORY — the authoritative check is the check_determinism management command, which compares schedule hashes across repeated runs.">
+                            <i class="bi bi-dash-circle" aria-hidden="true"></i> Not established &mdash; {{ schedule.stop_reason }}
+                        </span>
+                    {% else %}
+                        {# Null, not False. Schedules created before migration 0063 have no
+                           provenance recorded; that is not the same as being irreproducible. #}
+                        <span class="text-muted" role="status" aria-label="Reproducibility not recorded for this schedule.">
+                            &mdash; <small>not recorded</small>
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <strong>Model Fingerprint <small class="text-muted fw-normal">(input model)</small>:</strong><br>
+                    {% if schedule.model_fingerprint %}
+                        <code style="font-size: 0.85rem; letter-spacing: 0.05em; word-break: break-all;" title="SHA-256 of the CP-SAT model proto — identifies the question put to the solver. Two runs are only comparable when this matches.">{{ schedule.model_fingerprint }}</code>
+                        {% if schedule.deterministic_time_used is not None and schedule.deterministic_budget %}
+                            <br><small class="text-muted">Work used: {{ schedule.deterministic_time_used|floatformat:4 }} of
+                            {{ schedule.deterministic_budget|floatformat:4 }} deterministic-time units</small>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">&mdash;</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

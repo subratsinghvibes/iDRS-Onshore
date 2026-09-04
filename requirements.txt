@@ -54,8 +54,18 @@ proglog==0.1.12
 tqdm==4.67.3
 colorama==0.4.6; sys_platform == 'win32'  # Required by tqdm on Windows
 
+# Property-based testing — TEST-ONLY DEPENDENCY.
+# Not imported by any module under drilling_scheduler/ or scheduler/ outside
+# scheduler/tests/, so the application runs without it. It is pinned here rather
+# than left to a separate dev-requirements file because the offline VM installer
+# (Install Windows/install_offline.bat) builds its wheel set from this file, and
+# the determinism test suite must be runnable on the VM to verify a deployment.
+hypothesis==6.167.1
+
 # Core Dependencies (auto-installed with above packages)
 asgiref==3.11.0
+# Required by hypothesis (test-only, listed so the offline wheel set is complete)
+sortedcontainers==2.4.0
 sqlparse==0.5.5
 typing-extensions==4.15.0
 six==1.17.0

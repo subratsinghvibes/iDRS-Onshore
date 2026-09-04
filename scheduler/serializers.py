@@ -227,6 +227,15 @@ class ScheduleSerializer(serializers.ModelSerializer):
             # Hide admin-only fields for non-admin users
             data.pop('optimality_gap_percent', None)
             # Keep schedule_hash for grouping purposes but omit raw display in JS
+            #
+            # The determinism provenance fields (model_fingerprint,
+            # solver_fingerprint, deterministic_stop, stop_reason,
+            # deterministic_time_used, deterministic_budget) are deliberately NOT
+            # popped here. optimality_gap_percent is an internal solver
+            # diagnostic; stop_reason is a trust signal about whether the
+            # schedule in front of the user will reproduce. Hiding it from
+            # non-admins would hide the warning from exactly the people acting on
+            # the schedule.
         return data
 
 
@@ -251,6 +260,14 @@ class ScheduleListSerializer(serializers.ModelSerializer):
             'schedule_hash', 'parent_schedule', 'parent_schedule_id', 'parent_schedule_name',
             'branch_type', 'version_number',
             'input_wells_count', 'input_rigs_count', 'time_limit_seconds',
+            # Determinism provenance. Visible to EVERY user, deliberately: unlike
+            # optimality_gap_percent below, the stop reason is a trust signal
+            # rather than an internal diagnostic. An operator who cannot see that
+            # a run was cut short by the clock has no way to know the schedule
+            # they are about to act on may not reproduce. Not added to
+            # to_representation's admin gate.
+            'model_fingerprint', 'solver_fingerprint', 'deterministic_stop',
+            'stop_reason', 'deterministic_time_used', 'deterministic_budget',
             'location', 'location_code', 'location_name',
             'created_by', 'created_by_username',
             'is_stale', 'assignments_count',
